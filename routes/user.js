@@ -33,6 +33,27 @@ validator.extend('isImage', function (mimetype) {
     else return false;
 });
 
+
+router.post('/mysports', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    responseObj = {}
+    var userId = req.user.results[0].value.id;
+
+    db.merge("users", userId, {
+        sports: req.body
+    })
+        .then(function (result) {
+            responseObj["data"] = [];
+            responseObj["msg"] = "Sports Updated";
+            res.status(201);
+            res.json(responseObj);
+        })
+        .fail(function (err) {
+            responseObj["errors"] = [err.body.message];
+            res.status(422);
+            res.json(responseObj);
+        })
+}])
+
 /**
  * google login exchanging encrypted jwt tokens
  */
@@ -54,18 +75,23 @@ router.post('/auth/google', function (req, res) {
     if (validator.isNull(encryptedJwt)) errors.push("No JWT Token provided");
     else {
         decoded = jwt.decode(encryptedJwt, {complete: true});
-        header = decoded.header;
-        payload = decoded.payload;
-        if (validator.isNull(payload.sub)) errors.push("Profile ID is missing");
-        if (validator.isNull(payload.email)) errors.push("Email is missing");
-        if (validator.isNull(payload.name)) errors.push("Name is missing");
-        //if profile is missing set your own profile, because it has not been set in google.
-        if (validator.isNull(payload.picture)) {
-            avatar = "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png";
-            avatarThumb = "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png";
+
+        if (decoded) {
+            header = decoded.header;
+            payload = decoded.payload;
+            if (validator.isNull(payload.sub)) errors.push("Profile ID is missing");
+            if (validator.isNull(payload.email)) errors.push("Email is missing");
+            if (validator.isNull(payload.name)) errors.push("Name is missing");
+            //if profile is missing set your own profile, because it has not been set in google.
+            if (validator.isNull(payload.picture)) {
+                avatar = "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png";
+                avatarThumb = "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png";
+            } else {
+                avatar = payload.picture.replace('s96-c/', '');
+                avatarThumb = payload.picture;
+            }
         } else {
-            avatar = payload.picture.replace('s96-c/', '');
-            avatarThumb = payload.picture;
+            errors.push("Invalid JWT or JWT has expired. Please reissue a token")
         }
     }
 
@@ -513,25 +539,6 @@ router.post('/login', function (req, res) {
     //res.send('hello authed world');
 });
 
-
-/**
- * @api {post} /user/logout User Logout
- * @apiName userLogout
- * @apiGroup User
- *
- * @apiParam {String} access_token (in URL) Access Token of the current User
- *
- * @apiSuccess {String} success Success Response
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *      {
- *          "data": {
- *              "success": "Successfully and securely logged out, kind off"
- *              }
- *      }
- *
- */
 router.post('/logout', [passport.authenticate('bearer', {session: false}), function (req, res) {
     access_token = req.query.access_token;
     var responseObj = {};
@@ -550,56 +557,8 @@ router.post('/logout', [passport.authenticate('bearer', {session: false}), funct
 
 }]);
 
-router.post('/test', function (req, res) {
-    res.status(200)
-    res.json({ok: "tata"})
-});
-
 /**
- * @api {get} /user User Profile
- * @apiName getUserProfile
- * @apiGroup User
- *
- * @apiParam {String} access_token (in URL) Access Token of the current User
- * @apiParam {String} email (in URL) (Optional) Email of User to Get
- * @apiParam {String} limit (in URL) (Optional) Number of paths per page. Default 10
- * @apiParam {String} page (in URL) (Optional) Page Number. Default 1
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *      {
- *          "data": {
- *              "username": "ketannewbhatt123",
- *              "email": "newktbt12330@gmail.com",
- *              "avatar": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png",
- *              "qbId": 3125204,
- *              "id": "2342345345h",
- *              "paths": [
- *                  {
- *                      "title": "Star Trek",
- *                      "desc": "Get to know the basics of movie industry by following this course on start trek",
- *                      "buying": "free",
- *                      "coverPhoto": "https://s3.amazonaws.com/test-bucket-ketan/f78947c74b788406a23591902c6e36e8.JPG",
- *                      "coverPhotoThumb": "https://s3.amazonaws.com/test-bucket-ketanresized/resized-f78947c74b788406a23591902c6e36e8.JPG",
- *                      "concepts": [
- *                          {
- *                              "id": "Q43rWW8oyLJbY1mY",
- *                              "title": "Introduction",
- *                              "qbId": "55574a626390d8ebef01ba98"
- *                          }
- *                      ],
- *                      "qbId": "55574a626390d8ab91035862",
- *                      "mentorRoomId": "55574a626390d8261901ebb1",
- *                      "studentCount": 1,
- *                      "isOwner": true,
- *                      "id": "0a11e1090960fead"
- *                  }
- *              ]
- *          },
- *          "more": true
- *      }
- *
- * @apiDescription Returns User Profile for the specified email
+ * Returns User Profile for the specified email
  * Otherwise returns Profile of Logged In User
  */
 router.get('/', function (req, res, next) {
@@ -618,51 +577,11 @@ router.get('/', function (req, res, next) {
     var getUserInfo = function (userId, allowUpdate) {
         db.get('users', userId)
             .then(function (user) {
-                db.newGraphReader()
-                    .get()
-                    .limit(limit)
-                    .offset(offset)
-                    .from('users', userId)
-                    .related('related')
-                    .then(function (result) {
-                        responseObj["data"] = _.cloneDeep(user.body);
-                        responseObj["data"]["password"] = undefined;
-                        responseObj["data"]["allowUpdate"] = allowUpdate;
-                        if (result.body.count === 0) {
-                            responseObj["more"] = false;
-                            responseObj["data"]["paths"] = [];
-                            res.json(responseObj);
-                        } else {
-                            if (result.body.next) responseObj["more"] = true;
-                            else responseObj["more"] = false;
-
-                            responseObj["data"]["paths"] = _.cloneDeep(result.body.results);
-                            for (var i = 0 in responseObj["data"]["paths"]) {
-
-
-                                if (responseObj["data"]["paths"][i].value.producer.id == req.user.results[0].value.id) {
-                                    responseObj["data"]["paths"][i].value.producer = undefined;
-                                    responseObj["data"]["paths"][i].value["isOwner"] = true;
-                                } else {
-                                    responseObj["data"]["paths"][i].value["isOwner"] = false;
-                                }
-
-                                responseObj["data"]["paths"][i].value["id"] = responseObj["data"]["paths"][i].path.key;
-                                responseObj["data"]["paths"][i] = responseObj["data"]["paths"][i].value;
-                                responseObj["data"]["paths"][i]["allowEnroll"] = false;
-
-                                for (var j = 0 in responseObj["data"]["paths"][i]["concepts"]) {
-                                    responseObj["data"]["paths"][i]["concepts"][j].objects = undefined;
-                                }
-
-                                responseObj["data"]["paths"][i].value = undefined;
-                                responseObj["data"]["paths"][i].path = undefined;
-                                responseObj["data"]["paths"][i].score = undefined;
-                                responseObj["data"]["paths"][i].reftime = undefined;
-                            }
-                            res.json(responseObj);
-                        }
-                    })
+                user.body.password = undefined
+                responseObj["data"] = user.body
+                responseObj["allowUpdate"] = allowUpdate
+                res.status(200)
+                res.json(responseObj)
             })
             .fail(function (err) {
                 responseObj["errors"] = [err.body.message];
@@ -701,53 +620,11 @@ router.get('/', function (req, res) {
     var getUserInfo = function (userId, allowUpdate) {
         db.get('users', userId)
             .then(function (user) {
-                db.newGraphReader()
-                    .get()
-                    .limit(limit)
-                    .offset(offset)
-                    .from('users', userId)
-                    .related('related')
-                    .then(function (result) {
-                        responseObj["data"] = _.cloneDeep(user.body);
-                        ;
-                        responseObj["data"]["password"] = undefined;
-                        responseObj["data"]["allowUpdate"] = allowUpdate;
-                        if (result.body.count === 0) {
-                            responseObj["more"] = false;
-                            responseObj["data"]["paths"] = [];
-                            res.json(responseObj);
-                        } else {
-                            if (result.body.next) responseObj["more"] = true;
-                            else responseObj["more"] = false;
-
-                            responseObj["data"]["paths"] = _.cloneDeep(result.body.results);
-                            for (var i = 0 in responseObj["data"]["paths"]) {
-
-
-                                if (responseObj["data"]["paths"][i].value.producer.id == userId) {
-                                    responseObj["data"]["paths"][i].value.producer = undefined;
-                                    responseObj["data"]["paths"][i].value["isOwner"] = true;
-                                } else {
-                                    responseObj["data"]["paths"][i].value["isOwner"] = false;
-                                }
-
-                                responseObj["data"]["paths"][i].value["id"] = responseObj["data"]["paths"][i].path.key;
-                                responseObj["data"]["paths"][i] = responseObj["data"]["paths"][i].value;
-                                responseObj["data"]["paths"][i]["allowEnroll"] = false;
-
-                                for (var j = 0 in responseObj["data"]["paths"][i]["concepts"]) {
-                                    if (responseObj["data"]["paths"][i]["concepts"][j].title != "Introduction")
-                                        responseObj["data"]["paths"][i]["concepts"][j].objects = undefined;
-                                }
-
-                                responseObj["data"]["paths"][i].value = undefined;
-                                responseObj["data"]["paths"][i].path = undefined;
-                                responseObj["data"]["paths"][i].score = undefined;
-                                responseObj["data"]["paths"][i].reftime = undefined;
-                            }
-                            res.json(responseObj);
-                        }
-                    })
+                user.body.password = undefined
+                responseObj["data"] = user.body
+                responseObj["allowUpdate"] = allowUpdate
+                res.status(200)
+                res.json(responseObj)
             })
             .fail(function (err) {
                 responseObj["errors"] = [err.body.message];
@@ -768,23 +645,7 @@ router.get('/', function (req, res) {
 
 });
 
-router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res, next) {
-
-    //This code is everywhere to makesure
-    //quickblox session does not expire while trying to make a patch request
-    //dont land up with inconsistent data
-    qbchat.getSession(function (err, session) {
-        if (err) {
-            console.log("Recreating session");
-            qbchat.createSession(function (err, result) {
-                if (err) {
-                    res.status(503);
-                    res.json({"errors": ["Can't connect to the chat server, try again later"]});
-                } else next();
-            })
-        } else next();
-    })
-}, function (req, res) {
+router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
 
     if (Object.keys(req.body).length === 0 && Object.keys(req.files).length === 0) {
         res.status(422);
@@ -805,14 +666,23 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
         }
     });
 
+
+    if (!validator.isNull(reqBody.location_name)) {
+        if (!validator.isDecimal(reqBody.lat))
+            errors.push("Invalid Lattitude value");
+        else
+            reqBody.lat = parseFloat(reqBody.lat)
+        if (!validator.isDecimal(reqBody.long))
+            errors.push("Invalid Longitude value");
+        else
+            reqBody.long = parseFloat(reqBody.long)
+    }
+
     if (!validator.isNull(reqBody.name))
         if (!reqBody.name.match(/\w*/g)) errors.push("Name contains illegal characters");
 
     if (!validator.isNull(reqBody.userDesc))
         if (!validator.isLength(req.body.userDesc, 20)) errors.push("Description must be greater than 20 characters");
-
-    if (!validator.isNull(reqBody.tagline))
-        if (!validator.isLength(reqBody.tagline, 0, 40)) errors.push("Tagline must be less than 40 characters");
 
     if (!validator.isNull(req.files.avatar))
         if (!validator.isImage(req.files.avatar.mimetype)) errors.push("Avatar should be an image type");
@@ -852,7 +722,6 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 res.json(responseObj);
             } else {
                 customUtils.upload(req.files.avatar, function (avatarInfo) {
-
                     if (req.files.avatar) {
                         var payload = {
                             "avatar": avatarInfo.url,
@@ -861,14 +730,24 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                             "tagline": req.body.tagline,
                             "name": req.body.name,
                             "username": req.body.username,
-                            "gcmId": req.body.gcmId
+                            "gcmId": req.body.gcmId,
+                            "location_name": reqBody.location_name,
+                            "location": {
+                                "lat": reqBody.lat,
+                                "long": reqBody.long
+                            }
                         };
                     } else if (reqBody.email) {
                         var newToken = customUtils.generateToken();
                         var payload = {
                             "email": req.body.email,
                             "isVerified": newToken,
-                            "username": req.body.username
+                            "username": req.body.username,
+                            "location_name": reqBody.location_name,
+                            "location": {
+                                "lat": reqBody.lat,
+                                "long": reqBody.long
+                            }
                         };
                     } else if (req.body.avatar == 'null') {
                         var payload = {
@@ -881,47 +760,20 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                             "tagline": req.body.tagline,
                             "name": req.body.name,
                             "username": req.body.username,
-                            "gcmId": req.body.gcmId
+                            "gcmId": req.body.gcmId,
+                            "location_name": reqBody.location_name,
+                            "location": {
+                                "lat": reqBody.lat,
+                                "long": reqBody.long
+                            }
                         };
                     }
 
                     db.merge('users', userId, payload)
                         .then(function (result) {
-
-                            if (req.files.avatar) {
-                                notify.getRecieversAndUpdatePhotos('user', userId, payload['avatarThumb'], req.user.results[0].value.avatarThumb)
-                            }
-
-                            if (typeof payload['gcmId'] !== 'undefined') {
-                                var date = new Date();
-                                var chatObj = {
-                                    "type": "newGcmId",
-                                    "username": req.user.results[0].value.username,
-                                    "created": date.getTime(),
-                                    "id": date.getTime(),
-                                    "gcmId": payload['gcmId']
-                                }
-                                notify.emit("wordForChat", chatObj)
-                            }
-
-                            qbchat.updateUser(req.user.results[0].value.qbId, {
-                                login: payload.username,
-                                email: payload.email,
-                                full_name: payload.name,
-                                custom_data: payload.avatarThumb
-                            }, function (err, user) {
-                                if (err) console.log(err);
-                            })
                             responseObj["data"] = payload;
                             res.status(200);
                             res.json(responseObj);
-                            updateUser(userId, payload);
-                            if (reqBody.email) {
-                                var urlLink = "http://api2.pyoopil.com:3000/user/verify?user=" + userId + "&token=" + payload.isVerified;
-                                var msg = "Hello! Your Email ID was changed. \nPlease click on the below link to verify your email, excuse our brevity.\n\n" + urlLink + " \n\nLooking forward to see you on Pyoopil.\n\nBest Wishes,\nPyoopil Team";
-                                var subject = 'Email Change - Verify your new E-mail';
-                                sendEmail(reqBody.email, subject, msg);
-                            }
                         })
                         .fail(function (err) {
                             responseObj["errors"] = [err.body.message];
@@ -971,27 +823,6 @@ router.post('/forgotPassword', function (req, res) {
             res.json({"errors": [err.body.message]});
         })
 });
-
-router.post('/error', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var d = new Date();
-    var responseObj = {};
-    var payload = {
-        'userId': req.user.results[0].value.id,
-        'timestamp': d.getTime(),
-        'dump': req.body.dump
-    }
-    db.post('errors', payload)
-        .then(function (result) {
-            responseObj["data"] = {"success": "The error report was submitted successfully, thank you."};
-            res.status(201);
-            res.json(responseObj);
-        })
-        .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
-        })
-}]);
 
 router.patch('/password', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {};
@@ -1050,7 +881,64 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 
 }]);
 
-module.exports = router;
+router.get('/nearby', function (req, res) {
+    query = "value.location:NEAR:{lat:" + parseFloat(req.query.lat) + " lon:" + parseFloat(req.query.long) + " dist:" + req.query.radius + "}";
+    responseObj = {}
+    console.log(query)
+    db.newSearchBuilder()
+        .collection("users")
+        .sort('location', 'distance:asc')
+        .query(query)
+        .then(function (res) {
+            //console.log(res.body)
+            var results = res.body.results.map(function (aResult) {
+                return aResult.value;
+            })
+            responseObj["total_count"] = res.body.total_count
+            responseObj["data"] = results
+            res.status(200)
+            res.json(responseObj)
+        })
+        .fail(function (err) {
+            responseObj["errors"] = [err.body.message];
+            res.status(503);
+            res.json(responseObj);
+        })
+})
+
+router.get('/filterSports', function (req, res) {
+    var array = req.query.sports.split(',');
+    console.log(array)
+    var searchPattern = ""
+    responseObj = {}
+
+    array.forEach(function (sport) {
+        searchPattern = searchPattern + "value.sports." + sport + ":? AND "
+    })
+
+    searchPattern = searchPattern.substring(0, searchPattern.length - 5);
+
+    console.log(searchPattern)
+
+    db.newSearchBuilder()
+        .collection("users")
+        .query(searchPattern)
+        .then(function (res) {
+            console.log(res.body)
+            var results = res.body.results.map(function (aResult) {
+                return aResult.value;
+            })
+            responseObj["total_count"] = res.body.total_count
+            responseObj["data"] = results
+            res.status(200)
+            res.json(responseObj)
+        })
+        .fail(function (err) {
+            responseObj["errors"] = [err.body.message];
+            res.status(503);
+            res.json(responseObj);
+        })
+})
 
 var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
     var responseObj = {};
@@ -1104,7 +992,6 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                 })
         })
         .fail(function (err) {
-            console.log("POST FAIL:" + err);
             responseObj["errors"] = [err.body.message];
             res.status(503);
             res.json(responseObj);
@@ -1198,48 +1085,5 @@ var generateTokenAndLogin = function (user, res) {
         })
 };
 
-// To update producer info after PATCH to an user
-// TODO: Update 
-var updateUser = function (userId, userObj) {
-    db.newSearchBuilder()
-        .collection('paths')
-        .limit(100)
-        .query('value.producer.id:`' + userId + '`')
-        .then(function (result) {
-            pathIds = result.body.results.map(function (path) {
-                return path.path.key;
-            })
-            pathIds.forEach(function (pathId) {
-                db.newPatchBuilder("paths", pathId)
-                    .merge("producer", userObj)
-                    .apply()
-                    .then(function (result) {
-                        console.log("Denormalization wins");
-                    })
-            })
-        })
-        .fail(function (err) {
-            console.log(err.body.message);
-        });
 
-    db.newSearchBuilder()
-        .collection('reviews')
-        .limit(100)
-        .query('value.user.id:`' + userId + '`')
-        .then(function (result) {
-            reviewIds = result.body.results.map(function (review) {
-                return review.path.key;
-            })
-            reviewIds.forEach(function (reviewId) {
-                db.newPatchBuilder("reviews", reviewId)
-                    .merge("user", userObj)
-                    .apply()
-                    .then(function (result) {
-                        console.log("Denormalization wins again");
-                    })
-            })
-        })
-        .fail(function (err) {
-            console.log(err.body.message);
-        });
-}
+module.exports = router;
