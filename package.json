@@ -1,0 +1,42 @@
+{
+  "name": "Playable-S",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "async": "^0.9.0",
+    "bcryptjs": "^2.1.0",
+    "body-parser": "~1.12.0",
+    "bunyan": "^1.4.0",
+    "colors": "^0.6.2",
+    "cors": "^2.7.1",
+    "cron": "^1.0.9",
+    "crypto": "0.0.3",
+    "debug": "~2.1.1",
+    "express": "~4.12.2",
+    "firebase": "^2.2.7",
+    "fs": "0.0.2",
+    "jade": "1.9.2",
+    "jsonwebtoken": "^5.0.5",
+    "kew": "^0.5.0",
+    "lodash": "^3.10.1",
+    "mailgun-js": "^0.6.9",
+    "minimal-metainspector": "^1.1.1",
+    "morgan": "~1.5.1",
+    "multer": "^0.1.8",
+    "node-cache": "^3.0.0",
+    "node-gcm": "^0.9.15",
+    "node-xmpp": "^1.0.0-alpha2",
+    "orchestrate": "0.6.x",
+    "passport": "^0.2.1",
+    "passport-http-bearer": "^1.0.1",
+    "qbox": "^0.1.7",
+    "quickblox": "^1.9.3",
+    "random-string": "^0.1.2",
+    "request": "^2.55.0",
+    "s3fs": "^2.0.1",
+    "validator": "4.3.x"
+  }
+}
