@@ -881,64 +881,72 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 
 }]);
 
-router.get('/nearby', function (req, res) {
-    query = "value.location:NEAR:{lat:" + parseFloat(req.query.lat) + " lon:" + parseFloat(req.query.long) + " dist:" + req.query.radius + "}";
-    responseObj = {}
-    console.log(query)
-    db.newSearchBuilder()
-        .collection("users")
-        .sort('location', 'distance:asc')
-        .query(query)
-        .then(function (res) {
-            //console.log(res.body)
-            var results = res.body.results.map(function (aResult) {
-                return aResult.value;
+router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var queries = new Array();
+    var responseObj = {}
+
+    var isDistanceQuery = false;
+    if (req.query.lat && req.query.long && req.query.radius) {
+        console.log("we have a distance query")
+        queries.push(customUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        isDistanceQuery = true;
+    }
+
+    if (req.query.sports) {
+        console.log("we have a sports filter")
+        var searchPattern = ""
+        var sportsArray = req.query.sports.split(',');
+        sportsArray.forEach(function (sport) {
+            //just match 1 wildcard, its a hack for checking the key exists or not
+            //since sports are organized as keys
+            searchPattern = searchPattern + "value.sports." + sport + ":? AND "
+        })
+        searchPattern = searchPattern.substring(0, searchPattern.length - 5);
+        queries.push(searchPattern)
+    }
+
+    var theFinalQuery = customUtils.queryJoiner(queries)
+    console.log("The final query")
+    console.log(theFinalQuery)
+
+    /**
+     * remove sort by location if query does not have
+     * location
+     */
+    if (isDistanceQuery) {
+        db.newSearchBuilder()
+            .collection("users")
+            .sort('location', 'distance:asc')
+            .query(theFinalQuery)
+            .then(function (results) {
+                responseObj["total_count"] = results.body.total_count
+                responseObj["data"] = customUtils.formatResults(results)
+                res.status(200)
+                res.json(responseObj)
             })
-            responseObj["total_count"] = res.body.total_count
-            responseObj["data"] = results
-            res.status(200)
-            res.json(responseObj)
-        })
-        .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
-        })
-})
-
-router.get('/filterSports', function (req, res) {
-    var array = req.query.sports.split(',');
-    console.log(array)
-    var searchPattern = ""
-    responseObj = {}
-
-    array.forEach(function (sport) {
-        searchPattern = searchPattern + "value.sports." + sport + ":? AND "
-    })
-
-    searchPattern = searchPattern.substring(0, searchPattern.length - 5);
-
-    console.log(searchPattern)
-
-    db.newSearchBuilder()
-        .collection("users")
-        .query(searchPattern)
-        .then(function (res) {
-            console.log(res.body)
-            var results = res.body.results.map(function (aResult) {
-                return aResult.value;
+            .fail(function (err) {
+                responseObj["error"] = [err.body.message]
+                res.status(503)
+                res.json(responseObj)
             })
-            responseObj["total_count"] = res.body.total_count
-            responseObj["data"] = results
-            res.status(200)
-            res.json(responseObj)
-        })
-        .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
-        })
-})
+    } else {
+        db.newSearchBuilder()
+            .collection("users")
+            //.sort('location', 'distance:asc')
+            .query(theFinalQuery)
+            .then(function (results) {
+                responseObj["total_count"] = results.body.total_count
+                responseObj["data"] = customUtils.formatResults(results)
+                res.status(200)
+                res.json(responseObj)
+            })
+            .fail(function (err) {
+                responseObj["error"] = [err.body.message]
+                res.status(503)
+                res.json(responseObj)
+            })
+    }
+}])
 
 var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
     var responseObj = {};
