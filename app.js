@@ -10,6 +10,8 @@ var passport = require('passport');
 var BearerStrategy = require('passport-http-bearer').Strategy;
 
 var user = require('./routes/user');
+var matches = require('./routes/matches');
+var facilities = require('./routes/facilities');
 
 var config = require('./config.js');
 var customUtils = require('./utils.js');
@@ -69,6 +71,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/user', user);
+app.use('/matches', matches);
+app.use('/facilities', facilities);
+
 
 app.all('/ping', function (req, res) {
     res.send('Pong')

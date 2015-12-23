@@ -1085,5 +1085,4 @@ var generateTokenAndLogin = function (user, res) {
         })
 };
 
-
 module.exports = router;

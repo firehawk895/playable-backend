@@ -109,8 +109,68 @@ function toTitleCase(str)
     return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 }
 
+function stringToBoolean(theString) {
+    if (theString == "true") {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/**
+ * join a set of queries with AND, OR conditions
+ * for lucene/orchestrate
+ * @param queries
+ * @param type
+ */
+function queryJoiner(queries) {
+    var returnQuery = ""
+    queries.forEach(function (query) {
+        returnQuery += "("
+        returnQuery += query
+        returnQuery += ") AND "
+    })
+    returnQuery = returnQuery.substring(0, returnQuery.length - 5)
+    return returnQuery
+}
+
+/**
+ * create a distance query for orchestrate
+ * @param lat
+ * @param long
+ * @param radius
+ * @returns {string}
+ */
+function createDistanceQuery(lat, long, radius) {
+    var theDistanceQuery = "value.location:NEAR:{lat:" + parseFloat(lat) + " lon:" + parseFloat(long) + " dist:" + radius + "}";
+    return theDistanceQuery
+}
+
+function createSportsQuery(sportsArray) {
+    var theSportsQuery = ""
+    sportsArray.forEach(function (sport) {
+        theSportsQuery = theSportsQuery + "value.sport:`" + sport + "` OR "
+    })
+    theSportsQuery = theSportsQuery.substring(0, theSportsQuery.length - 4);
+    return theSportsQuery
+}
+
+function formatResults(results) {
+    var response = results.body.results.map(function (aResult) {
+        var value = aResult.value
+        value["id"] = aResult.path.key
+        return value
+    })
+    return response
+}
+
 exports.getLinkInfo = getLinkInfo;
 exports.upload = upload;
 exports.generateToken = generateToken;
 exports.randomizer = randomizer;
 exports.toTitleCase = toTitleCase;
+exports.stringToBoolean = stringToBoolean;
+exports.queryJoiner = queryJoiner;
+exports.createDistanceQuery = createDistanceQuery;
+exports.createSportsQuery = createSportsQuery;
+exports.formatResults = formatResults;
