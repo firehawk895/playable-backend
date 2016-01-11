@@ -899,7 +899,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
         sportsArray.forEach(function (sport) {
             //just match 1 wildcard, its a hack for checking the key exists or not
             //since sports are organized as keys
-            searchPattern = searchPattern + "value.sports." + sport + ":? AND "
+            searchPattern = searchPattern + "value.sports." + sport + ":? OR "
         })
         searchPattern = searchPattern.substring(0, searchPattern.length - 5);
         queries.push(searchPattern)
