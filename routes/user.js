@@ -27,6 +27,7 @@ var CronJob = require('cron').CronJob;
 var mailgun = require('mailgun-js')({apiKey: config.mailgun.key, domain: config.mailgun.domain});
 var validator = require('validator');
 var jwt = require('jsonwebtoken');
+var msg91 = require("msg91")(config.msg91.authkey, config.msg91.senderId, config.msg91.routeNumber);
 
 validator.extend('isImage', function (mimetype) {
     if (mimetype.match(/^image.*/)) return true;
@@ -410,6 +411,7 @@ router.post('/signup', function (req, res) {
                         "avatarThumb": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png",
                         "userDesc": req.body.userDesc,
                         "tagline": req.body.tagline,
+                        "phoneNumberVerified": false,
                         "isVerified": isVerified,
                         "last_seen": date.getTime(),
                         "created": date.getTime()
@@ -555,6 +557,95 @@ router.post('/logout', [passport.authenticate('bearer', {session: false}), funct
             res.json(responseObj);
         })
 
+}]);
+
+router.post('/verify/phone', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var responseObj = {}
+    var errors = []
+    if (!validator.isMobilePhone(req.body.phoneNumber, 'en-IN'))
+        errors.push("Your Phone number is invalid");
+
+    if (errors.length > 0) {
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
+    } else {
+        var userId = req.user.results[0].value.id;
+        var otp = customUtils.getRandomArbitrary(1000, 9999)
+
+        var date = new Date()
+        var now = date.getTime()
+        var payload = {
+            'phoneNumber': req.body.phoneNumber,
+            'otp': otp,
+            'otpExpiry': now + config.msg91.otpExpiry
+        }
+
+        async.parallel([
+                function (callback) {
+                    db.merge('users', userId, payload)
+                        .then(function (result) {
+                            callback(null, "")
+                        })
+                        .fail(function (err) {
+                            callback(err, "")
+                        })
+                },
+                function (callback) {
+                    var message = "Your OTP is " + otp + ". Please verify it in the playable app."
+                    console.log(message)
+                    msg91.send(req.body.phoneNumber, message, function (err, response) {
+                        if (err) {
+                            callback(err, "")
+                        } else {
+                            callback(null, response)
+                        }
+                    });
+                }
+            ],
+            function (err, results) {
+                if (err) {
+                    responseObj["errors"] = "Saving/Sending the OTP failed. Please try again later.";
+                    res.status(503);
+                    res.json(responseObj);
+                } else {
+                    responseObj["data"] = []
+                    res.status(200)
+                    res.json(responseObj)
+                }
+            }
+        )
+
+    }
+}]);
+
+router.post('/otp/verify', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    //TODO also check if OTP has expired
+    var responseObj = {}
+    var inputOtp = req.body.otp
+    var userId = req.user.results[0].value.id;
+    var usersOtp = req.user.results[0].value.otp;
+    var payload = {
+        'phoneNumberVerified': true
+    }
+
+    if (usersOtp == inputOtp) {
+        db.merge('users', userId, payload)
+            .then(function (result) {
+                responseObj["data"] = payload
+                res.status(200);
+                res.json(responseObj);
+            })
+            .fail(function (err) {
+                responseObj["errors"] = [err.body.message];
+                res.status(503);
+                res.json(responseObj);
+            })
+    } else {
+        responseObj["errors"] = "The OTP entered does not match.";
+        res.status(422);
+        res.json(responseObj);
+    }
 }]);
 
 /**
@@ -881,6 +972,37 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 
 }]);
 
+router.get('/connections', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var userId = user.body.results[0].value.id
+    var removeMatchInvitees = false
+    var matchPlayers = []
+
+    if (req.query.matchId) {
+        //the query has a matchId
+        //remove the already invited participants in that match from that list
+        removeMatchInvitees = true
+        db.get('match', req.query.matchId)
+            .then(function (results) {
+                results.body.results.forEach(function (user) {
+                    matchPlayers.push(user.path.key)
+                })
+            })
+            .fail(function (err) {
+
+            })
+    }
+
+    db.newGraphReader()
+        .get()
+        .from('users', userId)
+        .related('connections')
+        .then(function (result) {
+
+        })
+
+
+}])
+
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var queries = new Array();
     var responseObj = {}
@@ -920,7 +1042,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
             .query(theFinalQuery)
             .then(function (results) {
                 responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = customUtils.formatResults(results)
+                responseObj["data"] = customUtils.injectId(results)
                 res.status(200)
                 res.json(responseObj)
             })
@@ -936,7 +1058,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
             .query(theFinalQuery)
             .then(function (results) {
                 responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = customUtils.formatResults(results)
+                responseObj["data"] = customUtils.injectId(results)
                 res.status(200)
                 res.json(responseObj)
             })
@@ -971,6 +1093,7 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
         "userDesc": undefined,
         "tagline": undefined,
         "isVerified": true,
+        "phoneNumberVerified": false,
         "last_seen": date.getTime(),
         "google": payload['sub'],
         "created": date.getTime()
@@ -1030,6 +1153,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "avatarThumb": avatarThumb,
         "userDesc": undefined,
         "tagline": undefined,
+        "phoneNumberVerified": false,
         "isVerified": true,
         "last_seen": date.getTime(),
         "facebook": payload['id'],
