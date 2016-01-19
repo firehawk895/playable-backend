@@ -14,6 +14,9 @@ var db = oio(config.db.key);
 var expressValidator = require('express-validator')
 var customValidations = require('../customValidations')
 //passport.authenticate('bearer', {session: false}),
+
+
+//TODO: remove sensitive information about host from the json inside the match's host key
 router.post('/', [passport.authenticate('bearer', {session: false}), expressValidator(customValidations), function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value;
@@ -131,7 +134,7 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
 
     db.get('matches', matchId)
         .then(function (result) {
-            if (result.body.value.host.id != hostUserId) {
+            if (result.body.host.id != hostUserId) {
                 responseObj["error"] = ["Only the host of the match can invite people"]
                 res.status(403)
                 res.json(responseObj)
@@ -139,11 +142,15 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
                 customUtils.createGraphRelation('matches', matchId, 'users', invitedUserId, 'invitees')
                 customUtils.createGraphRelation('users', invitedUserId, 'matches', matchId, 'invited')
                 customUtils.createRequest('invitedToMatch', invitedUserId, matchId, hostUserId)
+                responseObj["data"] = []
+                responseObj["message"] = ["Users have been invited. Duplicate invites are not sent out."]
+                res.status(200)
+                res.json(responseObj)
             }
         })
         .fail(function (err) {
             responseObj["error"] = [err.body.message]
-            res.status(200)
+            res.status(503)
             res.json(responseObj)
         })
 }])
@@ -226,5 +233,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
             })
     }
 }])
+
+router.get
 
 module.exports = router;
