@@ -973,34 +973,56 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 }]);
 
 router.get('/connections', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var userId = user.body.results[0].value.id
+    var userId = req.user.results[0].value.id;
     var removeMatchInvitees = false
     var matchPlayers = []
-
-    if (req.query.matchId) {
-        //the query has a matchId
-        //remove the already invited participants in that match from that list
-        removeMatchInvitees = true
-        db.get('match', req.query.matchId)
-            .then(function (results) {
-                results.body.results.forEach(function (user) {
-                    matchPlayers.push(user.path.key)
-                })
-            })
-            .fail(function (err) {
-
-            })
-    }
+    var responseObj = {}
 
     db.newGraphReader()
         .get()
         .from('users', userId)
         .related('connections')
-        .then(function (result) {
+        .then(function (userResults) {
+            if (req.query.matchId) {
+                /**
+                 * the query has a matchId
+                 * remove the already invited participants in that match from that list
+                 */
+                db.newGraphReader()
+                    .get()
+                    .from('matches', req.query.matchId)
+                    .related('invitees')
+                    .then(function (inviteeResults) {
 
+                        var inviteeResultsId = inviteeResults.map(function (inviteeResult) {
+                            return inviteeResult.path.key
+                        })
+
+                        var filteredConnections = []
+                        userResults.forEach(function (userResult) {
+                            if (!(inviteeResultsId[userResult.path.key] > -1))
+                                filteredConnections.push(userResult)
+                        })
+                        responseObj["data"] = customUtils.injectId(filteredConnections)
+                        res.status(200)
+                        res.json(responseObj)
+                    })
+                    .fail(function (err) {
+                        responseObj["data"] = customUtils.injectId(userResults)
+                        res.status(200)
+                        res.json(responseObj)
+                    })
+            } else {
+                responseObj["data"] = customUtils.injectId(userResults)
+                res.status(200)
+                res.json(responseObj)
+            }
         })
-
-
+        .fail(function (err) {
+            responseObj["error"] = [err.body.message]
+            res.status(503)
+            res.json(responseObj)
+        })
 }])
 
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
