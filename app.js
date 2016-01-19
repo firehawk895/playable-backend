@@ -1,3 +1,7 @@
+/**
+ * TODO: switch to schema based validation
+ */
+
 var express = require('express');
 var path = require('path');
 var fs = require('fs')
@@ -12,6 +16,7 @@ var BearerStrategy = require('passport-http-bearer').Strategy;
 var user = require('./routes/user');
 var matches = require('./routes/matches');
 var facilities = require('./routes/facilities');
+var sports = require('./routes/sports');
 
 var config = require('./config.js');
 var customUtils = require('./utils.js');
@@ -73,31 +78,12 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/user', user);
 app.use('/matches', matches);
 app.use('/facilities', facilities);
+app.use('/sports', sports);
 
 
 app.all('/ping', function (req, res) {
     res.send('Pong')
 });
-
-app.post('/util/link', function (req, res) {
-    if (!validator.isURL(req.body.url)) {
-        res.status(422);
-        res.json({"errors": ["URL must be valid"]});
-    } else {
-        customUtils.getLinkInfo(req.body.url, function (info) {
-            info["video"] = req.body.url;
-            res.json({"data": info});
-        })
-    }
-});
-
-app.get('/preview', function (req, res) {
-    var theRequest = "http://collex.io/c/get_site_content/?url=" + req.query.url
-    console.log(theRequest)
-    request(theRequest, function (err, response, body) {
-        res.send(JSON.parse(body))
-    })
-})
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
