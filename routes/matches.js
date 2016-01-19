@@ -35,7 +35,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), expressVali
             sport: req.body.sport,
             skill_level_min: req.body.skill_level_min,
             skill_level_max: req.body.skill_level_max,
-            time: req.body.time,
+            playing_time: req.body.playing_time,
             slots_filled: 0,
             slots: req.body.slots,
             location_name: req.body.location_name,
