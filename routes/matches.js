@@ -5,60 +5,78 @@ var passport = require('passport');
 customUtils = require('../utils.js');
 
 var config = require('../config.js');
+//var config = require('../models/Match.js');
+var matchValidation = require('../validations/Match.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+var expressValidator = require('express-validator')
+var customValidations = require('../customValidations')
+//passport.authenticate('bearer', {session: false}),
+router.post('/', [passport.authenticate('bearer', {session: false}), expressValidator(customValidations), function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value;
     var userId = req.user.results[0].value.id;
+    //req.checkBody(matchValidation.postMatch)
+    var validationResponse = matchValidation.validatePostMatch(req.body);
 
-    var payload = {
-        title: req.body.title,
-        description: req.body.description,
-        sport: req.body.sport,
-        skill_level_min: parseInt(req.body.skill_level_min),
-        skill_level_max: parseInt(req.body.skill_level_max),
-        time: parseInt(req.body.time),
-        slots_filled: 0,
-        slots: req.body.slots,
-        location_name: req.body.location_name,
-        location: {
-            lat: parseFloat(req.body.lat),
-            long: parseFloat(req.body.long)
-        },
-        host: user,
-        isFacility: customUtils.stringToBoolean(req.body.isFacility),
-        isEvent: customUtils.stringToBoolean(req.body.isEvent)
+    req.body = validationResponse.reqBody
+    var errors = validationResponse.errors
+
+    if (errors.length > 0) {
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
+    } else {
+        var payload = {
+            title: req.body.title,
+            description: req.body.description,
+            sport: req.body.sport,
+            skill_level_min: req.body.skill_level_min,
+            skill_level_max: req.body.skill_level_max,
+            time: req.body.time,
+            slots_filled: 0,
+            slots: req.body.slots,
+            location_name: req.body.location_name,
+            location: {
+                lat: req.body.lat,
+                long: req.body.long
+            },
+            host: user,
+            isFacility: req.body.isFacility,
+            isEvent: req.body.isEvent
+        }
+        payload["host"]["password"] = undefined
+
+        db.post('matches', payload)
+            .then(function (result) {
+                payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+                responseObj["data"] = payload;
+                res.status(201);
+                res.json(responseObj);
+
+                /**
+                 * The numerous graph relations are so that we
+                 * can access the related data from any entry point
+                 */
+
+                    //The user hosts the match
+                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], 'hosts')
+                //The user plays in the match
+                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], 'plays')
+                //The match is hosted by user
+                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'isHosted')
+                //The match has participants (user)
+                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'participants')
+            })
+            .fail(function (err) {
+                responseObj["errors"] = [err.body.message];
+                res.status(422);
+                res.json(responseObj);
+            })
+        //TODO: isFacility is true, set up graph relation and access codes
     }
-    payload["host"]["password"] = undefined
-
-    console.log(payload)
-
-    db.post('matches', payload)
-        .then(function (result) {
-            payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
-            responseObj["data"] = payload;
-            res.status(201);
-            res.json(responseObj);
-
-            //The user hosts the match
-            customUtils.createGraphRelation('users', userId, 'matches', payload["id"], 'hosts')
-            //The user plays in the match
-            customUtils.createGraphRelation('users', userId, 'matches', payload["id"], 'plays')
-            //The match is hosted by user
-            customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'isHosted')
-            //The match has participants (user)
-            customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'participants')
-        })
-        .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(422);
-            res.json(responseObj);
-        })
-
-    //TODO: isFacility is true, set up graph relation and access codes
 }])
 
 router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {
