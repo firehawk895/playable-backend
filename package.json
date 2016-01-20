@@ -26,7 +26,7 @@
     "msg91": "0.0.6",
     "msg91-sms": "^1.0.1",
     "multer": "^0.1.8",
-    "orchestrate": "0.6.x",
+    "orchestrate": "0.7.x",
     "passport": "^0.2.1",
     "passport-http-bearer": "^1.0.1",
     "random-string": "^0.1.2",

@@ -12,12 +12,12 @@ oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
 var expressValidator = require('express-validator')
-var customValidations = require('../customValidations')
+//var customValidations = require('../customValidations')
 //passport.authenticate('bearer', {session: false}),
 
 
 //TODO: remove sensitive information about host from the json inside the match's host key
-router.post('/', [passport.authenticate('bearer', {session: false}), expressValidator(customValidations), function (req, res) {
+router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value;
     var userId = req.user.results[0].value.id;
@@ -83,23 +83,43 @@ router.post('/', [passport.authenticate('bearer', {session: false}), expressVali
 }])
 
 router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    console.log("definitely here")
     var matchId = req.body.matchId;
     var userId = req.user.results[0].value.id;
     var responseObj = {}
 
     db.get('matches', matchId)
         .then(function (result) {
-            if (result.value.slots == result.value.slots_filled) {
+            if (result.body.slots == result.body.slots_filled) {
                 responseObj["error"] = ["The Match is already full. Please contact the host"]
                 res.status(422)
                 res.json(responseObj)
             } else {
+                //Check if he has already joined the match
+                console.log("cant get past")
+                db.newGraphReader()
+                    .get()
+                    .from('users', userId)
+                    .related('plays')
+                    //.to('matches', matchId) //doesn't work
+                    .then(function(result) {
+                        console.log(result.body.results)
+                        console.log("thisssss")
+                        //res.status(200).send(result)
+                        //return
+                    })
+                console.log("and this?")
+                //The match has participants (user)
+                customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
+
+                console.log("what happens hereasdas")
                 db.newGraphBuilder()
                     .create()
                     .from('users', userId)
-                    .related('related')
+                    .related('plays')
                     .to('matches', matchId)
                     .then(function (result) {
+                        console.log("this is it")
                         /**
                          * You are hoping that orchestrate handles concurrency
                          * this sort of modification needs to be safe from race conditions
