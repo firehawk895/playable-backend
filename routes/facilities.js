@@ -21,7 +21,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
     async.each(req.files.image,
         // 2nd param is the function that each item is passed to
         function (theImage, callback) {
-            // Call an asynchronous function, often a save() to DB
+            // Call the asynchronous function
             customUtils.upload(theImage, function (theImageInS3) {
                 images.push(theImageInS3)
                 // Async call is done, alert via callback

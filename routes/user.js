@@ -15,6 +15,8 @@ var multer = require('multer'),
 var config = require('../config.js');
 var customUtils = require('../utils.js');
 
+var constants = require('../constants.js');
+
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
@@ -23,6 +25,8 @@ var date = new Date();
 var now = date.getTime();
 
 var CronJob = require('cron').CronJob;
+
+var userValidation = require('../validations/User.js');
 
 //var mailgun = require('mailgun-js')({apiKey: config.mailgun.key, domain: config.mailgun.domain});
 var validator = require('validator');
@@ -34,25 +38,35 @@ validator.extend('isImage', function (mimetype) {
     else return false;
 });
 
-
 router.post('/mysports', [passport.authenticate('bearer', {session: false}), function (req, res) {
     responseObj = {}
     var userId = req.user.results[0].value.id;
 
-    db.merge("users", userId, {
-        sports: req.body
-    })
-        .then(function (result) {
-            responseObj["data"] = [];
-            responseObj["msg"] = "Sports Updated";
-            res.status(201);
-            res.json(responseObj);
+    var validationResponse = userValidation.validateUpdateSports(req.body);
+
+    req.body = validationResponse.reqBody
+    var errors = validationResponse.errors
+
+    if (errors.length > 0) {
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
+    } else {
+        db.merge("users", userId, {
+            sports: req.body
         })
-        .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(422);
-            res.json(responseObj);
-        })
+            .then(function (result) {
+                responseObj["data"] = [];
+                responseObj["msg"] = "Sports Updated";
+                res.status(201);
+                res.json(responseObj);
+            })
+            .fail(function (err) {
+                responseObj["errors"] = [err.body.message];
+                res.status(422);
+                res.json(responseObj);
+            })
+    }
 }])
 
 /**
@@ -85,8 +99,8 @@ router.post('/auth/google', function (req, res) {
             if (validator.isNull(payload.name)) errors.push("Name is missing");
             //if profile is missing set your own profile, because it has not been set in google.
             if (validator.isNull(payload.picture)) {
-                avatar = "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png";
-                avatarThumb = "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png";
+                avatar = "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png";
+                avatarThumb = "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png";
             } else {
                 avatar = payload.picture.replace('s96-c/', '');
                 avatarThumb = payload.picture;
@@ -165,7 +179,7 @@ router.post('/auth/google', function (req, res) {
                 }
             })
             .fail(function (err) {
-                responseObj["errors"] = ['Service failure. Contact Pyoopil immediately'];
+                responseObj["errors"] = ['Service failure. Contact Playable immediately'];
                 res.status(422);
                 res.json(responseObj);
             })
@@ -186,7 +200,7 @@ router.post('/auth/facebook', function (req, res) {
             res.json(responseObj);
         } else {
             //--------------URLs-----------------------------------------------------------------------
-            accessTokenUrl = "https://graph.facebook.com/v2.3/me?fields=id,name,email&access_token=" + accessToken;
+            accessTokenUrl = "https://graph.facebook.com/v2.3/me?fields=id,name,email,cover&access_token=" + accessToken;
             //--------------URLs End -------------------------------------------------------------------
             request.get({url: accessTokenUrl, json: true}, function (err, response, payload) {
                 if (response.statusCode !== 200) {
@@ -194,6 +208,10 @@ router.post('/auth/facebook', function (req, res) {
                 }
                 if (validator.isNull(payload.id)) return res.status(409).send("Profile ID could not be retrieved");
                 if (validator.isNull(payload.name)) return res.status(409).send("Name could not be retrieved");
+                if (validator.isNull(payload.cover)) {
+                    log.info(payload, "Cover photo could not be retrieved - kamina user probably denied the permission")
+                    payload.cover = constants.cover
+                }
                 if (validator.isNull(payload.email)) {
                     payload.email = "playable" + customUtils.generateToken(4) + "@mailinator.com";
                     changeEmail = true;
@@ -270,7 +288,7 @@ router.post('/auth/facebook', function (req, res) {
                         }
                     })
                     .fail(function (err) {
-                        responseObj["errors"] = ['Service failure. Contact Pyoopil immediately'];
+                        responseObj["errors"] = ['Service failure. Contact Playable immediately'];
                         res.status(422);
                         res.json(responseObj);
                     })
@@ -407,14 +425,15 @@ router.post('/signup', function (req, res) {
                         "username": req.body.username,
                         "email": req.body.email,
                         "password": hashedPassword,
-                        "avatar": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png",
-                        "avatarThumb": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png",
+                        "avatar": "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png",
+                        "avatarThumb": "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png",
                         "userDesc": req.body.userDesc,
                         "tagline": req.body.tagline,
                         "phoneNumberVerified": false,
                         "isVerified": isVerified,
                         "last_seen": date.getTime(),
-                        "created": date.getTime()
+                        "created": date.getTime(),
+                        "cover": constants.cover
                     };
 
                     db.put('users', id, user)
@@ -605,7 +624,7 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
             ],
             function (err, results) {
                 if (err) {
-                    responseObj["errors"] = "Saving/Sending the OTP failed. Please try again later.";
+                    responseObj["errors"] = ["Saving/Sending the OTP failed. Please try again later."];
                     res.status(503);
                     res.json(responseObj);
                 } else {
@@ -642,7 +661,7 @@ router.post('/otp/verify', [passport.authenticate('bearer', {session: false}), f
                 res.json(responseObj);
             })
     } else {
-        responseObj["errors"] = "The OTP entered does not match.";
+        responseObj["errors"] = ["The OTP entered does not match."];
         res.status(422);
         res.json(responseObj);
     }
@@ -842,8 +861,8 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                         };
                     } else if (req.body.avatar == 'null') {
                         var payload = {
-                            "avatar": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png",
-                            "avatarThumb": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-files/default_profile_photo-1.png"
+                            "avatar": "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png",
+                            "avatarThumb": "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png"
                         }
                     } else {
                         var payload = {
@@ -900,7 +919,7 @@ router.post('/forgotPassword', function (req, res) {
                                 "success": "Please check your Email for the new password"
                             }
                         });
-                        var msg = "Hello!\nYour new password for Pyoopil is : " + newPass + "\n\nKindly note that this is a system generated password and we strongly recommend that you change your password once you login using this.\n\nLooking forward to providing you a great learning experience on Pyoopil.\n\nRegards,\nPyoopil Team";
+                        var msg = "Hello!\nYour new password for Playable is : " + newPass + "\n\nKindly note that this is a system generated password and we strongly recommend that you change your password once you login using this.\n\nLooking forward to providing you a great playing experience on Playable.\n\nRegards,\nPlayable Team";
                         var subject = 'Request for New Password'
                         sendEmail(userObj.email, subject, msg)
                     })
@@ -1118,7 +1137,8 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
         "phoneNumberVerified": false,
         "last_seen": date.getTime(),
         "google": payload['sub'],
-        "created": date.getTime()
+        "created": date.getTime(),
+        "cover": constants.cover
     };
 
     db.put('users', id, user)

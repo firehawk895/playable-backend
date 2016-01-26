@@ -11,10 +11,9 @@ var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-var expressValidator = require('express-validator')
+//var expressValidator = require('express-validator')
 //var customValidations = require('../customValidations')
 //passport.authenticate('bearer', {session: false}),
-
 
 //TODO: remove sensitive information about host from the json inside the match's host key
 router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
@@ -48,7 +47,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
             },
             host: user,
             isFacility: req.body.isFacility,
-            isEvent: req.body.isEvent
+            isEvent: false
         }
         payload["host"]["password"] = undefined
 
@@ -91,7 +90,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
     db.get('matches', matchId)
         .then(function (result) {
             if (result.body.slots == result.body.slots_filled) {
-                responseObj["error"] = ["The Match is already full. Please contact the host"]
+                responseObj["errors"] = ["The Match is already full. Please contact the host"]
                 res.status(422)
                 res.json(responseObj)
             } else {
@@ -133,15 +132,15 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                         res.json(responseObj)
                     })
                     .fail(function (err) {
-                        responseObj["error"] = [err.body.message, "Could not join you into the match, Please try again later"]
-                        res.status(200)
+                        responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
+                        res.status(503)
                         res.json(responseObj)
                     })
             }
         })
         .fail(function (err) {
-            responseObj["error"] = [err.body.message]
-            res.status(200)
+            responseObj["errors"] = [err.body.message]
+            res.status(503)
             res.json(responseObj)
         })
 }])
@@ -155,7 +154,7 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
     db.get('matches', matchId)
         .then(function (result) {
             if (result.body.host.id != hostUserId) {
-                responseObj["error"] = ["Only the host of the match can invite people"]
+                responseObj["errors"] = ["Only the host of the match can invite people"]
                 res.status(403)
                 res.json(responseObj)
             } else {
@@ -169,7 +168,7 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
             }
         })
         .fail(function (err) {
-            responseObj["error"] = [err.body.message]
+            responseObj["errors"] = [err.body.message]
             res.status(503)
             res.json(responseObj)
         })
@@ -231,8 +230,8 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                responseObj["error"] = [err.body.message]
-                res.status(200)
+                responseObj["errors"] = [err.body.message]
+                res.status(503)
                 res.json(responseObj)
             })
     } else {
@@ -247,13 +246,11 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                responseObj["error"] = [err.body.message]
-                res.status(200)
+                responseObj["errors"] = [err.body.message]
+                res.status(503)
                 res.json(responseObj)
             })
     }
 }])
-
-router.get
 
 module.exports = router;

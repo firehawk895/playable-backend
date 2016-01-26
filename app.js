@@ -1,7 +1,6 @@
 /**
  * TODO: switch to schema based validation
  */
-
 var express = require('express');
 var path = require('path');
 var fs = require('fs')
@@ -17,11 +16,36 @@ var user = require('./routes/user');
 var matches = require('./routes/matches');
 var facilities = require('./routes/facilities');
 var sports = require('./routes/sports');
+var events = require('./routes/events');
 
 var config = require('./config.js');
 var customUtils = require('./utils.js');
 
+//----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');
+validator.extend('isTimeInFuture', function (time) {
+    console.log(time)
+    if (!time)
+        return false
+    var date = new Date()
+    var currentTime = date.getTime()
+    console.log(currentTime)
+    if (parseInt(time) > (currentTime / 1000))
+        return true
+    else
+        return false
+});
+
+validator.extend('isValidLatLong', function (latOrLong) {
+    var regex = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/
+    return latOrLong.match(regex) ? true : false
+})
+
+validator.extend('isImage', function (file) {
+    return file.mimetype.match(/^image/)
+})
+//---------------------------- End Extended Validators -----------------------------------------
+
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
@@ -79,6 +103,7 @@ app.use('/user', user);
 app.use('/matches', matches);
 app.use('/facilities', facilities);
 app.use('/sports', sports);
+app.use('/events', events);
 
 
 app.all('/ping', function (req, res) {
@@ -118,8 +143,8 @@ app.use(function (req, res, next) {
 app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.json({
-        message: err.message,
-        error: err
+        errors: [err.message],
+        errorObj: err
     });
 });
 //}

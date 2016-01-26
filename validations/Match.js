@@ -2,25 +2,6 @@ var constants = require('../constants')
 var validator = require('validator');
 var config = require('../config.js');
 
-validator.extend('isTimeInFuture', function (time) {
-    console.log(time)
-    if (!time)
-        return false
-
-    var date = new Date()
-    var currentTime = date.getTime()
-    console.log(currentTime)
-    if (parseInt(time) > (currentTime / 1000))
-        return true
-    else
-        return false
-});
-
-validator.extend('isValidLatLong', function (latOrLong) {
-    var regex = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/
-    return latOrLong.match(regex) ? true : false
-})
-
 validatePostMatch = function (reqBody) {
     var errors = []
     if (validator.isNull(reqBody.title))
@@ -70,6 +51,76 @@ validatePostMatch = function (reqBody) {
     return {
         errors: errors,
         reqBody: reqBody
+    }
+}
+
+validatePostEvent = function (req) {
+    //if you send more files with the same key. you get an array.
+    //that will probably throw an exception
+    var reqFiles = req.files
+    console.log(reqFiles)
+
+    var reqBody = req.body
+    var errors = []
+
+    if (!validator.isImage(reqFiles.image))
+        errors.push(constants.validations.event.is_not_image_message)
+
+    if (validator.isNull(reqBody.title))
+        errors.push(constants.validations.event.title_empty_message)
+
+    if (validator.isLength(reqBody.sub_title, {min: 0, max: constants.validations.event.sub_title_max_length}))
+        errors.push(constants.validations.event.title_empty_message)
+
+    if (validator.isLength(reqBody.description, {min: 0, max: constants.validations.event.description_max_length}))
+        errors.push(constants.validations.event.description_max_length_message)
+
+    if (!validator.isIn(reqBody.sport, constants.sports))
+        errors.push(constants.validations.invalid_sport_type)
+
+    if (validator.isTimeInFuture(reqBody.playing_time))
+        reqBody.playing_time = parseInt(reqBody.playing_time)
+    else
+        errors.push(constants.validations.event.time_in_future)
+
+    if (validator.isInt(reqBody.slots, {min: constants.validations.event.slot_min}))
+        reqBody.slots = parseInt(reqBody.slots)
+    else
+        errors.push(constants.validations.event.slot_min_message)
+
+    //reqBody.location_name is optional
+    if (validator.isValidLatLong(reqBody.lat))
+        reqBody.lat = parseFloat(reqBody.lat)
+    else
+        errors.push(constants.validations.invalid_lat_message)
+
+    if (validator.isValidLatLong(reqBody.long))
+        reqBody.long = parseFloat(reqBody.long)
+    else
+        errors.push(constants.validations.invalid_long_message)
+
+    if (validator.isBoolean(reqBody.isPaid))
+        reqBody.isPaid = customUtils.stringToBoolean(reqBody.isPaid)
+    else
+        errors.push(constants.validations.event.isPaid_boolean_message)
+
+    //if (validator.isBoolean(reqBody.isFacility))
+    //    reqBody.isFacility = customUtils.stringToBoolean(reqBody.isFacility)
+    //else
+    //    errors.push("isFacility can be true or false only")
+
+    if (validator.isInt(reqBody.skill_level_min) &&
+        validator.isInt(reqBody.skill_level_max) &&
+        reqBody.skill_level_min <= reqBody.skill_level_max) {
+        reqBody.skill_level_min = parseInt(reqBody.skill_level_min)
+        reqBody.skill_level_max = parseInt(reqBody.skill_level_max)
+    } else {
+        errors.push(constants.validations.invalid_skill_rating_range_message)
+    }
+    return {
+        errors: errors,
+        reqBody: reqBody,
+        reqFiles: reqFiles
     }
 }
 
@@ -169,5 +220,6 @@ validatePostMatch = function (reqBody) {
 //}
 
 module.exports = {
-    validatePostMatch: validatePostMatch
+    validatePostMatch: validatePostMatch,
+    validatePostEvent: validatePostEvent
 }
