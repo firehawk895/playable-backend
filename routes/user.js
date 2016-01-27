@@ -1199,7 +1199,8 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "isVerified": true,
         "last_seen": date.getTime(),
         "facebook": payload['id'],
-        "created": date.getTime()
+        "created": date.getTime(),
+        "cover": payload['cover']
     };
 
     db.put('users', id, user)
