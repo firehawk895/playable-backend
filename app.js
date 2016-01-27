@@ -41,8 +41,8 @@ validator.extend('isValidLatLong', function (latOrLong) {
     return latOrLong.match(regex) ? true : false
 })
 
-validator.extend('isImage', function (file) {
-    return file.mimetype.match(/^image/)
+validator.extend('isImage', function (mimetype) {
+    return mimetype.match(/^image/)
 })
 //---------------------------- End Extended Validators -----------------------------------------
 
@@ -72,6 +72,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.use(passport.initialize());
+
+/**
+ * Its better to use JWT (JSON Web Token)
+ * so as to save these extra calls to the database
+ * caching queries above the layer of orchestrate would be
+ * the awesome way to go.
+ */
 passport.use(new BearerStrategy({},
     function (token, done) {
         db.newGraphReader()

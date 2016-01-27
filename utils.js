@@ -129,6 +129,15 @@ function createDistanceQuery(lat, long, radius) {
 }
 
 /**
+ * create a eventId search query
+ * @param eventId
+ */
+function createSearchByIdQuery(id) {
+    var searchByIdQuery = "path.key: `" + id + "`"
+    return searchByIdQuery
+}
+
+/**
  * Crate a lucene query with the array of sports provided
  * @param sportsArray
  * @returns {string}
@@ -320,6 +329,30 @@ function createRequest(type, userId, matchId, hostUserId) {
     }
 }
 
+function sendErrors(errorArray, statusCode) {
+    /**
+     * include validations if required
+     * TODO: convert this to a mapped array of key : error
+     * That seems to be a more standard way of doing it these days
+     */
+    var responseObj = []
+    responseObj["errors"] = errorArray;
+    res.status(statusCode);
+    res.json(responseObj);
+}
+
+/**
+ * Time capsule:
+ * ----------------------------------------------
+ * 11:37 Pm, 27th Jan 2016, Malviya Nagar.
+ * listening to https://youtu.be/ysx9BVYlUY4
+ * Surreal music. It's quite, I'm alone. My best friend will be
+ * coming to visit me. Sia - Breathe Me
+ *
+ * <Hey developer :), add your location and what you're doing here>,
+ * leave memories behind, because tu beer hai bc :)
+ */
+
 exports.upload = upload;
 exports.generateToken = generateToken;
 exports.randomizer = randomizer;
@@ -337,3 +370,5 @@ exports.createConnection = createConnection;
 exports.createGraphRelation = createGraphRelation;
 exports.deleteGraphRelation = deleteGraphRelation;
 exports.createRequest = createRequest;
+exports.sendErrors = sendErrors;
+exports.createSearchByIdQuery = createSearchByIdQuery;

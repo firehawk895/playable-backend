@@ -47,7 +47,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
             },
             host: user,
             isFacility: req.body.isFacility,
-            isEvent: false
+            type: "match"
         }
         payload["host"]["password"] = undefined
 
@@ -62,7 +62,6 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                  * The numerous graph relations are so that we
                  * can access the related data from any entry point
                  */
-
                     //The user hosts the match
                 customUtils.createGraphRelation('users', userId, 'matches', payload["id"], 'hosts')
                 //The user plays in the match
@@ -95,30 +94,23 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                 res.json(responseObj)
             } else {
                 //Check if he has already joined the match
-                console.log("cant get past")
                 db.newGraphReader()
                     .get()
                     .from('users', userId)
                     .related('plays')
                     //.to('matches', matchId) //doesn't work
-                    .then(function(result) {
-                        console.log(result.body.results)
-                        console.log("thisssss")
+                    .then(function (result) {
                         //res.status(200).send(result)
                         //return
                     })
-                console.log("and this?")
                 //The match has participants (user)
                 customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
-
-                console.log("what happens hereasdas")
                 db.newGraphBuilder()
                     .create()
                     .from('users', userId)
                     .related('plays')
                     .to('matches', matchId)
                     .then(function (result) {
-                        console.log("this is it")
                         /**
                          * You are hoping that orchestrate handles concurrency
                          * this sort of modification needs to be safe from race conditions
@@ -191,6 +183,11 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     queries.push(query)
     console.log(query)
     var isDistanceQuery = false;
+
+    if (req.query.matchId) {
+        console.log("we have a specific matchId query")
+        queries.push(customUtils.createSearchByIdQuery(req.query.matchId))
+    }
 
     if (req.query.lat && req.query.long && req.query.radius) {
         console.log("we have a distance query")

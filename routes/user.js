@@ -48,9 +48,7 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
     var errors = validationResponse.errors
 
     if (errors.length > 0) {
-        responseObj["errors"] = errors;
-        res.status(422);
-        res.json(responseObj);
+        customUtils.sendErrors(errors, 422)
     } else {
         db.merge("users", userId, {
             sports: req.body
@@ -62,9 +60,7 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
                 res.json(responseObj);
             })
             .fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(422);
-                res.json(responseObj);
+                customUtils.sendErrors([err.body.message], 422)
             })
     }
 }])
@@ -111,9 +107,7 @@ router.post('/auth/google', function (req, res) {
     }
 
     if (errors.length > 0) {
-        responseObj["errors"] = errors;
-        res.status(422);
-        res.json(responseObj);
+        customUtils.sendErrors(errors, 422)
     } else {
         console.log("entering search?");
         db.newSearchBuilder()
@@ -179,9 +173,7 @@ router.post('/auth/google', function (req, res) {
                 }
             })
             .fail(function (err) {
-                responseObj["errors"] = ['Service failure. Contact Playable immediately'];
-                res.status(422);
-                res.json(responseObj);
+                customUtils.sendErrors(['Service failure. Contact Playable immediately'], 503)
             })
     }
 });
@@ -195,9 +187,7 @@ router.post('/auth/facebook', function (req, res) {
         if (validator.isNull(accessToken)) errors.push("Access Token not provided");
 
         if (errors.length > 0) {
-            responseObj["errors"] = errors;
-            res.status(422);
-            res.json(responseObj);
+            customUtils.sendErrors(errors, 422)
         } else {
             //--------------URLs-----------------------------------------------------------------------
             accessTokenUrl = "https://graph.facebook.com/v2.3/me?fields=id,name,email,cover&access_token=" + accessToken;
@@ -288,9 +278,7 @@ router.post('/auth/facebook', function (req, res) {
                         }
                     })
                     .fail(function (err) {
-                        responseObj["errors"] = ['Service failure. Contact Playable immediately'];
-                        res.status(422);
-                        res.json(responseObj);
+                        customUtils.sendErrors(['Service failure. Contact Playable immediately'], 422)
                     })
                 //--------------------------------end of signup scenarios----------------------------------------------------
 
@@ -404,9 +392,7 @@ router.post('/signup', function (req, res) {
         if (!validator.isLength(req.body.tagline, 0, 40)) errors.push("Tagline must be less than 40 characters");
 
     if (errors.length > 0) {
-        responseObj["errors"] = errors;
-        res.status(422);
-        res.json(responseObj);
+        customUtils.sendErrors(errors, 422)
     } else {
         db.newSearchBuilder()
             .collection('users')
@@ -458,19 +444,13 @@ router.post('/signup', function (req, res) {
                                 })
                         })
                         .fail(function (err) {
-                            responseObj["errors"] = [err.body.message];
-                            res.status(503);
-                            res.json(responseObj);
+                            customUtils.sendErrors(err.body.message, 503)
                         });
                 } else {
-                    responseObj["errors"] = ["Email ID or username already in use"];
-                    res.status(409);
-                    res.json(responseObj);
+                    customUtils.sendErrors(["Email ID or username already in use"], 409)
                 }
             }).fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(503);
-                res.json(responseObj);
+                customUtils.sendErrors([err.body.message], 503)
             })
     }
 });
@@ -486,9 +466,7 @@ router.post('/login', function (req, res) {
     if (!validator.isEmail(email)) errors.push("Invalid Email");
 
     if (errors.length > 0) {
-        responseObj["errors"] = errors;
-        res.status(422);
-        res.json(responseObj);
+        customUtils.sendErrors(errors, 422);
     } else {
         db.newSearchBuilder()
             .collection('users')
@@ -540,21 +518,15 @@ router.post('/login', function (req, res) {
                             //});
                         }
                     } else {
-                        responseObj["errors"] = ["Entered password is incorrect"];
-                        res.status(401);
-                        res.json(responseObj);
+                        customUtils.sendErrors(["Entered password is incorrect"], 401)
                         //deferred.resolve(false);
                     }
                 } else {
-                    responseObj["errors"] = ["No Account with the entered email exists"];
-                    res.status(503);
-                    res.json(responseObj);
+                    customUtils.sendErrors(["No Account with the entered email exists"], 422)
                     return;
                 }
             }).fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(503);
-                res.json(responseObj);
+                customUtils.sendErrors([err.body.message], 503)
             });
     }
     //res.send('hello authed world');
@@ -571,9 +543,7 @@ router.post('/logout', [passport.authenticate('bearer', {session: false}), funct
             res.json(responseObj);
         })
         .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
+            customUtils.sendErrors([err.body.message], 503)
         })
 
 }]);
@@ -585,9 +555,7 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
         errors.push("Your Phone number is invalid");
 
     if (errors.length > 0) {
-        responseObj["errors"] = errors;
-        res.status(422);
-        res.json(responseObj);
+        customUtils.sendErrors(errors, 422)
     } else {
         var userId = req.user.results[0].value.id;
         var otp = customUtils.getRandomArbitrary(1000, 9999)
@@ -624,9 +592,7 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
             ],
             function (err, results) {
                 if (err) {
-                    responseObj["errors"] = ["Saving/Sending the OTP failed. Please try again later."];
-                    res.status(503);
-                    res.json(responseObj);
+                    customUtils.sendErrors(["Saving/Sending the OTP failed. Please try again later."], 503)
                 } else {
                     responseObj["data"] = []
                     res.status(200)
@@ -656,14 +622,10 @@ router.post('/otp/verify', [passport.authenticate('bearer', {session: false}), f
                 res.json(responseObj);
             })
             .fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(503);
-                res.json(responseObj);
+                customUtils.sendErrors([err.body.message], 503)
             })
     } else {
-        responseObj["errors"] = ["The OTP entered does not match."];
-        res.status(422);
-        res.json(responseObj);
+        customUtils.sendErrors(["The OTP entered does not match."], 422)
     }
 }]);
 
@@ -694,16 +656,12 @@ router.get('/', function (req, res, next) {
                 res.json(responseObj)
             })
             .fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(503);
-                res.json(responseObj);
+                customUtils.sendErrors([err.body.message], 503)
             });
     }
 
     if (validator.isNull(query_user)) {
-        responseObj["errors"] = ["Please specify the User ID"];
-        res.status(503);
-        res.json(responseObj);
+        customUtils.sendErrors(["Please specify the User ID"], 422)
         return
     } else {
         if (query_user == req.user.results[0].value.id)
@@ -737,16 +695,12 @@ router.get('/', function (req, res) {
                 res.json(responseObj)
             })
             .fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(503);
-                res.json(responseObj);
+                customUtils.sendErrors([err.body.message], 503)
             });
     }
 
     if (validator.isNull(query_user)) {
-        responseObj["errors"] = ["Please specify the User ID"];
-        res.status(503);
-        res.json(responseObj);
+        customUtils.sendErrors(["Please specify the User ID"], 422)
         return
     } else {
         allowUpdate = false;
@@ -827,9 +781,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 errors.push(errMsg);
             }
             if (errors.length > 0) {
-                responseObj["errors"] = errors;
-                res.status(422);
-                res.json(responseObj);
+                customUtils.sendErrors(errors, 422)
             } else {
                 customUtils.upload(req.files.avatar, function (avatarInfo) {
                     if (req.files.avatar) {
@@ -886,17 +838,13 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                             res.json(responseObj);
                         })
                         .fail(function (err) {
-                            responseObj["errors"] = [err.body.message];
-                            res.status(503);
-                            res.json(responseObj);
+                            customUtils.sendErrors([err.body.message], 503)
                         });
                 });
             }
         })
         .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
+            customUtils.sendErrors([err.body.message], 503)
         })
 }]);
 
@@ -953,9 +901,7 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
     }
 
     if (errors.length > 0) {
-        responseObj["errors"] = errors;
-        res.status(422);
-        res.json(responseObj);
+        customUtils.sendErrors(errors, 422)
     } else {
         var hashedPassword = bcrypt.hashSync(req.body.newPass, 8);
         var payload = {
@@ -983,9 +929,7 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
                 });
             })
             .fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(503);
-                res.json(responseObj);
+                customUtils.sendErrors([err.body.message], 503)
             });
     }
 
@@ -1038,9 +982,7 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
             }
         })
         .fail(function (err) {
-            responseObj["error"] = [err.body.message]
-            res.status(503)
-            res.json(responseObj)
+            customUtils.sendErrors([err.body.message], 503)
         })
 }])
 
@@ -1059,16 +1001,6 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
         console.log("we have a sports filter")
         var sportsArray = req.query.sports.split(',');
         queries.push(customUtils.createSportsQuery(sportsArray))
-        //console.log("we have a sports filter")
-        //var searchPattern = ""
-        //var sportsArray = req.query.sports.split(',');
-        //sportsArray.forEach(function (sport) {
-        //    //just match 1 wildcard, its a hack for checking the key exists or not
-        //    //since sports are organized as keys
-        //    searchPattern = searchPattern + "value.sports." + sport + ":? OR "
-        //})
-        //searchPattern = searchPattern.substring(0, searchPattern.length - 5);
-        //queries.push(searchPattern)
     }
 
     var theFinalQuery = customUtils.queryJoiner(queries)
@@ -1091,9 +1023,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                responseObj["error"] = [err.body.message]
-                res.status(503)
-                res.json(responseObj)
+                customUtils.sendErrors([err.body.message], 503)
             })
     } else {
         db.newSearchBuilder()
@@ -1107,9 +1037,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                responseObj["error"] = [err.body.message]
-                res.status(503)
-                res.json(responseObj)
+                customUtils.sendErrors([err.body.message], 503)
             })
     }
 }])
@@ -1168,9 +1096,7 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                 })
         })
         .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
+            customUtils.sendErrors([err.body.message], 503)
         });
     //}
     //})
@@ -1234,9 +1160,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                 })
         })
         .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
+            customUtils.sendErrors([err.body.message], 503)
         });
 }
 

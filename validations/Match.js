@@ -63,8 +63,8 @@ validatePostEvent = function (req) {
     var reqBody = req.body
     var errors = []
 
-    if (!validator.isImage(reqFiles.image))
-        errors.push(constants.validations.event.is_not_image_message)
+    if (validator.isNull(reqFiles.image) || !validator.isImage(reqFiles.image.mimetype))
+        errors.push(constants.validations.event.cover_photo_invalid);
 
     if (validator.isNull(reqBody.title))
         errors.push(constants.validations.event.title_empty_message)
@@ -99,10 +99,16 @@ validatePostEvent = function (req) {
     else
         errors.push(constants.validations.invalid_long_message)
 
-    if (validator.isBoolean(reqBody.isPaid))
+    if (validator.isBoolean(reqBody.isPaid)) {
         reqBody.isPaid = customUtils.stringToBoolean(reqBody.isPaid)
+        if (reqBody.isPaid && !validator.isInt(reqBody.price, {min: 1}))
+            errors.push(constants.validations.event.price_invalid_message)
+    }
     else
         errors.push(constants.validations.event.isPaid_boolean_message)
+
+    if (!validator.isURL(reqBody.google_form))
+        errors.push(constants.validations.event.invalid_url)
 
     //if (validator.isBoolean(reqBody.isFacility))
     //    reqBody.isFacility = customUtils.stringToBoolean(reqBody.isFacility)
