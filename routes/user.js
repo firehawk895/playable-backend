@@ -19,6 +19,7 @@ var QB = require('quickblox');
 QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 
 var constants = require('../constants.js');
+var qbchat = require('../qbchat.js');
 
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
@@ -71,16 +72,18 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
 /**
  * google login exchanging encrypted jwt tokens
  */
-router.post('/auth/google', qbchat.getSession(function (err, session) {
-    if (err) {
-        console.log("Recreating session");
-        qbchat.createSession(function (err, result) {
-            if (err) {
-                customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
-            } else next();
-        })
-    } else next();
-}), function (req, res) {
+router.post('/auth/google', function (req, res, next) {
+    qbchat.getSession(function (err, session) {
+        if (err) {
+            console.log("Recreating session");
+            qbchat.createSession(function (err, result) {
+                if (err) {
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                } else next();
+            })
+        } else next();
+    })
+}, function (req, res) {
     var responseObj = {}
 
     var encryptedJwt = req.body.code;
@@ -1117,7 +1120,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     }
 }])
 
-route.get('/chatrooms', [passport.authenticate('bearer', {session: false}), function (req, res) {
+router.get('/chatrooms', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     getUsersDialogs(username, function (err, dialogList) {
         if (err) {
@@ -1189,7 +1192,7 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                     else
                         chatObj['gcmId'] = 'undefined'
 
-                    notify.emit("wordForChat", chatObj)
+                    //notify.emit("wordForChat", chatObj)
 
                     user['password'] = undefined;
 
@@ -1197,7 +1200,7 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                         user: id,
                         name: user.name
                     };
-                    notify.emit('welcome', notifObj)
+                    //notify.emit('welcome', notifObj)
                 })
                 .then(function () {
                     var accessToken = customUtils.generateToken();

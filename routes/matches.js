@@ -14,7 +14,7 @@ var db = oio(config.db.key);
 var qbchat = require('../qbchat.js');
 
 var Notifications = require('../notifications');
-var notify = new Notifications();
+//var notify = new Notifications();
 
 //var expressValidator = require('express-validator')
 //var customValidations = require('../customValidations')

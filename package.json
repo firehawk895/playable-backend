@@ -32,6 +32,7 @@
     "random-string": "^0.1.2",
     "request": "^2.55.0",
     "quickblox": "^2.x.x",
+    "node-gcm": "0.14.x",
     "s3fs": "^2.0.1",
     "validator": "4.5.0",
     "express-validator": "2.18.0"

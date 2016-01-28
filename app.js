@@ -8,6 +8,7 @@ var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var request = require('request')
+var qbchat = require('./qbchat');
 
 var passport = require('passport');
 var BearerStrategy = require('passport-http-bearer').Strategy;
@@ -51,6 +52,15 @@ oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
 var app = express();
+
+qbchat.init();
+qbchat.createSession(function (err, session) {
+        if (session) {
+            console.log("Quickblox Session created");
+        }
+        else if (err) console.log(err)
+    }
+);
 
 function failure() {
     return false;
