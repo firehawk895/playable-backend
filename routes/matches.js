@@ -11,6 +11,11 @@ var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
+var qbchat = require('../qbchat.js');
+
+var Notifications = require('../notifications');
+var notify = new Notifications();
+
 //var expressValidator = require('express-validator')
 //var customValidations = require('../customValidations')
 //passport.authenticate('bearer', {session: false}),
@@ -70,6 +75,39 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'isHosted')
                 //The match has participants (user)
                 customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'participants')
+
+                /**
+                 * Create the chat room for the match, and make the host join it
+                 */
+                //var chatObj = {
+                //    "created": date.getTime(),
+                //    "type": "newChannel",
+                //    "matchId": payload["id"],
+                //    "pathTitle": reqBody.title
+                //}
+
+                /**
+                 * The title is appended with <matchRoom>
+                 * to differentiate it from <connectionRoom>
+                 */
+                qbchat.createRoom(2, payload["title"] + " : <matchRoom>", function (err, newRoom) {
+                    if (err) console.log(err);
+                    else {
+                        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
+                            if (err) console.log(err);
+                        })
+                        db.merge('matches', payload["id"], {"qbId": newRoom._id})
+                            .then(function (result) {
+                                //chatObj["id"] = date.getTime() + "@1";
+                                //chatObj["channelName"] = payload["title"];
+                                //chatObj["channelId"] = newRoom._id;
+                                //notify.emit('wordForChat', chatObj);
+                            })
+                            .fail(function (err) {
+                                console.log(err.body.message);
+                            });
+                    }
+                });
             })
             .fail(function (err) {
                 responseObj["errors"] = [err.body.message];
