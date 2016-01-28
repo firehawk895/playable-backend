@@ -15,6 +15,9 @@ var multer = require('multer'),
 var config = require('../config.js');
 var customUtils = require('../utils.js');
 
+var QB = require('quickblox');
+QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
+
 var constants = require('../constants.js');
 
 var oio = require('orchestrate');
@@ -68,7 +71,16 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
 /**
  * google login exchanging encrypted jwt tokens
  */
-router.post('/auth/google', function (req, res) {
+router.post('/auth/google', qbchat.getSession(function (err, session) {
+    if (err) {
+        console.log("Recreating session");
+        qbchat.createSession(function (err, result) {
+            if (err) {
+                customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+            } else next();
+        })
+    } else next();
+}), function (req, res) {
     var responseObj = {}
 
     var encryptedJwt = req.body.code;
@@ -178,7 +190,18 @@ router.post('/auth/google', function (req, res) {
     }
 });
 
-router.post('/auth/facebook', function (req, res) {
+router.post('/auth/facebook', function (req, res, next) {
+        qbchat.getSession(function (err, session) {
+            if (err) {
+                console.log("Recreating session");
+                qbchat.createSession(function (err, result) {
+                    if (err) {
+                        customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                    } else next();
+                })
+            } else next();
+        })
+    }, function (req, res) {
         var responseObj = {};
         var errors = new Array();
         var changeEmail = false;
@@ -367,7 +390,18 @@ var extractFacebookFriends = function (userId, accessToken) {
 
 //TODO: Trim all user inputs before validating
 //TODO: See that if key absent, proper error is sent
-router.post('/signup', function (req, res) {
+router.post('/signup', function (req, res, next) {
+    qbchat.getSession(function (err, session) {
+        if (err) {
+            console.log("Recreating session");
+            qbchat.createSession(function (err, result) {
+                if (err) {
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                } else next();
+            })
+        } else next();
+    })
+}, function (req, res) {
     var email = req.body.email;
     var password = req.body.password;
     var name = customUtils.toTitleCase(req.body.name);
@@ -422,30 +456,71 @@ router.post('/signup', function (req, res) {
                         "cover": constants.cover
                     };
 
-                    db.put('users', id, user)
-                        .then(function (result) {
-                            var accessToken = customUtils.generateToken();
-                            var userId = id;
-                            db.put('tokens', accessToken, {
-                                "user": userId
-                            })
+                    qbchat.createUser({
+                        login: user.username,
+                        email: user.email,
+                        password: config.qb.defaultPassword,
+                        full_name: user.name,
+                        custom_data: user.avatar
+                    }, function (err, newUser) {
+                        if (err) {
+                            customUtils.sendErrors(["Chat server failure. Contact us ASAP."], 503)
+                            return;
+                        } else {
+                            user["qbId"] = newUser.id
+                            db.put('users', id, user)
                                 .then(function (result) {
-                                    db.newGraphBuilder()
-                                        .create()
-                                        .from('tokens', accessToken)
-                                        .related('hasUser')
-                                        .to('users', userId)
+                                    var date = new Date();
+                                    var chatObj = {
+                                        "type": "newUser",
+                                        "username": user['username'],
+                                        "qbId": user['qbId'],
+                                        "dbId": user['id'],
+                                        "created": date.getTime(),
+                                        "id": date.getTime()
+                                    }
+                                    if (typeof user['gcmId'] !== 'undefined')
+                                        chatObj['gcmId'] = user['gcmId']
+                                    else
+                                        chatObj['gcmId'] = 'undefined'
+
+                                    notify.emit("wordForChat", chatObj)
+
+                                    user['password'] = undefined;
+
+                                    var notifObj = {
+                                        user: id,
+                                        name: user.name
+                                    };
+                                    notify.emit('welcome', notifObj)
+                                })
+                                .then(function () {
+
+                                    var accessToken = customUtils.generateToken();
+                                    var userId = id;
+                                    db.put('tokens', accessToken, {
+                                        "user": userId
+                                    })
                                         .then(function (result) {
-                                            user["access_token"] = accessToken;
-                                            responseObj["data"] = user;
-                                            res.status(201);
-                                            res.json(responseObj);
+                                            db.newGraphBuilder()
+                                                .create()
+                                                .from('tokens', accessToken)
+                                                .related('hasUser')
+                                                .to('users', userId)
+                                                .then(function (result) {
+                                                    user["access_token"] = accessToken;
+                                                    responseObj["data"] = user;
+                                                    res.status(201);
+                                                    res.json(responseObj);
+                                                })
                                         })
                                 })
-                        })
-                        .fail(function (err) {
-                            customUtils.sendErrors(err.body.message, 503)
-                        });
+                                .fail(function (err) {
+                                    customUtils.sendErrors([err.body.message], 503)
+                                });
+                        }
+                    })
+
                 } else {
                     customUtils.sendErrors(["Email ID or username already in use"], 409)
                 }
@@ -1072,34 +1147,75 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
         "cover": constants.cover
     };
 
-    db.put('users', id, user)
-        .then(function () {
-            var accessToken = customUtils.generateToken();
-            var userId = user.id;
-            db.put('tokens', accessToken, {
-                "user": userId
-            })
+    qbchat.createUser({
+        login: user.username,
+        email: user.email,
+        password: config.qb.defaultPassword,
+        full_name: user.name,
+        custom_data: user.avatar
+    }, function (err, newUser) {
+        if (err) {
+            responseObj["errors"] = err;
+            res.status(409);
+            res.json(responseObj);
+        } else {
+            user["qbId"] = newUser.id;
+            db.put('users', id, user)
                 .then(function (result) {
-                    db.newGraphBuilder()
-                        .create()
-                        .from('tokens', accessToken)
-                        .related('hasUser')
-                        .to('users', userId)
+                    var date = new Date();
+                    var chatObj = {
+                        "type": "newUser",
+                        "username": user['username'],
+                        "qbId": user['qbId'],
+                        "dbId": user['id'],
+                        "created": date.getTime(),
+                        "id": date.getTime()
+                    }
+                    if (typeof user['gcmId'] !== 'undefined')
+                        chatObj['gcmId'] = user['gcmId']
+                    else
+                        chatObj['gcmId'] = 'undefined'
+
+                    notify.emit("wordForChat", chatObj)
+
+                    user['password'] = undefined;
+
+                    var notifObj = {
+                        user: id,
+                        name: user.name
+                    };
+                    notify.emit('welcome', notifObj)
+                })
+                .then(function () {
+                    var accessToken = customUtils.generateToken();
+                    var userId = user.id;
+                    db.put('tokens', accessToken, {
+                        "user": userId
+                    })
                         .then(function (result) {
-                            user["access_token"] = accessToken;
-                            responseObj["data"] = user;
-                            //prompt the user to change his randomly generated username
-                            responseObj["data"]["changeUsername"] = true;
-                            res.status(201);
-                            res.json(responseObj);
+                            db.newGraphBuilder()
+                                .create()
+                                .from('tokens', accessToken)
+                                .related('hasUser')
+                                .to('users', userId)
+                                .then(function (result) {
+                                    user["access_token"] = accessToken;
+                                    responseObj["data"] = user;
+                                    //prompt the user to change his randomly generated username
+                                    responseObj["data"]["changeUsername"] = true;
+                                    res.status(201);
+                                    res.json(responseObj);
+                                })
                         })
                 })
-        })
-        .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503)
-        });
-    //}
-    //})
+                .fail(function (err) {
+                    console.log("POST FAIL:" + err);
+                    responseObj["errors"] = [err.body.message];
+                    res.status(503);
+                    res.json(responseObj);
+                });
+        }
+    })
 };
 
 var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, changeEmail, accessToken) {
@@ -1132,37 +1248,84 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "cover": payload['cover']
     };
 
-    db.put('users', id, user)
-        .then(function (result) {
-            extractFacebookFriends(id, accessToken)
-            user['password'] = undefined;
-
-            var accessToken = customUtils.generateToken();
-            var userId = user.id;
-            db.put('tokens', accessToken, {
-                "user": userId
-            })
+    qbchat.createUser({
+        login: user.username,
+        email: user.email,
+        password: config.qb.defaultPassword,
+        full_name: user.name,
+        custom_data: user.avatar
+    }, function (err, newUser) {
+        if (err) {
+            responseObj["errors"] = err;
+            res.status(409);
+            res.json(responseObj);
+        } else {
+            user["qbId"] = newUser.id;
+            db.put('users', id, user)
                 .then(function (result) {
-                    db.newGraphBuilder()
-                        .create()
-                        .from('tokens', accessToken)
-                        .related('hasUser')
-                        .to('users', userId)
+                    //---------------merge facebook friends ------------------------
+                    extractFacebookFriends(id, accessToken)
+                    //---------------merge facebook friends end --------------------
+                    //var urlLink = "http://api2.pyoopil.com:3000/user/verify?user=" + id + "&token=" + isVerified;
+                    //var msg = "Hello" + user.name + ",\n Thank you for signing up with Pyoopil. Kindly verify your email by clicking on the following link. This shall help us serve you better. \n " + urlLink + " \nLooking forward to providing you a great learning experience on Pyoopil.\n\nRegards,\nPyoopil Team";
+                    //var subject = 'Welcome to Pyoopil - Email Verification';
+                    //sendEmail(user.email, subject, msg);
+                    var date = new Date();
+                    var chatObj = {
+                        "type": "newUser",
+                        "username": user['username'],
+                        "qbId": user['qbId'],
+                        "dbId": user['id'],
+                        "created": date.getTime(),
+                        "id": date.getTime()
+                    }
+                    if (typeof user['gcmId'] !== 'undefined')
+                        chatObj['gcmId'] = user['gcmId']
+                    else
+                        chatObj['gcmId'] = 'undefined'
+
+                    notify.emit("wordForChat", chatObj)
+
+                    user['password'] = undefined;
+
+                    var notifObj = {
+                        user: id,
+                        name: user.name
+                    };
+                    notify.emit('welcome', notifObj)
+                })
+                .then(function () {
+                    var accessToken = customUtils.generateToken();
+                    var userId = user.id;
+                    db.put('tokens', accessToken, {
+                        "user": userId
+                    })
                         .then(function (result) {
-                            user["access_token"] = accessToken;
-                            responseObj["data"] = user;
-                            //prompt the user to change his randomly generated username
-                            responseObj["data"]["changeUsername"] = true;
-                            responseObj["data"]["changeEmail"] = changeEmail;
-                            res.status(201);
-                            res.json(responseObj);
+                            db.newGraphBuilder()
+                                .create()
+                                .from('tokens', accessToken)
+                                .related('hasUser')
+                                .to('users', userId)
+                                .then(function (result) {
+                                    user["access_token"] = accessToken;
+                                    responseObj["data"] = user;
+                                    //prompt the user to change his randomly generated username
+                                    responseObj["data"]["changeUsername"] = true;
+                                    responseObj["data"]["changeEmail"] = changeEmail;
+                                    res.status(201);
+                                    res.json(responseObj);
+                                })
                         })
                 })
-        })
-        .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503)
-        });
-}
+                .fail(function (err) {
+                    console.log("POST FAIL:" + err);
+                    responseObj["errors"] = [err.body.message];
+                    res.status(503);
+                    res.json(responseObj);
+                });
+        }
+    })
+};
 
 var generateTokenAndLogin = function (user, res) {
     var responseObj = {};
