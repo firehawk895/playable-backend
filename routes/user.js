@@ -808,17 +808,17 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
         }
     });
 
+    //if (!validator.isNull(reqBody.location_name)) {
+    if (!validator.isDecimal(reqBody.lat))
+        errors.push("Invalid Lattitude value");
+    else
+        reqBody.lat = parseFloat(reqBody.lat)
 
-    if (!validator.isNull(reqBody.location_name)) {
-        if (!validator.isDecimal(reqBody.lat))
-            errors.push("Invalid Lattitude value");
-        else
-            reqBody.lat = parseFloat(reqBody.lat)
-        if (!validator.isDecimal(reqBody.long))
-            errors.push("Invalid Longitude value");
-        else
-            reqBody.long = parseFloat(reqBody.long)
-    }
+    if (!validator.isDecimal(reqBody.long))
+        errors.push("Invalid Longitude value");
+    else
+        reqBody.long = parseFloat(reqBody.long)
+    //}
 
     if (!validator.isNull(reqBody.name))
         if (!reqBody.name.match(/\w*/g)) errors.push("Name contains illegal characters");
@@ -1067,6 +1067,8 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var queries = new Array();
     var responseObj = {}
+
+    queries.push("*")
 
     var isDistanceQuery = false;
     if (req.query.lat && req.query.long && req.query.radius) {
