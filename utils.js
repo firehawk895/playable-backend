@@ -416,13 +416,13 @@ function createRequest(type, userId, matchId, hostUserId) {
     }
 }
 
-function sendErrors(errorArray, statusCode) {
+function sendErrors(errorArray, statusCode, res) {
     /**
      * include validations if required
      * TODO: convert this to a mapped array of key : error
      * That seems to be a more standard way of doing it these days
      */
-    var responseObj = []
+    var responseObj = {}
     responseObj["errors"] = errorArray;
     res.status(statusCode);
     res.json(responseObj);
@@ -439,12 +439,11 @@ function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relatio
     var query =
         "@path.kind:relationship AND @path.source.collection:`" +
         sourceCollection +
-        "` AND @path.source.key:`'" +
+        "` AND @path.source.key:`" +
         sourceId + "` AND @path.relation:`" +
         relation + "` AND @path.destination.collection:`" +
         destinationCollection + "` AND @path.destination.key:`" +
         destinationId + "`"
-
     return query
 }
 
@@ -456,10 +455,10 @@ function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relatio
 function getTotalConnections(userId) {
     var totalConnectionsDefer = kew.defer()
     getGraphResultsPromise("users", userId, "connections")
-        .then(function(result) {
+        .then(function (result) {
             kew.resolve(result.body.count)
         })
-        .fail(function(err) {
+        .fail(function (err) {
             kew.reject(err)
         })
     return totalConnectionsDefer

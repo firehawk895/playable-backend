@@ -52,8 +52,9 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
     var errors = validationResponse.errors
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422)
+        customUtils.sendErrors(errors, 422, res)
     } else {
+        console.log("updating sports")
         db.merge("users", userId, {
             sports: req.body,
             hasSelectedSports: true
@@ -65,7 +66,7 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
                 res.json(responseObj);
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 422)
+                customUtils.sendErrors([err.body.message], 422, res)
             })
     }
 }])
@@ -79,7 +80,7 @@ router.post('/auth/google', function (req, res, next) {
             console.log("Recreating session");
             qbchat.createSession(function (err, result) {
                 if (err) {
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
                 } else next();
             })
         } else next();
@@ -123,7 +124,7 @@ router.post('/auth/google', function (req, res, next) {
     }
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422)
+        customUtils.sendErrors(errors, 422, res)
     } else {
         console.log("entering search?");
         db.newSearchBuilder()
@@ -189,7 +190,7 @@ router.post('/auth/google', function (req, res, next) {
                 }
             })
             .fail(function (err) {
-                customUtils.sendErrors(['Service failure. Contact Playable immediately'], 503)
+                customUtils.sendErrors(['Service failure. Contact Playable immediately'], 503, res)
             })
     }
 });
@@ -200,7 +201,7 @@ router.post('/auth/facebook', function (req, res, next) {
                 console.log("Recreating session");
                 qbchat.createSession(function (err, result) {
                     if (err) {
-                        customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                        customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
                     } else next();
                 })
             } else next();
@@ -214,7 +215,7 @@ router.post('/auth/facebook', function (req, res, next) {
         if (validator.isNull(accessToken)) errors.push("Access Token not provided");
 
         if (errors.length > 0) {
-            customUtils.sendErrors(errors, 422)
+            customUtils.sendErrors(errors, 422, res)
         } else {
             //--------------URLs-----------------------------------------------------------------------
             accessTokenUrl = "https://graph.facebook.com/v2.3/me?fields=id,name,email,cover,gender&access_token=" + accessToken;
@@ -223,6 +224,7 @@ router.post('/auth/facebook', function (req, res, next) {
                 if (response.statusCode !== 200) {
                     return res.status(response.statusCode).send({errors: [payload.error.message]});
                 }
+                console.log(payload)
                 if (validator.isNull(payload.id)) return res.status(409).send("Profile ID could not be retrieved");
                 if (validator.isNull(payload.name)) return res.status(409).send("Name could not be retrieved");
                 if (validator.isNull(payload.cover)) {
@@ -272,7 +274,9 @@ router.post('/auth/facebook', function (req, res, next) {
                                         var mergeData = {
                                             "facebook": payload.id,
                                             "avatar": avatar,
-                                            "avatarThumb": avatarThumb
+                                            "avatarThumb": avatarThumb,
+                                            "cover": payload.cover,
+                                            "gender": payload.gender
                                         };
                                         db.merge('users', user.body.results[0].value.id, mergeData)
                                             .then(function (linkedUser) {
@@ -282,6 +286,8 @@ router.post('/auth/facebook', function (req, res, next) {
                                                 responseObj['data']['facebook'] = mergeData.facebook;
                                                 responseObj['data']['avatar'] = mergeData.avatar;
                                                 responseObj['data']['avatarThumb'] = mergeData.avatarThumb;
+                                                responseObj['data']['cover'] = payload.cover;
+                                                responseObj['data']['gender'] = payload.gender;
                                                 console.log(responseObj);
 
                                                 var accessToken = customUtils.generateToken();
@@ -308,7 +314,7 @@ router.post('/auth/facebook', function (req, res, next) {
                         }
                     })
                     .fail(function (err) {
-                        customUtils.sendErrors(['Service failure. Contact Playable immediately'], 422)
+                        customUtils.sendErrors(['Service failure. Contact Playable immediately'], 422, res)
                     })
                 //--------------------------------end of signup scenarios----------------------------------------------------
 
@@ -403,7 +409,7 @@ router.post('/signup', function (req, res, next) {
             console.log("Recreating session");
             qbchat.createSession(function (err, result) {
                 if (err) {
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
                 } else next();
             })
         } else next();
@@ -433,7 +439,7 @@ router.post('/signup', function (req, res, next) {
         if (!validator.isLength(req.body.tagline, 0, 40)) errors.push("Tagline must be less than 40 characters");
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422)
+        customUtils.sendErrors(errors, 422, res)
     } else {
         db.newSearchBuilder()
             .collection('users')
@@ -473,7 +479,7 @@ router.post('/signup', function (req, res, next) {
                         custom_data: user.avatar
                     }, function (err, newUser) {
                         if (err) {
-                            customUtils.sendErrors(["Chat server failure. Contact us ASAP."], 503)
+                            customUtils.sendErrors(["Chat server failure. Contact us ASAP."], 503, res)
                             return;
                         } else {
                             user["qbId"] = newUser.id
@@ -493,7 +499,7 @@ router.post('/signup', function (req, res, next) {
                                     else
                                         chatObj['gcmId'] = 'undefined'
 
-                                    notify.emit("wordForChat", chatObj)
+                                    //notify.emit("wordForChat", chatObj)
 
                                     user['password'] = undefined;
 
@@ -501,7 +507,7 @@ router.post('/signup', function (req, res, next) {
                                         user: id,
                                         name: user.name
                                     };
-                                    notify.emit('welcome', notifObj)
+                                    //notify.emit('welcome', notifObj)
                                 })
                                 .then(function () {
 
@@ -525,16 +531,16 @@ router.post('/signup', function (req, res, next) {
                                         })
                                 })
                                 .fail(function (err) {
-                                    customUtils.sendErrors([err.body.message], 503)
+                                    customUtils.sendErrors([err.body.message], 503, res)
                                 });
                         }
                     })
 
                 } else {
-                    customUtils.sendErrors(["Email ID or username already in use"], 409)
+                    customUtils.sendErrors(["Email ID or username already in use"], 409, res)
                 }
             }).fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             })
     }
 });
@@ -550,7 +556,7 @@ router.post('/login', function (req, res) {
     if (!validator.isEmail(email)) errors.push("Invalid Email");
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422);
+        customUtils.sendErrors(errors, 422, res);
     } else {
         db.newSearchBuilder()
             .collection('users')
@@ -602,15 +608,15 @@ router.post('/login', function (req, res) {
                             //});
                         }
                     } else {
-                        customUtils.sendErrors(["Entered password is incorrect"], 401)
+                        customUtils.sendErrors(["Entered password is incorrect"], 401, res)
                         //deferred.resolve(false);
                     }
                 } else {
-                    customUtils.sendErrors(["No Account with the entered email exists"], 422)
+                    customUtils.sendErrors(["No Account with the entered email exists"], 422, res)
                     return;
                 }
             }).fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             });
     }
     //res.send('hello authed world');
@@ -627,7 +633,7 @@ router.post('/logout', [passport.authenticate('bearer', {session: false}), funct
             res.json(responseObj);
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503)
+            customUtils.sendErrors([err.body.message], 503, res)
         })
 
 }]);
@@ -641,7 +647,7 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
         errors.push("Your Phone number is invalid");
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422)
+        customUtils.sendErrors(errors, 422, res)
     } else {
         var userId = req.user.results[0].value.id;
         var otp = customUtils.getRandomArbitrary(1000, 9999)
@@ -678,7 +684,7 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
             ],
             function (err, results) {
                 if (err) {
-                    customUtils.sendErrors(["Saving/Sending the OTP failed. Please try again later."], 503)
+                    customUtils.sendErrors(["Saving/Sending the OTP failed. Please try again later."], 503, res)
                 } else {
                     responseObj["data"] = []
                     res.status(200)
@@ -704,14 +710,15 @@ router.post('/otp/verify', [passport.authenticate('bearer', {session: false}), f
         db.merge('users', userId, payload)
             .then(function (result) {
                 responseObj["data"] = payload
+                console.log
                 res.status(200);
                 res.json(responseObj);
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             })
     } else {
-        customUtils.sendErrors(["The OTP entered does not match."], 422)
+        customUtils.sendErrors(["The OTP entered does not match."], 422, res)
     }
 }]);
 
@@ -742,12 +749,12 @@ router.get('/', function (req, res, next) {
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             });
     }
 
     if (validator.isNull(query_user)) {
-        customUtils.sendErrors(["Please specify the User ID"], 422)
+        customUtils.sendErrors(["Please specify the User ID"], 422, res)
         return
     } else {
         if (query_user == req.user.results[0].value.id)
@@ -784,7 +791,7 @@ router.get('/', function (req, res) {
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             })
         //db.get('users', userId)
         //    .then(function (user) {
@@ -795,12 +802,12 @@ router.get('/', function (req, res) {
         //        res.json(responseObj)
         //    })
         //    .fail(function (err) {
-        //        customUtils.sendErrors([err.body.message], 503)
+        //        customUtils.sendErrors([err.body.message], 503, res)
         //    });
     }
 
     if (validator.isNull(query_user)) {
-        customUtils.sendErrors(["Please specify the User ID"], 422)
+        customUtils.sendErrors(["Please specify the User ID"], 422, res)
         return
     } else {
         allowUpdate = false;
@@ -881,7 +888,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 errors.push(errMsg);
             }
             if (errors.length > 0) {
-                customUtils.sendErrors(errors, 422)
+                customUtils.sendErrors(errors, 422, res)
             } else {
                 customUtils.upload(req.files.avatar, function (avatarInfo) {
                     if (req.files.avatar) {
@@ -938,13 +945,13 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                             res.json(responseObj);
                         })
                         .fail(function (err) {
-                            customUtils.sendErrors([err.body.message], 503)
+                            customUtils.sendErrors([err.body.message], 503, res)
                         });
                 });
             }
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503)
+            customUtils.sendErrors([err.body.message], 503, res)
         })
 }]);
 
@@ -1001,7 +1008,7 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
     }
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422)
+        customUtils.sendErrors(errors, 422, res)
     } else {
         var hashedPassword = bcrypt.hashSync(req.body.newPass, 8);
         var payload = {
@@ -1029,7 +1036,7 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
                 });
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             });
     }
 
@@ -1082,7 +1089,7 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
             }
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503)
+            customUtils.sendErrors([err.body.message], 503, res)
         })
 }])
 
@@ -1125,7 +1132,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             })
     } else {
         db.newSearchBuilder()
@@ -1139,7 +1146,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503)
+                customUtils.sendErrors([err.body.message], 503, res)
             })
     }
 }])
@@ -1148,7 +1155,7 @@ router.get('/chatrooms', [passport.authenticate('bearer', {session: false}), fun
     var responseObj = {}
     getUsersDialogs(username, function (err, dialogList) {
         if (err) {
-            customUtils.sendErrors(["Unable to get your chat rooms", err], 503)
+            customUtils.sendErrors(["Unable to get your chat rooms", err], 503, res)
         } else {
             responseObj["data"] = dialogList;
             res.status(200);
@@ -1288,6 +1295,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "facebook": payload['id'],
         "created": date.getTime(),
         "cover": payload['cover'],
+        "gender": payload["gender"],
         "hasSelectedSports": false,
         "matchesPlayed": 0
     };
@@ -1328,7 +1336,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                     else
                         chatObj['gcmId'] = 'undefined'
 
-                    notify.emit("wordForChat", chatObj)
+                    //notify.emit("wordForChat", chatObj)
 
                     user['password'] = undefined;
 
@@ -1336,7 +1344,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                         user: id,
                         name: user.name
                     };
-                    notify.emit('welcome', notifObj)
+                    //notify.emit('welcome', notifObj)
                 })
                 .then(function () {
                     var accessToken = customUtils.generateToken();

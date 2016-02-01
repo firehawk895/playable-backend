@@ -28,7 +28,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
             console.log("Recreating session");
             qbchat.createSession(function (err, result) {
                 if (err) {
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
                 } else next();
             })
         } else next();
@@ -60,7 +60,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
             skill_level_min: req.body.skill_level_min,
             skill_level_max: req.body.skill_level_max,
             playing_time: req.body.playing_time,
-            slots_filled: 0,
+            slots_filled: 1, //the host is a participant of the match
             slots: req.body.slots,
             location_name: req.body.location_name,
             location: {
@@ -147,7 +147,19 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
     }
 }])
 
-router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {
+router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
+    qbchat.getSession(function (err, session) {
+        if (err) {
+            console.log("Recreating session");
+            qbchat.createSession(function (err, result) {
+                if (err) {
+                    console.log(err)
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                } else next();
+            })
+        } else next();
+    })
+}, function (req, res) {
     console.log("definitely here")
     var matchId = req.body.matchId;
     var userId = req.user.results[0].value.id;
@@ -172,7 +184,8 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                             console.log("user determined to be not participating in match")
                             qbchat.addUserToRoom(roomId, [userId], function (err, result) {
                                 if (err) {
-                                    customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503)
+                                    console.log(err)
+                                    customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503, res)
                                 } else {
                                     customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
                                     customUtils.incrementMatchesPlayed(userId)
@@ -212,7 +225,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                                 }
                             })
                         } else {
-                            customUtils.sendErrors(["You are already part of this match"], 422)
+                            customUtils.sendErrors(["You are already part of this match"], 422, res)
                         }
                     })
             }
@@ -262,6 +275,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var page = 1
     var limit = 100
 
+    console.log ("omg the id is " + userId)
     console.log("default time and isDiscoverable query")
     queries.push(customUtils.createIsDiscoverableQuery())
 
@@ -315,7 +329,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             .offset(offset)
             .sort('location', 'distance:asc')
             .query(theFinalQuery)
-
         promises.push(distanceQuery)
     } else {
         /**
@@ -359,7 +372,10 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
             //isJoined tells if the current user is part of the match or not
             if (isMatchQuery) {
+                console.log("the results are ")
+                console.log(results[1].body.results[0].path)
                 var count = results[1].body.count
+                console.log("count is " + count)
                 if (count == 0) {
                     responseObj["isJoined"] = false
                 } else {
@@ -374,7 +390,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             res.json(responseObj)
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503)
+            customUtils.sendErrors([err.body.message], 503, res)
         })
 }])
 
