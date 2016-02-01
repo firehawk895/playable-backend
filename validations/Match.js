@@ -42,11 +42,11 @@ validatePostMatch = function (reqBody) {
 
     if (validator.isInt(reqBody.skill_level_min) &&
         validator.isInt(reqBody.skill_level_max) &&
-        reqBody.skill_level_min <= reqBody.skill_level_max) {
+        parseInt(reqBody.skill_level_min) <= parseInt(reqBody.skill_level_max)) {
         reqBody.skill_level_min = parseInt(reqBody.skill_level_min)
         reqBody.skill_level_max = parseInt(reqBody.skill_level_max)
     } else {
-        errors.push("The skill level must be a valid range")
+        errors.push("The skill level must be a valid range of 1-5")
     }
     return {
         errors: errors,

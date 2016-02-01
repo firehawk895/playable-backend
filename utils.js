@@ -133,23 +133,83 @@ function createDistanceQuery(lat, long, radius) {
  * @param eventId
  */
 function createSearchByIdQuery(id) {
-    var searchByIdQuery = "path.key: `" + id + "`"
+    var searchByIdQuery = "key: `" + id + "`"
     return searchByIdQuery
 }
 
 /**
- * Crate a lucene query with the array of sports provided
+ * Note : For lucene you can use filed grouping:
+ * Field Grouping
+ * Lucene supports using parentheses to group multiple clauses to a single field.
+ * To search for a title that contains both the word "return" and the phrase "pink panther" use the query:
+ * title:(+return +"pink panther")
+ *
+ * createSportsQuery can be updated this way
+ */
+
+/**
+ * Crate a lucene OR query with the array of sports provided
  * @param sportsArray
  * @returns {string}
  */
 function createSportsQuery(sportsArray) {
-    var theSportsQuery = ""
-    sportsArray.forEach(function (sport) {
-        theSportsQuery = theSportsQuery + "value.sport:`" + sport + "` OR "
-    })
-    theSportsQuery = theSportsQuery.substring(0, theSportsQuery.length - 4);
-    return theSportsQuery
+    return createFieldORQuery(sportsArray, "value.sports")
 }
+
+/**
+ * Crate a lucene OR query with the array of gender provided
+ * @param genderArray
+ * @returns {*}
+ */
+function createGenderQuery(genderArray) {
+    return createFieldORQuery(genderArray, "value.gender")
+}
+
+/**
+ * get results having playing_time that are past the current time
+ * and whose results matches/events are discoverable
+ * @returns {string}
+ */
+function createIsDiscoverableQuery() {
+    var date = new Date()
+    var currentUnixTime = Math.round(date.getTime() / 1000)
+    var query = "value.playing_time: " + currentUnixTime + "~*"  //this means greater than equalto
+    //https://orchestrate.io/docs/apiref#search
+    //matches that are not discoverable for any reason are set to isDiscoverable: false
+    query = query + " AND value.isDiscoverable:true"
+    return query
+}
+
+/**
+ * generates a lucene OR query for a set of values (theArray)
+ * for a specific key (searchKey) to search for
+ * @param theArray
+ * @param searchKey
+ * @returns {string}
+ */
+function createFieldORQuery(theArray, searchKey) {
+    var theQuery = searchKey + ": ("
+    theArray.forEach(function (oneItem) {
+        theQuery += "`" + oneItem + "` OR "
+    })
+    theQuery += ")"
+    theQuery = theQuery.substring(0, theQuery.length - 4);
+    return theQuery
+}
+
+/**
+ * check if a user is participating in a match
+ * @param matchId
+ * @param userId
+ * @returns {SearchBuilder}
+ */
+function checkMatchParticipationPromise(matchId, userId) {
+    var checkMatchParticipation =
+        db.newSearchBuilder("*")
+            .query(createGetOneOnOneGraphRelationQuery('matches', matchId, 'participants', 'users', userId))
+    return checkMatchParticipation
+}
+
 
 /**
  * generete the lucene query for min and max skill rating
@@ -161,12 +221,39 @@ function createSportsQuery(sportsArray) {
  * For example, the range *~-10 would mean "all values less than negative ten" and
  * the range 100~* would communicate "all values greater than or equal to one hundred".
  *
+ * Ya that shit didn't work so I used the range [minRating TO 5] etc. -_- :*
  * @param minRating
  * @param maxRating
  */
 function createSkillRatingQuery(minRating, maxRating) {
-    var skillQuery = "value.skill_level_min:" + minRating + "~* AND " + "value.skill_level_max:*~" + maxRating
+    var skillQuery = "value.skill_level_min:[" + minRating + " TO 5] AND " + "value.skill_level_max:[1 TO " + maxRating + "]"
     return skillQuery
+}
+
+/**
+ * get featured matches
+ * @returns {SearchBuilder} promise
+ */
+function getFeaturedMatchesPromise() {
+    var queries = new Array()
+    queries.push("value.isFeatured:true")
+    queries.push(createIsDiscoverableQuery())
+    var finalQuery = queryJoiner(queries)
+    var featuredMatches = db.newSearchBuilder()
+        .collection("matches")
+        .query(finalQuery)
+
+    return featuredMatches
+}
+
+function incrementMatchesPlayed(userId) {
+    db.get("users", userId)
+        .then(function (result) {
+            var matchesPlayed = result.body.matchesPlayed;
+            db.merge("users", userId, {
+                matchesPlayed: matchesPlayed + 1
+            })
+        })
 }
 
 /**
@@ -254,7 +341,7 @@ function updateMatchConnections(userId, matchId) {
         .related('participants')
         .then(function (results) {
             //get all the players of the match
-            var playerList = result.body.results.map(function (oneUser) {
+            var playerList = results.body.results.map(function (oneUser) {
                 return oneUser.path.key;
             })
 
@@ -342,11 +429,80 @@ function sendErrors(errorArray, statusCode) {
 }
 
 /**
+ * generate a one on one graph relation query
+ * @param sourceCollection
+ * @param sourceId
+ * @param destinationCollection
+ * @param destinationId
+ */
+function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relation, destinationCollection, destinationId) {
+    var query =
+        "@path.kind:relationship AND @path.source.collection:`" +
+        sourceCollection +
+        "` AND @path.source.key:`'" +
+        sourceId + "` AND @path.relation:`" +
+        relation + "` AND @path.destination.collection:`" +
+        destinationCollection + "` AND @path.destination.key:`" +
+        destinationId + "`"
+
+    return query
+}
+
+/**
+ *
+ * @param userId
+ * @returns {number|*|!Promise}
+ */
+function getTotalConnections(userId) {
+    var totalConnectionsDefer = kew.defer()
+    getGraphResultsPromise("users", userId, "connections")
+        .then(function(result) {
+            kew.resolve(result.body.count)
+        })
+        .fail(function(err) {
+            kew.reject(err)
+        })
+    return totalConnectionsDefer
+}
+
+/**
+ *
+ * @param collection
+ * @param id
+ * @param relation
+ * @returns {GraphBuilder}
+ */
+function getGraphResultsPromise(collection, id, relation) {
+    return db.newGraphReader()
+        .get()
+        .from(collection, id)
+        .related(relation)
+}
+
+/**
+ * takes a json payload and inserts flags:
+ * hasMale, hasFemale, hasCustomGender
+ * @param payload
+ * @param gender
+ * @returns {*}
+ */
+function updateGenderInPayload(payload, gender) {
+    if (gender == "male")
+        payload["hasMale"] = true
+    else if (gender == "female")
+        payload["hasFemale"] = true
+    else {
+        payload["hasCustomGender"] = true
+    }
+    return payload
+}
+
+/**
  * Time capsule:
  * ----------------------------------------------
  * 11:37 Pm, 27th Jan 2016, Malviya Nagar.
  * listening to https://youtu.be/ysx9BVYlUY4
- * Surreal music. It's quite, I'm alone. My best friend will be
+ * Surreal music. It's quiet, I'm alone. My best friend will be
  * coming to visit me. Sia - Breathe Me
  *
  * <Hey developer :), add your location and what you're doing here>,
@@ -372,3 +528,10 @@ exports.deleteGraphRelation = deleteGraphRelation;
 exports.createRequest = createRequest;
 exports.sendErrors = sendErrors;
 exports.createSearchByIdQuery = createSearchByIdQuery;
+exports.updateGenderInPayload = updateGenderInPayload;
+exports.createGenderQuery = createGenderQuery;
+exports.createIsDiscoverableQuery = createIsDiscoverableQuery;
+exports.getFeaturedMatchesPromise = getFeaturedMatchesPromise;
+exports.incrementMatchesPlayed = incrementMatchesPlayed;
+exports.getTotalConnections = getTotalConnections;
+exports.checkMatchParticipationPromise = checkMatchParticipationPromise;

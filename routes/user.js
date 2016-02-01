@@ -55,7 +55,8 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
         customUtils.sendErrors(errors, 422)
     } else {
         db.merge("users", userId, {
-            sports: req.body
+            sports: req.body,
+            hasSelectedSports: true
         })
             .then(function (result) {
                 responseObj["data"] = [];
@@ -216,7 +217,7 @@ router.post('/auth/facebook', function (req, res, next) {
             customUtils.sendErrors(errors, 422)
         } else {
             //--------------URLs-----------------------------------------------------------------------
-            accessTokenUrl = "https://graph.facebook.com/v2.3/me?fields=id,name,email,cover&access_token=" + accessToken;
+            accessTokenUrl = "https://graph.facebook.com/v2.3/me?fields=id,name,email,cover,gender&access_token=" + accessToken;
             //--------------URLs End -------------------------------------------------------------------
             request.get({url: accessTokenUrl, json: true}, function (err, response, payload) {
                 if (response.statusCode !== 200) {
@@ -231,6 +232,9 @@ router.post('/auth/facebook', function (req, res, next) {
                 if (validator.isNull(payload.email)) {
                     payload.email = "playable" + customUtils.generateToken(4) + "@mailinator.com";
                     changeEmail = true;
+                }
+                if (validator.isNull(payload.gender)) {
+                    payload.gender = "custom";
                 }
 
                 avatar = "https://graph.facebook.com/" + payload.id + "/picture?type=large";
@@ -456,7 +460,9 @@ router.post('/signup', function (req, res, next) {
                         "isVerified": isVerified,
                         "last_seen": date.getTime(),
                         "created": date.getTime(),
-                        "cover": constants.cover
+                        "cover": constants.cover,
+                        "hasSelectedSports": false,
+                        "matchesPlayed": 0
                     };
 
                     qbchat.createUser({
@@ -626,6 +632,8 @@ router.post('/logout', [passport.authenticate('bearer', {session: false}), funct
 
 }]);
 
+//TODO: don't allow this API to be hacked
+//TODO: write a condition to not allow OTP sending of already verified phones.
 router.post('/verify/phone', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     var errors = []
@@ -746,10 +754,8 @@ router.get('/', function (req, res, next) {
             allowUpdate = true;
         else
             allowUpdate = false;
-
         getUserInfo(query_user, allowUpdate)
     }
-
 }]);
 
 
@@ -764,17 +770,33 @@ router.get('/', function (req, res) {
     var allowUpdate;
 
     var getUserInfo = function (userId, allowUpdate) {
-        db.get('users', userId)
-            .then(function (user) {
-                user.body.password = undefined
-                responseObj["data"] = user.body
+
+        var getUserDataPromise = db.get('users', userId)
+        var getTotalCountPromise = customUtils.getTotalConnections
+
+        kew.all([getUserDataPromise, getTotalCountPromise])
+            .then(function (results) {
+                results[0].body.password = undefined
+                responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
+                responseObj["totalConnections"] = results[1]
                 res.status(200)
                 res.json(responseObj)
             })
             .fail(function (err) {
                 customUtils.sendErrors([err.body.message], 503)
-            });
+            })
+        //db.get('users', userId)
+        //    .then(function (user) {
+        //        user.body.password = undefined
+        //        responseObj["data"] = user.body
+        //        responseObj["allowUpdate"] = allowUpdate
+        //        res.status(200)
+        //        res.json(responseObj)
+        //    })
+        //    .fail(function (err) {
+        //        customUtils.sendErrors([err.body.message], 503)
+        //    });
     }
 
     if (validator.isNull(query_user)) {
@@ -1162,7 +1184,9 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
         "last_seen": date.getTime(),
         "google": payload['sub'],
         "created": date.getTime(),
-        "cover": constants.cover
+        "cover": constants.cover,
+        "hasSelectedSports": false,
+        "matchesPlayed": 0
     };
 
     qbchat.createUser({
@@ -1263,7 +1287,9 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "last_seen": date.getTime(),
         "facebook": payload['id'],
         "created": date.getTime(),
-        "cover": payload['cover']
+        "cover": payload['cover'],
+        "hasSelectedSports": false,
+        "matchesPlayed": 0
     };
 
     qbchat.createUser({

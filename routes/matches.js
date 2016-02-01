@@ -12,6 +12,7 @@ oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
 var qbchat = require('../qbchat.js');
+var kew = require('kew')
 
 var Notifications = require('../notifications');
 //var notify = new Notifications();
@@ -21,10 +22,22 @@ var Notifications = require('../notifications');
 //passport.authenticate('bearer', {session: false}),
 
 //TODO: remove sensitive information about host from the json inside the match's host key
-router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
+    qbchat.getSession(function (err, session) {
+        if (err) {
+            console.log("Recreating session");
+            qbchat.createSession(function (err, result) {
+                if (err) {
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503)
+                } else next();
+            })
+        } else next();
+    })
+}, function (req, res) {
     var responseObj = {}
-    var user = req.user.results[0].value;
-    var userId = req.user.results[0].value.id;
+    var user = req.user.results[0].value
+    var userId = req.user.results[0].value.id
+    var hostGender = req.user.results[0].value.gender
     //req.checkBody(matchValidation.postMatch)
     var validationResponse = matchValidation.validatePostMatch(req.body);
 
@@ -36,6 +49,10 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
         res.status(422);
         res.json(responseObj);
     } else {
+
+        //Note only insert in a denormalized manner the host details of what is required
+        //hasMale, hasFemale, hasCustomGender make it simpler to search for games that contain
+        //males, females or custom gender participants
         var payload = {
             title: req.body.title,
             description: req.body.description,
@@ -50,11 +67,23 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 lat: req.body.lat,
                 long: req.body.long
             },
-            host: user,
+            host: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                avatar: user.avatar,
+                avatarThumb: user.avatarThumb
+            },
             isFacility: req.body.isFacility,
-            type: "match"
+            type: "match",
+            hasMale: false,
+            hasFemale: false,
+            hasCustomGender: false,
+            isDiscoverable: true,
+            isFeatured: false
         }
-        payload["host"]["password"] = undefined
+
+        payload = customUtils.updateGenderInPayload(payload, hostGender)
 
         db.post('matches', payload)
             .then(function (result) {
@@ -126,45 +155,65 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
 
     db.get('matches', matchId)
         .then(function (result) {
+            var roomId = result.body.qbId
             if (result.body.slots == result.body.slots_filled) {
                 responseObj["errors"] = ["The Match is already full. Please contact the host"]
                 res.status(422)
                 res.json(responseObj)
-            } else {
+                return
+            }
+            else {
                 //Check if he has already joined the match
-                db.newGraphReader()
-                    .get()
-                    .from('users', userId)
-                    .related('plays')
-                    //.to('matches', matchId) //doesn't work
-                    .then(function (result) {
-                        //res.status(200).send(result)
-                        //return
-                    })
-                //The match has participants (user)
-                customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
-                db.newGraphBuilder()
-                    .create()
-                    .from('users', userId)
-                    .related('plays')
-                    .to('matches', matchId)
-                    .then(function (result) {
-                        /**
-                         * You are hoping that orchestrate handles concurrency
-                         * this sort of modification needs to be safe from race conditions
-                         */
-                        db.merge('matches', {
-                            slots_filled: result.value.slots_filled + 1
-                        })
-                        customUtils.updateMatchConnections(userId, matchId)
-                        responseObj["data"] = result
-                        res.status(200)
-                        res.json(responseObj)
-                    })
-                    .fail(function (err) {
-                        responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
-                        res.status(503)
-                        res.json(responseObj)
+                customUtils.checkMatchParticipationPromise(matchId, userId)
+                    .then(function (results) {
+                        console.log("just checked match participation")
+                        var count = results.body.count
+                        if (count == 0) {
+                            console.log("user determined to be not participating in match")
+                            qbchat.addUserToRoom(roomId, [userId], function (err, result) {
+                                if (err) {
+                                    customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503)
+                                } else {
+                                    customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
+                                    customUtils.incrementMatchesPlayed(userId)
+                                    db.newGraphBuilder()
+                                        .create()
+                                        .from('users', userId)
+                                        .related('plays')
+                                        .to('matches', matchId)
+                                        .then(function (result) {
+                                            /**
+                                             * You are hoping that orchestrate handles concurrency
+                                             * this sort of modification needs to be safe from race conditions
+                                             */
+                                            var slots = result.value.slots
+                                            var slotsFilled = result.value.slots_filled + 1
+                                            var payload = {
+                                                'slots_filled': slotsFilled
+                                            }
+
+                                            //if match is full make it undiscoverable
+                                            if (slots == slotsFilled) {
+                                                payload["isDiscoverable"] = false
+                                            }
+
+                                            db.merge('matches', payload)
+                                            customUtils.updateMatchConnections(userId, matchId)
+
+                                            responseObj["data"] = result
+                                            res.status(200)
+                                            res.json(responseObj)
+                                        })
+                                        .fail(function (err) {
+                                            responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
+                                            res.status(503)
+                                            res.json(responseObj)
+                                        })
+                                }
+                            })
+                        } else {
+                            customUtils.sendErrors(["You are already part of this match"], 422)
+                        }
                     })
             }
         })
@@ -205,26 +254,37 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
 }])
 
 
-router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var user = {}
-    user.location = {
-        'lat': req.user.results[0].value.location.lat,
-        'long': req.user.results[0].value.location.long
-    }
-    var date = new Date();
-    var currentUnixTime = Math.round(date.getTime() / 1000);
-    var queries = new Array();
+router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var promises = new Array()
+    var userId = req.user.results[0].value.id
+    var queries = new Array()
     var responseObj = {}
+    var page = 1
+    var limit = 100
 
-    var query = "value.time: " + currentUnixTime + "~*"  //this means greater than equalto
-    //https://orchestrate.io/docs/apiref#search
-    queries.push(query)
-    console.log(query)
-    var isDistanceQuery = false;
+    console.log("default time and isDiscoverable query")
+    queries.push(customUtils.createIsDiscoverableQuery())
+
+    var isDistanceQuery = false
+    var isMatchQuery = false
+    var getFeatured = false
+
+    if (req.query.limit && req.query.page) {
+        page = req.query.page
+        limit = req.query.limit
+    }
+    var offset = limit * (page - 1)
 
     if (req.query.matchId) {
+        isMatchQuery = true
         console.log("we have a specific matchId query")
         queries.push(customUtils.createSearchByIdQuery(req.query.matchId))
+    }
+
+    if (req.query.gender) {
+        console.log("we have a gender query")
+        var genderArray = req.query.gender.split(',')
+        queries.push(customUtils.createGenderQuery(genderArray))
     }
 
     if (req.query.lat && req.query.long && req.query.radius) {
@@ -248,44 +308,78 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     console.log("The final query")
     console.log(theFinalQuery)
 
-    /**
-     * remove sort by location if query does not have
-     * location
-     */
     if (isDistanceQuery) {
-        db.newSearchBuilder()
+        var distanceQuery = db.newSearchBuilder()
             .collection("matches")
+            .limit(limit)
+            .offset(offset)
             .sort('location', 'distance:asc')
             .query(theFinalQuery)
-            .then(function (results) {
-                var distanceInjectedResults = customUtils.insertDistance(results, req.query.lat, req.query.long)
-                responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = customUtils.injectId(distanceInjectedResults)
-                res.status(200)
-                res.json(responseObj)
-            })
-            .fail(function (err) {
-                responseObj["errors"] = [err.body.message]
-                res.status(503)
-                res.json(responseObj)
-            })
+
+        promises.push(distanceQuery)
     } else {
-        db.newSearchBuilder()
+        /**
+         * remove sort by location if query does not have
+         * location. the orchestrate query won't work otherwise
+         */
+        var distanceLessQuery = db.newSearchBuilder()
             .collection("matches")
+            .limit(limit)
+            .offset(offset)
             //.sort('location', 'distance:asc')
             .query(theFinalQuery)
-            .then(function (results) {
-                responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = customUtils.injectId(results)
-                res.status(200)
-                res.json(responseObj)
-            })
-            .fail(function (err) {
-                responseObj["errors"] = [err.body.message]
-                res.status(503)
-                res.json(responseObj)
-            })
+        promises.push(distanceLessQuery)
     }
+
+    if (isMatchQuery) {
+        promises.push(customUtils.checkMatchParticipationPromise(req.query.matchId, userId))
+    } else {
+        //pass a resolved dummy promise so the order of the array is always constant
+        promises.push(kew.resolve([]))
+    }
+
+    if (req.query.featured) {
+        getFeatured = true;
+        promises.push(customUtils.getFeaturedMatchesPromise())
+    } else {
+        //pass a resolved dummy promise so the order of the array is always constant
+        promises.push(kew.resolve([]))
+    }
+
+    kew.all(promises)
+        .then(function (results) {
+            //result[0] is the main query
+            //result[1] is the match participation query (if isMatchQuery is true)
+            //result[2] is the featured matches query
+            if (distanceQuery) {
+                results[0] = customUtils.insertDistance(results[0], req.query.lat, req.query.long)
+            }
+            responseObj["total_count"] = results[0].body.total_count
+            responseObj["data"] = customUtils.injectId(results[0])
+
+            //isJoined tells if the current user is part of the match or not
+            if (isMatchQuery) {
+                var count = results[1].body.count
+                if (count == 0) {
+                    responseObj["isJoined"] = false
+                } else {
+                    responseObj["isJoined"] = true
+                }
+            }
+            if (getFeatured) {
+                var featuredMatches = customUtils.injectId(results[2])
+                responseObj["featured"] = featuredMatches
+            }
+            res.status(200)
+            res.json(responseObj)
+        })
+        .fail(function (err) {
+            customUtils.sendErrors([err.body.message], 503)
+        })
 }])
+
+router.get('/test', function (req, res) {
+    console.log(req.query)
+})
 
 module.exports = router;

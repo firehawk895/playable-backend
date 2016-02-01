@@ -66,11 +66,11 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 }])
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var user = {}
-    user.location = {
-        'lat': req.user.results[0].value.location.lat,
-        'long': req.user.results[0].value.location.long
-    }
+    //var user = {}
+    //user.location = {
+    //    'lat': req.user.results[0].value.location.lat,
+    //    'long': req.user.results[0].value.location.long
+    //}
     var date = new Date();
     var currentUnixTime = Math.round(date.getTime() / 1000);
     var queries = new Array();
