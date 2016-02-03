@@ -43,5 +43,21 @@ module.exports = {
         "invalid_lat_message": "The Lattitude value is invalid",
         "invalid_long_message": "The Longitude value is invalid",
         "invalid_skill_rating_range_message" : "The skill level must be a valid integer range"
+    },
+    "firebaseNodes" : {
+        "newMatches" : "matches",
+        "recommendations" : "recommendations"
+    },
+    "recommendations" : {
+        rating : {
+            "thumbsUp": "thumbsUp",
+            "thumbsDown": "thumbsDown",
+            "notPlayed": "notPlayed"
+        },
+        type : {
+            OneOnOne : "OneOnOne",
+            facility : "facility",
+            team : "team"
+        }
     }
 }

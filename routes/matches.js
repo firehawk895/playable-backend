@@ -137,6 +137,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                             });
                     }
                 });
+                customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
             })
             .fail(function (err) {
                 responseObj["errors"] = [err.body.message];
@@ -275,7 +276,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var page = 1
     var limit = 100
 
-    console.log ("omg the id is " + userId)
+    console.log("omg the id is " + userId)
     console.log("default time and isDiscoverable query")
     queries.push(customUtils.createIsDiscoverableQuery())
 

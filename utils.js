@@ -14,6 +14,161 @@ var fs = require('fs'),
         secretAccessKey: config.s3.secret
     });
 
+var Firebase = require("firebase");
+var myFirebaseRef = new Firebase(config.firebase.url, config.firebase.secret);
+
+
+/**
+ * Orchestrate query wrappers ---------------------------------->
+ */
+/**
+ * create an orchestrate Neo4J graph connection
+ * @param from
+ * @param fromKey
+ * @param to
+ * @param toKey
+ * @param relationName
+ */
+function createGraphRelation(from, fromKey, to, toKey, relationName) {
+    db.newGraphBuilder()
+        .create()
+        .from(from, fromKey)
+        .related(relationName)
+        .to(to, toKey);
+}
+
+/**
+ *
+ * @param collection
+ * @param id
+ * @param relation
+ * @returns {GraphBuilder}
+ */
+function getGraphResultsPromise(collection, id, relation) {
+    return db.newGraphReader()
+        .get()
+        .from(collection, id)
+        .related(relation)
+}
+
+/**
+ * Orchestrate query wrappers ENDS------------------------------>
+ */
+/**
+ * LUCENE query generators ------------------------------------->
+ */
+/**
+ * generete the lucene query for min and max skill rating
+ *
+ * Lucene reference:
+ * Your queries can contain as many as ten different buckets in a single Range Aggregate.
+ * Each bucket can have numerical min and max values, separated by a tilde character (~).
+ * An asterisk may be used to designate a particular range bucket as boundless.
+ * For example, the range *~-10 would mean "all values less than negative ten" and
+ * the range 100~* would communicate "all values greater than or equal to one hundred".
+ *
+ * Ya that shit didn't work so I used the range [minRating TO 5] etc. -_- :*
+ * @param minRating
+ * @param maxRating
+ */
+function createSkillRatingQuery(minRating, maxRating) {
+    var skillQuery = "value.skill_level_min:[" + minRating + " TO 5] AND " + "value.skill_level_max:[1 TO " + maxRating + "]"
+    return skillQuery
+}
+/**
+ * get results having playing_time that are past the current time
+ * and whose results matches/events are discoverable
+ * @returns {string}
+ */
+function createIsDiscoverableQuery() {
+    var date = new Date()
+    var currentUnixTime = Math.round(date.getTime() / 1000)
+    var query = "value.playing_time: " + currentUnixTime + "~*"  //this means greater than equalto
+    //https://orchestrate.io/docs/apiref#search
+    //matches that are not discoverable for any reason are set to isDiscoverable: false
+    query = query + " AND value.isDiscoverable:true"
+    return query
+}
+
+/**
+ * generates a lucene OR query for a set of values (theArray)
+ * for a specific key (searchKey) to search for
+ * @param theArray
+ * @param searchKey
+ * @returns {string}
+ */
+function createFieldORQuery(theArray, searchKey) {
+    var theQuery = searchKey + ": ("
+    theArray.forEach(function (oneItem) {
+        theQuery += "`" + oneItem + "` OR "
+    })
+    theQuery += ")"
+    theQuery = theQuery.substring(0, theQuery.length - 4);
+    return theQuery
+}
+
+/**
+ * create a distance query for orchestrate
+ * @param lat
+ * @param long
+ * @param radius
+ * @returns {string}
+ */
+function createDistanceQuery(lat, long, radius) {
+    var theDistanceQuery = "value.location:NEAR:{lat:" + parseFloat(lat) + " lon:" + parseFloat(long) + " dist:" + radius + "}";
+    return theDistanceQuery
+}
+
+/**
+ * create a eventId search query
+ * @param eventId
+ */
+function createSearchByIdQuery(id) {
+    var searchByIdQuery = "key: `" + id + "`"
+    return searchByIdQuery
+}
+
+/**
+ * Note : For lucene you can use filed grouping:
+ * Field Grouping
+ * Lucene supports using parentheses to group multiple clauses to a single field.
+ * To search for a title that contains both the word "return" and the phrase "pink panther" use the query:
+ * title:(+return +"pink panther")
+ *
+ * createSportsQuery can be updated this way
+ */
+
+/**
+ * Crate a lucene OR query with the array of sports provided
+ * @param sportsArray
+ * @returns {string}
+ */
+function createSportsQuery(sportsArray) {
+    return createFieldORQuery(sportsArray, "value.sports")
+}
+
+/**
+ * join a set of queries with AND, OR conditions
+ * for lucene/orchestrate
+ * @param queries
+ * @param type
+ */
+function queryJoiner(queries) {
+    var returnQuery = ""
+    queries.forEach(function (query) {
+        returnQuery += "("
+        returnQuery += query
+        returnQuery += ") AND "
+    })
+    returnQuery = returnQuery.substring(0, returnQuery.length - 5)
+    return returnQuery
+}
+/**
+ *
+ * LUCENE query generators ENDS---------------------------------->
+ */
+
+
 /**
  * Uploads file to S3
  * @param {file} file
@@ -100,101 +255,12 @@ function stringToBoolean(theString) {
 }
 
 /**
- * join a set of queries with AND, OR conditions
- * for lucene/orchestrate
- * @param queries
- * @param type
- */
-function queryJoiner(queries) {
-    var returnQuery = ""
-    queries.forEach(function (query) {
-        returnQuery += "("
-        returnQuery += query
-        returnQuery += ") AND "
-    })
-    returnQuery = returnQuery.substring(0, returnQuery.length - 5)
-    return returnQuery
-}
-
-/**
- * create a distance query for orchestrate
- * @param lat
- * @param long
- * @param radius
- * @returns {string}
- */
-function createDistanceQuery(lat, long, radius) {
-    var theDistanceQuery = "value.location:NEAR:{lat:" + parseFloat(lat) + " lon:" + parseFloat(long) + " dist:" + radius + "}";
-    return theDistanceQuery
-}
-
-/**
- * create a eventId search query
- * @param eventId
- */
-function createSearchByIdQuery(id) {
-    var searchByIdQuery = "key: `" + id + "`"
-    return searchByIdQuery
-}
-
-/**
- * Note : For lucene you can use filed grouping:
- * Field Grouping
- * Lucene supports using parentheses to group multiple clauses to a single field.
- * To search for a title that contains both the word "return" and the phrase "pink panther" use the query:
- * title:(+return +"pink panther")
- *
- * createSportsQuery can be updated this way
- */
-
-/**
- * Crate a lucene OR query with the array of sports provided
- * @param sportsArray
- * @returns {string}
- */
-function createSportsQuery(sportsArray) {
-    return createFieldORQuery(sportsArray, "value.sports")
-}
-
-/**
  * Crate a lucene OR query with the array of gender provided
  * @param genderArray
  * @returns {*}
  */
 function createGenderQuery(genderArray) {
     return createFieldORQuery(genderArray, "value.gender")
-}
-
-/**
- * get results having playing_time that are past the current time
- * and whose results matches/events are discoverable
- * @returns {string}
- */
-function createIsDiscoverableQuery() {
-    var date = new Date()
-    var currentUnixTime = Math.round(date.getTime() / 1000)
-    var query = "value.playing_time: " + currentUnixTime + "~*"  //this means greater than equalto
-    //https://orchestrate.io/docs/apiref#search
-    //matches that are not discoverable for any reason are set to isDiscoverable: false
-    query = query + " AND value.isDiscoverable:true"
-    return query
-}
-
-/**
- * generates a lucene OR query for a set of values (theArray)
- * for a specific key (searchKey) to search for
- * @param theArray
- * @param searchKey
- * @returns {string}
- */
-function createFieldORQuery(theArray, searchKey) {
-    var theQuery = searchKey + ": ("
-    theArray.forEach(function (oneItem) {
-        theQuery += "`" + oneItem + "` OR "
-    })
-    theQuery += ")"
-    theQuery = theQuery.substring(0, theQuery.length - 4);
-    return theQuery
 }
 
 /**
@@ -210,25 +276,6 @@ function checkMatchParticipationPromise(matchId, userId) {
     return checkMatchParticipation
 }
 
-
-/**
- * generete the lucene query for min and max skill rating
- *
- * Lucene reference:
- * Your queries can contain as many as ten different buckets in a single Range Aggregate.
- * Each bucket can have numerical min and max values, separated by a tilde character (~).
- * An asterisk may be used to designate a particular range bucket as boundless.
- * For example, the range *~-10 would mean "all values less than negative ten" and
- * the range 100~* would communicate "all values greater than or equal to one hundred".
- *
- * Ya that shit didn't work so I used the range [minRating TO 5] etc. -_- :*
- * @param minRating
- * @param maxRating
- */
-function createSkillRatingQuery(minRating, maxRating) {
-    var skillQuery = "value.skill_level_min:[" + minRating + " TO 5] AND " + "value.skill_level_max:[1 TO " + maxRating + "]"
-    return skillQuery
-}
 
 /**
  * get featured matches
@@ -370,22 +417,6 @@ function createConnection(user1id, user2id) {
 }
 
 /**
- * create an orchestrate Neo4J graph connection
- * @param from
- * @param fromKey
- * @param to
- * @param toKey
- * @param relationName
- */
-function createGraphRelation(from, fromKey, to, toKey, relationName) {
-    db.newGraphBuilder()
-        .create()
-        .from(from, fromKey)
-        .related(relationName)
-        .to(to, toKey);
-}
-
-/**
  * Delete a graph relation from orchestrate
  * @param from
  * @param fromKey
@@ -465,20 +496,6 @@ function getTotalConnections(userId) {
 }
 
 /**
- *
- * @param collection
- * @param id
- * @param relation
- * @returns {GraphBuilder}
- */
-function getGraphResultsPromise(collection, id, relation) {
-    return db.newGraphReader()
-        .get()
-        .from(collection, id)
-        .related(relation)
-}
-
-/**
  * takes a json payload and inserts flags:
  * hasMale, hasFemale, hasCustomGender
  * @param payload
@@ -494,6 +511,233 @@ function updateGenderInPayload(payload, gender) {
         payload["hasCustomGender"] = true
     }
     return payload
+}
+
+/**
+ * Dispatches to firebase the event and information
+ * that a match has been created
+ */
+function notifyMatchCreated(matchId, playing_time) {
+    var newMatches = myFirebaseRef.child(constants.firebaseNodes.newMatches).push();
+    newMatches.set({
+        matchId: matchId,
+        playing_time: playing_time
+    });
+}
+
+/**
+ * creates cron jobs that will create recommendations
+ * for the participants of the match
+ * @param matchId
+ * @param playing_time
+ */
+function createRecommendationCron(matchId, playing_time) {
+    //create new cron for the playing_time + constants.recommendation.dispatchTime
+    //get all match participants
+    //create recommendation objects for each user in firebase
+    var matchPromise = getMatchPromise(matchId)
+    var participantsPromise = getMatchParticipantsPromise(matchId)
+
+    kew.all([matchPromise, participantsPromise])
+        .then(function (results) {
+            var match = results[0]
+            var participants = results[1]
+            if (match.body.slots_filled == 2) {
+                //1 on 1 match
+                var participant1 = participants.results.body[0];
+                var participant2 = participants.results.body[1];
+                createRateYourOpponentReco(participant1.key, participant2.key, participant2.value.name)
+                createRateYourOpponentReco(participant2.key, participant1.key, participant1.value.name)
+            } else {
+                //team match (more than 2 players)
+                participants.results.body.forEach(function (participant) {
+                    createRateTeamReco(participant.key, matchId, match.title)
+                })
+            }
+            if (match.isFacility) {
+                getFacilityOfMatchPromise
+                    .then(function (result) {
+                        var facilityId = result.body.results[0].path.key
+                        var facility = result.body.results[0].path.value
+                        participants.results.body.forEach(function (participant) {
+                            createRateFacilityReco(participant.key, facilityId, facility)
+                        })
+                    })
+            }
+        })
+}
+
+function createRateYourOpponentReco(fromUserId, toUserId, toUserName) {
+    var payload = {
+        'type': constants.recommendations.type.OneOnOne, //the type of Recommendation rating
+        'message': 'Rate your opponent! Would you like to play with ' + toUserName + " again?",
+        'isRated': false, //set to true once user has rated this
+        'rating': constants.recommendations.rating.notPlayed, //front End will switch this to "thumbsUp" or "thumbsDown",
+        fromUserId: fromUserId,
+        'toUserId': toUserId
+    }
+    pushRecoToFirebase(payload, fromUserId)
+}
+
+function parseOneOnOneReco(recoObj) {
+    rateUser(recoObj.rating, recoObj.toUserId)
+    incrementMatchesPlayed(recoObj.fromUserId)
+}
+
+function createRateFacilityReco(fromUserId, toFacilityId, facilityName) {
+    var payload = {
+        'type': constants.recommendations.type.facility, //the type of Recommendation rating
+        'message': 'How would you like to rate the facility ' + facilityName + "?",
+        'isRated': false, //set to true once user has rated this
+        'rating': constants.recommendations.rating.notPlayed, //front End will switch this to "thumbsUp" or "thumbsDown" or "notPlayed",
+        fromUserId: fromUserId,
+        toFacilityId: toFacilityId
+    }
+    pushRecoToFirebase(payload, fromUserId)
+}
+
+function parseFacilityReco(recoObj) {
+    rateFacility(recoObj.rating, recoObj.toFacilityId)
+}
+
+function createRateTeamReco(fromUserId, toMatchId, toMatchName) {
+    var payload = {
+        'type': constants.recommendations.type.team, //the type of Recommendation rating
+        'message': 'Rate the match "' + toMatchName + '"! Would you play with this team again?',
+        'isRated': false, //set to true once user has rated this
+        'rating': constants.recommendations.rating.notPlayed, //front End will switch this to "thumbsUp" or "thumbsDown" or "notPlayed",
+        'toMatchId': toMatchId,
+        'fromUserId': fromUserId
+    }
+    pushRecoToFirebase(payload, fromUserId)
+}
+
+function parseTeamReco(recoObj) {
+    getMatchParticipantsPromise(recoObj.toMatchId)
+        .then(function (results) {
+            var participantIds = results.body.results.map(function (aResult) {
+                return aResult.path.key
+            })
+
+            //If you've rated, you've played
+            //because, you know, users are honest :)
+            if (recoObj.rating != constants.recommendations.rating.notPlayed) {
+                incrementMatchesPlayed(recoObj.fromUserId)
+            }
+            participantIds.splice(recoObj.fromUserId, 1)
+            participantIds.forEach(function (participantId) {
+                rateUser(recoObj.rating, participantId)
+            })
+        })
+}
+
+/**
+ * Parse each recommendation marked by user
+ * and do the needful updates
+ * @param recoObj
+ */
+function parseRecObject(recoObj) {
+    switch (recoObj.type) {
+        case constants.recommendations.type.OneOnOne:
+            parseOneOnOneReco(recoObj)
+            break;
+        case constants.recommendations.type.facility:
+            parseFacilityReco(recoObj)
+            break;
+        case constants.recommendations.type.team:
+            parseTeamReco(recoObj)
+            break;
+        default:
+    }
+}
+
+function rateUser(rating, userId) {
+    var payload = {}
+    db.get('users', userId)
+        .then(function (result) {
+            var totalRatings = result.body.totalRatings
+            var thumbsUps = result.body.thumbsUps
+            var matchesPlayed = result.body.matchesPlayed
+
+            if (rating == constants.recommendations.rating.thumbsUp) {
+                payload = {
+                    totalRatings: totalRatings + 1,
+                    thumbsUps: thumbsUps + 1
+                }
+            } else if (rating == constants.recommendations.rating.thumbsDown) {
+                payload = {
+                    totalRatings: totalRatings + 1
+                }
+            }
+            db.merge('users', userId, payload)
+        })
+}
+
+function rateFacility(rating, facilityId) {
+    var payload = {}
+    getFacilityPromise(facilityId)
+        .then(function (result) {
+            var totalRatings = result.body.totalRatings
+            var thumbsUps = result.body.thumbsUps
+            var matchesPlayed = result.body.matchesPlayed
+
+            if (rating == constants.recommendations.rating.thumbsUp) {
+                payload = {
+                    totalRatings: totalRatings + 1,
+                    thumbsUps: thumbsUps + 1
+                }
+            } else if (rating == constants.recommendations.rating.thumbsDown) {
+                payload = {
+                    totalRatings: totalRatings + 1
+                }
+            }
+            db.merge('facilities', facilityId, payload)
+        })
+}
+
+
+/**
+ * Push a recommendation to Firebase user tree
+ * @param jsonPayload
+ * @param userId
+ */
+function pushRecoToFirebase(jsonPayload, userId) {
+    var newRecoRef = new Firebase(config.firebase.url + "/" + constants.firebase.recommendations + "/" + userId)
+    newRecoRef.push().set(jsonPayload)
+}
+
+function getFacilityOfMatchPromise(matchId) {
+    return getGraphResultsPromise('matches', matchId, 'hostedFacility')
+}
+
+function getMatchPromise(matchId) {
+    return db.get('matches', matchId)
+}
+
+function getFacilityPromise(facilityId) {
+    return db.get('facilities', facilityId)
+}
+
+function getUserPromise(userId) {
+    return db.get('users', userId)
+}
+
+
+/**
+ * get the promise that gets the participants of the matches
+ * @param matchId
+ */
+function getMatchParticipantsPromise(matchId) {
+    return getGraphResultsPromise('matches', matchId, 'participants')
+}
+
+
+function createRecoForFacility(facilityId) {
+    var payload = {}
+}
+
+function createRecoForGroupMatch(matchId) {
+
 }
 
 /**
@@ -513,24 +757,34 @@ exports.generateToken = generateToken;
 exports.randomizer = randomizer;
 exports.toTitleCase = toTitleCase;
 exports.stringToBoolean = stringToBoolean;
+exports.getRandomArbitrary = getRandomArbitrary;
+
 exports.queryJoiner = queryJoiner;
 exports.createDistanceQuery = createDistanceQuery;
 exports.createSportsQuery = createSportsQuery;
 exports.createSkillRatingQuery = createSkillRatingQuery;
 exports.injectId = injectId;
 exports.insertDistance = insertDistance;
-exports.getRandomArbitrary = getRandomArbitrary;
-exports.updateMatchConnections = updateMatchConnections;
-exports.createConnection = createConnection;
-exports.createGraphRelation = createGraphRelation;
-exports.deleteGraphRelation = deleteGraphRelation;
-exports.createRequest = createRequest;
-exports.sendErrors = sendErrors;
 exports.createSearchByIdQuery = createSearchByIdQuery;
+exports.createIsDiscoverableQuery = createIsDiscoverableQuery;
+
+//matches/events
+exports.updateMatchConnections = updateMatchConnections;
 exports.updateGenderInPayload = updateGenderInPayload;
 exports.createGenderQuery = createGenderQuery;
-exports.createIsDiscoverableQuery = createIsDiscoverableQuery;
+exports.createConnection = createConnection;
 exports.getFeaturedMatchesPromise = getFeaturedMatchesPromise;
 exports.incrementMatchesPlayed = incrementMatchesPlayed;
 exports.getTotalConnections = getTotalConnections;
+
+//db
+exports.createGraphRelation = createGraphRelation;
+exports.deleteGraphRelation = deleteGraphRelation;
+exports.sendErrors = sendErrors;
+
+exports.parseRecObject = parseRecObject;
+exports.notifyMatchCreated = notifyMatchCreated;
+exports.createReccomendationCron = createReccomendationCron;
+exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
+exports.createRecoObjectForUser = createRecoObjectForUser;
 exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
