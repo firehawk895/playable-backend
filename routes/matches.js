@@ -183,48 +183,48 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                         var count = results.body.count
                         if (count == 0) {
                             console.log("user determined to be not participating in match")
-                            qbchat.addUserToRoom(roomId, [userId], function (err, result) {
-                                if (err) {
-                                    console.log(err)
-                                    customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503, res)
-                                } else {
-                                    customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
-                                    customUtils.incrementMatchesPlayed(userId)
-                                    db.newGraphBuilder()
-                                        .create()
-                                        .from('users', userId)
-                                        .related('plays')
-                                        .to('matches', matchId)
-                                        .then(function (result) {
-                                            /**
-                                             * You are hoping that orchestrate handles concurrency
-                                             * this sort of modification needs to be safe from race conditions
-                                             */
-                                            var slots = result.value.slots
-                                            var slotsFilled = result.value.slots_filled + 1
-                                            var payload = {
-                                                'slots_filled': slotsFilled
-                                            }
+                            //qbchat.addUserToRoom(roomId, [userId], function (err, result) {
+                            //    if (err) {
+                            //        console.log(err)
+                            //        customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503, res)
+                            //    } else {
+                            customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
+                            //customUtils.incrementMatchesPlayed(userId)
+                            db.newGraphBuilder()
+                                .create()
+                                .from('users', userId)
+                                .related('plays')
+                                .to('matches', matchId)
+                                .then(function (result) {
+                                    /**
+                                     * You are hoping that orchestrate handles concurrency
+                                     * this sort of modification needs to be safe from race conditions
+                                     */
+                                    var slots = result.value.slots
+                                    var slotsFilled = result.value.slots_filled + 1
+                                    var payload = {
+                                        'slots_filled': slotsFilled
+                                    }
 
-                                            //if match is full make it undiscoverable
-                                            if (slots == slotsFilled) {
-                                                payload["isDiscoverable"] = false
-                                            }
+                                    //if match is full make it undiscoverable
+                                    if (slots == slotsFilled) {
+                                        payload["isDiscoverable"] = false
+                                    }
 
-                                            db.merge('matches', payload)
-                                            customUtils.updateMatchConnections(userId, matchId)
+                                    db.merge('matches', payload)
+                                    customUtils.updateMatchConnections(userId, matchId)
 
-                                            responseObj["data"] = result
-                                            res.status(200)
-                                            res.json(responseObj)
-                                        })
-                                        .fail(function (err) {
-                                            responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
-                                            res.status(503)
-                                            res.json(responseObj)
-                                        })
-                                }
-                            })
+                                    responseObj["data"] = result
+                                    res.status(200)
+                                    res.json(responseObj)
+                                })
+                                .fail(function (err) {
+                                    responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
+                                    res.status(503)
+                                    res.json(responseObj)
+                                })
+                            //}
+                            //})
                         } else {
                             customUtils.sendErrors(["You are already part of this match"], 422, res)
                         }
