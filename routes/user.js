@@ -623,7 +623,7 @@ router.post('/login', function (req, res) {
 });
 
 router.post('/logout', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    access_token = req.query.access_token;
+    var access_token = req.query.access_token;
     var responseObj = {};
 
     db.remove('tokens', access_token, true)
@@ -740,17 +740,35 @@ router.get('/', function (req, res, next) {
     var allowUpdate;
 
     var getUserInfo = function (userId, allowUpdate) {
-        db.get('users', userId)
-            .then(function (user) {
+        var getUserStuff = db.get('users', userId)
+
+        /**
+         * The other way to do this is store a property under 1 relation
+         * thats cooler I guess?
+         */
+        var checkIfConnected = customUtils.checkIfConnected
+        var checkIfRequestedToConnect = customUtils.checkIfRequestedToConnect
+        var checkIfWaitingToAccept = customUtils.checkIfWaitingToAccept
+
+        kew.all([getUserStuff, checkIfConnected, checkIfRequestedToConnect, checkIfWaitingToAccept])
+            .then(function (results) {
+                var connectionStatus = constants.connections.status.none;
+                if (results[1])
+                    connectionStatus = constants.connections.status.connected
+                else if (results[2])
+                    connectionStatus = constants.connections.status.requestedToConnect
+                else if (results[3])
+                    connectionStatus = constants.connections.status.waitingToAccept
                 user.body.password = undefined
-                responseObj["data"] = user.body
+                responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
+                responseObj["connectionStatus"] = connectionStatus
                 res.status(200)
                 res.json(responseObj)
             })
             .fail(function (err) {
                 customUtils.sendErrors([err.body.message], 503, res)
-            });
+            })
     }
 
     if (validator.isNull(query_user)) {
@@ -1090,6 +1108,22 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
         })
         .fail(function (err) {
             customUtils.sendErrors([err.body.message], 503, res)
+        })
+}])
+
+router.post('/connect', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var userId = req.user.results[0].value.id;
+    var user2Id = req.body.connectToUserId
+
+    customUtils.createConnectionRequest(userId, user2Id)
+        .then(function (result) {
+            responseObj["data"] = []
+            responseObj["message"] = "Connection request successfully sent"
+            res.status(200)
+            res.json(responseObj)
+        })
+        .fail(function (err) {
+            customUtils.sendErrors([err.body.message], 422, res)
         })
 }])
 

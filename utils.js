@@ -417,6 +417,97 @@ function createConnection(user1id, user2id) {
 }
 
 /**
+ * create a connection request from user1 to user2
+ * @param user1id
+ * @param user2id
+ * @returns {*}
+ */
+function createConnectionRequest(user1id, user2id) {
+    return kew.all([
+        createGraphRelation('users', user1id, 'users', user2id, 'requestedToConnect'),
+        createGraphRelation('users', user2id, 'users', user1id, 'waitingToAccept')
+    ])
+}
+
+/**
+ * user2 accepts user1
+ * @param user1id
+ * @param user2id
+ */
+function acceptConnectionRequest(user1id, user2id) {
+    deleteGraphRelation('users', user1id, 'users', user2id, 'waitingToAccept')
+    deleteGraphRelation('users', user2id, 'users', user1id, 'requestedToConnect')
+    createConnection(user1id, user2id)
+}
+
+function checkIfRequestedToConnect(user1id, user2id) {
+    var thePromise = kew.defer()
+    var query = createGetOneOnOneGraphRelationQuery('users', user1id, 'requestedToConnect', 'users', user2id)
+    db.newSearchBuilder()
+        .collection('users')
+        .query(query)
+        .then(function (result) {
+            if (result.body.count == 1) {
+                thePromise.resolve(true)
+            } else {
+                thePromise.resolve(false)
+            }
+        })
+        .fail(function (err) {
+            thePromise.reject(err)
+        })
+    return thePromise
+}
+
+function checkIfWaitingToAccept(user1id, user2id) {
+    var thePromise = kew.defer()
+    var query = createGetOneOnOneGraphRelationQuery('users', user1id, 'waitingToAccept', 'users', user2id)
+    db.newSearchBuilder()
+        .collection('users')
+        .query(query)
+        .then(function (result) {
+            if (result.body.count == 1) {
+                thePromise.resolve(true)
+            } else {
+                thePromise.resolve(false)
+            }
+        })
+        .fail(function (err) {
+            thePromise.reject(err)
+        })
+    return thePromise
+}
+
+function checkIfConnected(user1id, user2id) {
+    var thePromise = kew.defer()
+    var query = createGetOneOnOneGraphRelationQuery('users', user1id, 'waitingToAccept', 'users', user2id)
+    db.newSearchBuilder()
+        .collection('users')
+        .query(query)
+        .then(function (result) {
+            if (result.body.count == 1) {
+                thePromise.resolve(true)
+            } else {
+                thePromise.resolve(false)
+            }
+        })
+        .fail(function (err) {
+            thePromise.reject(err)
+        })
+    return thePromise
+}
+
+function createConnectionRequestInvite(user1id, user2id) {
+    var payload = {
+        fromUserId: user1id,
+        toUserId: user2id,
+        type: constants.requests.type.connect,
+        status: constants.requests.status.pending
+    }
+    pushRequestToFirebase(payload, user2id)
+}
+
+/**
  * Delete a graph relation from orchestrate
  * @param from
  * @param fromKey
@@ -651,6 +742,26 @@ function parseRecObject(recoObj) {
     }
 }
 
+function parseRequestObject(requestObj) {
+    switch (requestObj.type) {
+        case constants.requests.type.connect:
+            parseConnectRequest(requestObj)
+            break;
+        case constants.requests.type.match:
+            parseFacilityReco(recoObj)
+            break;
+        default:
+    }
+}
+
+function parseConnectRequest(requestObj) {
+    acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
+}
+
+function parseMatchRequest(requestObj) {
+
+}
+
 function rateUser(rating, userId) {
     var payload = {}
     db.get('users', userId)
@@ -706,6 +817,11 @@ function pushRecoToFirebase(jsonPayload, userId) {
     newRecoRef.push().set(jsonPayload)
 }
 
+function pushRequestToFirebase(jsonPayload, userId) {
+    var newRequestRef = new Firebase(config.firebase.url + "/" + constants.firebase.requests + "/" + userId)
+    newRequestRef.push().set(jsonPayload)
+}
+
 function getFacilityOfMatchPromise(matchId) {
     return getGraphResultsPromise('matches', matchId, 'hostedFacility')
 }
@@ -717,11 +833,6 @@ function getMatchPromise(matchId) {
 function getFacilityPromise(facilityId) {
     return db.get('facilities', facilityId)
 }
-
-function getUserPromise(userId) {
-    return db.get('users', userId)
-}
-
 
 /**
  * get the promise that gets the participants of the matches
@@ -787,3 +898,12 @@ exports.notifyMatchCreated = notifyMatchCreated;
 exports.createRecommendationCron = createRecommendationCron;
 exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
 exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
+
+//requests
+exports.createConnectionRequest = createConnectionRequest;
+exports.acceptConnectionRequest = acceptConnectionRequest;
+exports.checkIfRequestedToConnect = checkIfRequestedToConnect;
+exports.checkIfWaitingToAccept = checkIfWaitingToAccept;
+exports.checkIfConnected = checkIfConnected;
+exports.parseRequestObject = parseRequestObject;
+//exports.parseConnectRequest = parseConnectRequest;

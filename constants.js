@@ -38,26 +38,47 @@ module.exports = {
             "isPaid_boolean_message": "isPaid must be true/false",
             "price_invalid_message": "Please enter a valid price of the event"
         },
-        "is_not_image_message" : "The file uploaded is not an image",
+        "is_not_image_message": "The file uploaded is not an image",
         "invalid_sport_type": "The sport entered is an invalid type",
         "invalid_lat_message": "The Lattitude value is invalid",
         "invalid_long_message": "The Longitude value is invalid",
-        "invalid_skill_rating_range_message" : "The skill level must be a valid integer range"
+        "invalid_skill_rating_range_message": "The skill level must be a valid integer range"
     },
-    "firebaseNodes" : {
-        "newMatches" : "matches",
-        "recommendations" : "recommendations"
+    "firebaseNodes": {
+        "newMatches": "matches",
+        "recommendations": "recommendations",
+        "requests": "requests"
     },
-    "recommendations" : {
-        rating : {
+    requests: {
+        type: {
+            connect: "connectRequest",
+            match: "matchRequest"
+        },
+        status: {
+            accepted: "accepted",
+            rejected: "rejected",
+            pending: "pending"
+        }
+    },
+    "recommendations": {
+        rating: {
             "thumbsUp": "thumbsUp",
             "thumbsDown": "thumbsDown",
             "notPlayed": "notPlayed"
         },
-        type : {
-            OneOnOne : "OneOnOne",
-            facility : "facility",
-            team : "team"
+        type: {
+            OneOnOne: "OneOnOne",
+            facility: "facility",
+            team: "team"
+        }
+    },
+    graphRelations: {},
+    connections: {
+        status: {
+            none: "none",
+            connected: "connected",
+            requestedToConnect: "requestedToConnect",
+            waitingToAccept: "waitingToAccept"
         }
     }
 }
