@@ -784,7 +784,6 @@ exports.sendErrors = sendErrors;
 
 exports.parseRecObject = parseRecObject;
 exports.notifyMatchCreated = notifyMatchCreated;
-exports.createReccomendationCron = createReccomendationCron;
+exports.createRecommendationCron = createRecommendationCron;
 exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
-exports.createRecoObjectForUser = createRecoObjectForUser;
 exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
