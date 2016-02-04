@@ -1,6 +1,7 @@
 var constants = require('../constants')
 var validator = require('validator');
 var config = require('../config.js');
+var customUtils = require('../utils.js');
 
 validatePostMatch = function (reqBody) {
     var errors = []
@@ -48,6 +49,36 @@ validatePostMatch = function (reqBody) {
     } else {
         errors.push("The skill level must be a valid range of 1-5")
     }
+    return {
+        errors: errors,
+        reqBody: reqBody
+    }
+}
+
+validatePatchMatch = function (reqBody) {
+    var errors = []
+
+    if (!validator.isNull(reqBody.lat)) {
+        if (validator.isValidLatLong(reqBody.lat))
+            reqBody.lat = parseFloat(reqBody.lat)
+        else
+            errors.push("Enter a valid Latitude")
+    }
+
+    if (!validator.isNull(reqBody.long)) {
+        if (validator.isValidLatLong(reqBody.long))
+            reqBody.long = parseFloat(reqBody.long)
+        else
+            errors.push("Enter a valid Longitude")
+    }
+
+    if (!validator.isNull(reqBody.isFacility)) {
+        if (validator.isBoolean(reqBody.isFacility))
+            reqBody.isFacility = customUtils.stringToBoolean(reqBody.isFacility)
+        else
+            errors.push("isFacility can be true or false only")
+    }
+
     return {
         errors: errors,
         reqBody: reqBody
@@ -227,5 +258,5 @@ validatePostEvent = function (req) {
 
 module.exports = {
     validatePostMatch: validatePostMatch,
-    validatePostEvent: validatePostEvent
+    validatePatchMatch: validatePatchMatch
 }

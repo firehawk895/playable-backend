@@ -48,13 +48,32 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                     res.status(201);
                     res.json(responseObj);
                 })
-                .fail(function(err) {
+                .fail(function (err) {
                     responseObj["errors"] = [err.body.message]
                     res.status(201);
                     res.json(responseObj);
                 })
         }
     );
+}])
+
+router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var responseObj = {}
+    db.newSearchBuilder()
+        .collection("facilities")
+        //.sort('location', 'distance:asc')
+        .query("*")
+        .then(function (results) {
+            responseObj["total_count"] = results.body.total_count
+            responseObj["data"] = customUtils.injectId(results)
+            res.status(200)
+            res.json(responseObj)
+        })
+        .fail(function (err) {
+            responseObj["errors"] = [err.body.message]
+            res.status(503)
+            res.json(responseObj)
+        })
 }])
 
 

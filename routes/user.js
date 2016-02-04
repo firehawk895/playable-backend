@@ -1185,6 +1185,17 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     }
 }])
 
+router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var responseObj = {}
+    customUtils.getMatchHistoryPromise
+        .then(function (results) {
+            var matchHistory = customUtils.injectId(results)
+            responseObj["Data"] = matchHistory
+            res.status(200)
+            res.json(responseObj)
+        })
+}])
+
 router.get('/chatrooms', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     getUsersDialogs(username, function (err, dialogList) {

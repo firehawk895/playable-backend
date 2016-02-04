@@ -124,7 +124,7 @@ function createDistanceQuery(lat, long, radius) {
  * @param eventId
  */
 function createSearchByIdQuery(id) {
-    var searchByIdQuery = "key: `" + id + "`"
+    var searchByIdQuery = "@path.key:" + id + ""
     return searchByIdQuery
 }
 
@@ -281,13 +281,13 @@ function checkMatchParticipationPromise(matchId, userId) {
  * get featured matches
  * @returns {SearchBuilder} promise
  */
-function getFeaturedMatchesPromise() {
+function getFeaturedEventsPromise() {
     var queries = new Array()
     queries.push("value.isFeatured:true")
     queries.push(createIsDiscoverableQuery())
     var finalQuery = queryJoiner(queries)
     var featuredMatches = db.newSearchBuilder()
-        .collection("matches")
+        .collection("events")
         .query(finalQuery)
 
     return featuredMatches
@@ -505,6 +505,17 @@ function createConnectionRequestInvite(user1id, user2id) {
         status: constants.requests.status.pending
     }
     pushRequestToFirebase(payload, user2id)
+}
+
+function createInviteToMatchRequest(fromUserId, fromUserName, matchId, matchTitle, sportName, toUserId) {
+    var payload = {
+        fromUserId: fromUserId,
+        message: "You have been invited to play a game of " + sportName + " by " + fromUserName + "in the match " + matchTitle,
+        toUserId: toUserId,
+        matchid: matchId,
+        type: constants.requests.type.invite
+    }
+    pushRequestToFirebase(payload, toUserId)
 }
 
 /**
@@ -823,7 +834,7 @@ function pushRequestToFirebase(jsonPayload, userId) {
 }
 
 function getFacilityOfMatchPromise(matchId) {
-    return getGraphResultsPromise('matches', matchId, 'hostedFacility')
+    return getGraphResultsPromise('matches', matchId, constants.graphRelations.matches.hostedFacility)
 }
 
 function getMatchPromise(matchId) {
@@ -842,6 +853,10 @@ function getMatchParticipantsPromise(matchId) {
     return getGraphResultsPromise('matches', matchId, 'participants')
 }
 
+function getMatchHistoryPromise(userId) {
+    return getGraphResultsPromise('users', userId, 'plays')
+}
+
 
 function createRecoForFacility(facilityId) {
     var payload = {}
@@ -849,6 +864,18 @@ function createRecoForFacility(facilityId) {
 
 function createRecoForGroupMatch(matchId) {
 
+}
+
+function removeFromMatch(userId, matchId) {
+    return kew.all([
+        deleteGraphRelation('matches', matchId, 'users', userId, 'participants'),
+        deleteGraphRelation('users', userId, 'matches', matchId, 'plays')
+    ])
+}
+
+function connectFacilityToMatch(matchId, facilityId) {
+    createGraphRelation('matches', matchId, 'facilities', facilityId, constants.graphRelations.matches.hostedFacility)
+    createGraphRelation('facilities', facilityId, 'matches', matchId, constants.graphRelations.matches.hasMatches)
 }
 
 /**
@@ -884,9 +911,11 @@ exports.updateMatchConnections = updateMatchConnections;
 exports.updateGenderInPayload = updateGenderInPayload;
 exports.createGenderQuery = createGenderQuery;
 exports.createConnection = createConnection;
-exports.getFeaturedMatchesPromise = getFeaturedMatchesPromise;
+exports.getFeaturedEventsPromise = getFeaturedEventsPromise;
 exports.incrementMatchesPlayed = incrementMatchesPlayed;
 exports.getTotalConnections = getTotalConnections;
+exports.removeFromMatch = removeFromMatch;
+exports.connectFacilityToMatch = connectFacilityToMatch;
 
 //db
 exports.createGraphRelation = createGraphRelation;
@@ -898,6 +927,7 @@ exports.notifyMatchCreated = notifyMatchCreated;
 exports.createRecommendationCron = createRecommendationCron;
 exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
 exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
+exports.getMatchHistoryPromise = getMatchHistoryPromise;
 
 //requests
 exports.createConnectionRequest = createConnectionRequest;
@@ -906,4 +936,5 @@ exports.checkIfRequestedToConnect = checkIfRequestedToConnect;
 exports.checkIfWaitingToAccept = checkIfWaitingToAccept;
 exports.checkIfConnected = checkIfConnected;
 exports.parseRequestObject = parseRequestObject;
+exports.createInviteToMatchRequest = createInviteToMatchRequest;
 //exports.parseConnectRequest = parseConnectRequest;

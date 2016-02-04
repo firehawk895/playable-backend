@@ -52,7 +52,8 @@ module.exports = {
     requests: {
         type: {
             connect: "connectRequest",
-            match: "matchRequest"
+            match: "OneOnOneMatchRequest",
+            invite : "inviteToMatchRequest"
         },
         status: {
             accepted: "accepted",
@@ -72,7 +73,14 @@ module.exports = {
             team: "team"
         }
     },
-    graphRelations: {},
+    graphRelations: {
+        matches : {
+            hostedFacility : 'hostedFacility'
+        },
+        facilities : {
+            hasMatches : 'hasMatches'
+        }
+    },
     connections: {
         status: {
             none: "none",

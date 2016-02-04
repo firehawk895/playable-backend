@@ -23,21 +23,24 @@ var Notifications = require('../notifications');
 
 //TODO: remove sensitive information about host from the json inside the match's host key
 router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
-    qbchat.getSession(function (err, session) {
-        if (err) {
-            console.log("Recreating session");
-            qbchat.createSession(function (err, result) {
-                if (err) {
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
-                } else next();
-            })
-        } else next();
-    })
+    //qbchat.getSession(function (err, session) {
+    //    if (err) {
+    //        console.log("Recreating session");
+    //        qbchat.createSession(function (err, result) {
+    //            if (err) {
+    //                customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+    //            } else next();
+    //        })
+    //    } else next();
+    //})
 }, function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value
     var userId = req.user.results[0].value.id
     var hostGender = req.user.results[0].value.gender
+    var invitedUsersIds = req.body.invitedUserIds
+    var invitedUserIdList = invitedUsersIds.split(',')
+
     //req.checkBody(matchValidation.postMatch)
     var validationResponse = matchValidation.validatePostMatch(req.body);
 
@@ -75,12 +78,12 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 avatarThumb: user.avatarThumb
             },
             isFacility: req.body.isFacility,
+            facilityId: req.body.facilityId,
             type: "match",
             hasMale: false,
             hasFemale: false,
             hasCustomGender: false,
-            isDiscoverable: true,
-            isFeatured: false
+            isDiscoverable: true
         }
 
         payload = customUtils.updateGenderInPayload(payload, hostGender)
@@ -91,6 +94,14 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 responseObj["data"] = payload;
                 res.status(201);
                 res.json(responseObj);
+
+                invitedUserIdList.forEach(function (invitedUserId) {
+                    customUtils.createInviteToMatchRequest(user.id, user.name, payload["id"], payload["title"], payload["sport"], invitedUserId)
+                })
+
+                if (payload.isFacility) {
+                    customUtils.connectFacilityToMatch(payload["id"], payload["facilityId"])
+                }
 
                 /**
                  * The numerous graph relations are so that we
@@ -119,24 +130,24 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                  * The title is appended with <matchRoom>
                  * to differentiate it from <connectionRoom>
                  */
-                qbchat.createRoom(2, payload["title"] + " : <matchRoom>", function (err, newRoom) {
-                    if (err) console.log(err);
-                    else {
-                        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
-                            if (err) console.log(err);
-                        })
-                        db.merge('matches', payload["id"], {"qbId": newRoom._id})
-                            .then(function (result) {
-                                //chatObj["id"] = date.getTime() + "@1";
-                                //chatObj["channelName"] = payload["title"];
-                                //chatObj["channelId"] = newRoom._id;
-                                //notify.emit('wordForChat', chatObj);
-                            })
-                            .fail(function (err) {
-                                console.log(err.body.message);
-                            });
-                    }
-                });
+                    //qbchat.createRoom(2, payload["title"] + " : <matchRoom>", function (err, newRoom) {
+                    //    if (err) console.log(err);
+                    //    else {
+                    //        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
+                    //            if (err) console.log(err);
+                    //        })
+                    //        db.merge('matches', payload["id"], {"qbId": newRoom._id})
+                    //            .then(function (result) {
+                    //                //chatObj["id"] = date.getTime() + "@1";
+                    //                //chatObj["channelName"] = payload["title"];
+                    //                //chatObj["channelId"] = newRoom._id;
+                    //                //notify.emit('wordForChat', chatObj);
+                    //            })
+                    //            .fail(function (err) {
+                    //                console.log(err.body.message);
+                    //            });
+                    //    }
+                    //});
                 customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
             })
             .fail(function (err) {
@@ -148,18 +159,64 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
     }
 }])
 
-router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
-    qbchat.getSession(function (err, session) {
-        if (err) {
-            console.log("Recreating session");
-            qbchat.createSession(function (err, result) {
-                if (err) {
-                    console.log(err)
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
-                } else next();
+router.patch('/', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
+    var responseObj = {}
+    var user = req.user.results[0].value
+    var matchId = req.body.matchId
+    var invitedUsersIds = req.body.invitedUserIds
+
+    var validationResponse = matchValidation.validatePatchMatch(req.body);
+    req.body = validationResponse.reqBody
+    var errors = validationResponse.errors
+
+    if (errors.length > 0) {
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
+    } else {
+        db.merge('matches', matchId.req.body)
+            .then(function (result) {
+                payload["id"] = matchId;
+                responseObj["data"] = req.body;
+                res.status(201);
+                res.json(responseObj);
             })
-        } else next();
-    })
+            .fail(function (err) {
+                customUtils.sendErrors([err.body.message], 503, res)
+            })
+    }
+}])
+
+
+router.post('/remove', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
+    var responseObj = {}
+    var matchId = req.body.matchId
+    var userId = req.body.userId
+
+    customUtils.removeFromMatch(userId, matchId)
+        .then(function (result) {
+            responseObj["data"] = [];
+            res.status(201);
+            res.json(responseObj);
+        })
+        .fail(function (error) {
+            customUtils.sendErrors(["An Unexpected error has occurred. Check again"], 422, res)
+        })
+
+}])
+
+router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
+    //qbchat.getSession(function (err, session) {
+    //    if (err) {
+    //        console.log("Recreating session");
+    //        qbchat.createSession(function (err, result) {
+    //            if (err) {
+    //                console.log(err)
+    //                customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+    //            } else next();
+    //        })
+    //    } else next();
+    //})
 }, function (req, res) {
     console.log("definitely here")
     var matchId = req.body.matchId;
@@ -276,7 +333,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var page = 1
     var limit = 100
 
-    console.log("omg the id is " + userId)
     console.log("default time and isDiscoverable query")
     queries.push(customUtils.createIsDiscoverableQuery())
 
@@ -354,9 +410,16 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     if (req.query.featured) {
         getFeatured = true;
-        promises.push(customUtils.getFeaturedMatchesPromise())
+        promises.push(customUtils.getFeaturedEventsPromise())
     } else {
         //pass a resolved dummy promise so the order of the array is always constant
+        promises.push(kew.resolve([]))
+    }
+
+    //push match participants
+    if (isMatchQuery) {
+        promises.push(customUtils.getMatchParticipantsPromise)
+    } else {
         promises.push(kew.resolve([]))
     }
 
@@ -365,6 +428,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             //result[0] is the main query
             //result[1] is the match participation query (if isMatchQuery is true)
             //result[2] is the featured matches query
+            //result[3] is the match participants
             if (distanceQuery) {
                 results[0] = customUtils.insertDistance(results[0], req.query.lat, req.query.long)
             }
@@ -373,8 +437,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
             //isJoined tells if the current user is part of the match or not
             if (isMatchQuery) {
-                console.log("the results are ")
-                console.log(results[1].body.results[0].path)
                 var count = results[1].body.count
                 console.log("count is " + count)
                 if (count == 0) {
@@ -382,10 +444,12 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 } else {
                     responseObj["isJoined"] = true
                 }
+                var matchParticipants = customUtils.injectId(results[3])
+                responseObj["players"] = matchParticipants
             }
             if (getFeatured) {
-                var featuredMatches = customUtils.injectId(results[2])
-                responseObj["featured"] = featuredMatches
+                var featuredEvents = customUtils.injectId(results[2])
+                responseObj["featuredEvents"] = featuredEvents
             }
             res.status(200)
             res.json(responseObj)
@@ -394,9 +458,5 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             customUtils.sendErrors([err.body.message], 503, res)
         })
 }])
-
-router.get('/test', function (req, res) {
-    console.log(req.query)
-})
 
 module.exports = router;
