@@ -24,7 +24,10 @@ validator.extend('isValidLatLong', function (latOrLong) {
 validateUpdateSports = function (reqBody) {
     var newReqBody = {}
     var errors = []
-    console.log(reqBody)
+    console.log("request body")
+    if(Object.keys(reqBody).length === 0) {
+        errors.push("Waaah beta waah. empty sports bheyjey ho tum. randi chamelion")
+    }
     for (var sportKey in reqBody) {
         if (constants.sports.indexOf(sportKey) <= -1) {
             errors.push("The sport " + sportKey + " is an invalid key")
