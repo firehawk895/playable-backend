@@ -418,7 +418,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     //push match participants
     if (isMatchQuery) {
-        promises.push(customUtils.getMatchParticipantsPromise)
+        promises.push(customUtils.getMatchParticipantsPromise(req.query.matchId))
     } else {
         promises.push(kew.resolve([]))
     }
@@ -444,11 +444,12 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 } else {
                     responseObj["isJoined"] = true
                 }
+                console.log("this is the results -->")
                 var matchParticipants = customUtils.injectId(results[3])
                 responseObj["players"] = matchParticipants
             }
             if (getFeatured) {
-                var featuredEvents = customUtils.injectId(results[2])
+                var featuredEvents = customUtils.injectId(results[2].body)
                 responseObj["featuredEvents"] = featuredEvents
             }
             res.status(200)
