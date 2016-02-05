@@ -730,7 +730,7 @@ router.get('/', function (req, res, next) {
     if (req.query.access_token) next();
     else next('route');
 }, [passport.authenticate('bearer', {session: false}), function (req, res) {
-
+    var userId = req.user.results[0].value.id;
     if (!req.query.limit || req.query.limit < 0) req.query.limit = 10;
     if (!req.query.page || req.query.page < 1) req.query.page = 1;
     var limit = req.query.limit;
@@ -739,16 +739,25 @@ router.get('/', function (req, res, next) {
     var query_user = req.query.userId;
     var allowUpdate;
 
-    var getUserInfo = function (userId, allowUpdate) {
+    if (validator.isNull(query_user)) {
+        customUtils.sendErrors(["Please specify the User ID"], 422, res)
+        return
+    } else {
+        if (query_user == req.user.results[0].value.id)
+            allowUpdate = true;
+        else
+            allowUpdate = false;
+
         var getUserStuff = db.get('users', userId)
 
         /**
          * The other way to do this is store a property under 1 relation
          * thats cooler I guess?
          */
-        var checkIfConnected = customUtils.checkIfConnected
-        var checkIfRequestedToConnect = customUtils.checkIfRequestedToConnect
-        var checkIfWaitingToAccept = customUtils.checkIfWaitingToAccept
+        var checkIfConnected = customUtils.checkIfConnected(userId, req.query.userId)
+        var checkIfRequestedToConnect = customUtils.checkIfRequestedToConnect(userId, req.query.userId)
+        var checkIfWaitingToAccept = customUtils.checkIfWaitingToAccept(userId, req.query.userId)
+
 
         kew.all([getUserStuff, checkIfConnected, checkIfRequestedToConnect, checkIfWaitingToAccept])
             .then(function (results) {
@@ -759,7 +768,7 @@ router.get('/', function (req, res, next) {
                     connectionStatus = constants.connections.status.requestedToConnect
                 else if (results[3])
                     connectionStatus = constants.connections.status.waitingToAccept
-                user.body.password = undefined
+                results[0].body.password = undefined
                 responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
                 responseObj["connectionStatus"] = connectionStatus
@@ -769,17 +778,6 @@ router.get('/', function (req, res, next) {
             .fail(function (err) {
                 customUtils.sendErrors([err.body.message], 503, res)
             })
-    }
-
-    if (validator.isNull(query_user)) {
-        customUtils.sendErrors(["Please specify the User ID"], 422, res)
-        return
-    } else {
-        if (query_user == req.user.results[0].value.id)
-            allowUpdate = true;
-        else
-            allowUpdate = false;
-        getUserInfo(query_user, allowUpdate)
     }
 }]);
 

@@ -17,6 +17,8 @@ var fs = require('fs'),
 var Firebase = require("firebase");
 var myFirebaseRef = new Firebase(config.firebase.url, config.firebase.secret);
 
+var kew = require('kew')
+
 
 /**
  * Orchestrate query wrappers ---------------------------------->
