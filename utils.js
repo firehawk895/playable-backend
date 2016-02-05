@@ -191,8 +191,8 @@ function upload(file, callback) {
                     callback(err);
                 }
                 var info = {
-                    url: "https://s3.amazonaws.com/" + config.s3.bucket + "/" + filename,
-                    urlThumb: "https://s3.amazonaws.com/" + config.s3.bucket + "resized/resized-" + thumb_filename
+                    url: "https://s3-ap-southeast-1.amazonaws.com/" + config.s3.bucket + "/" + filename,
+                    urlThumb: "https://s3-ap-southeast-1.amazonaws.com/" + config.s3.bucket + "resized/resized-" + thumb_filename
                 }
                 callback(info);
             });

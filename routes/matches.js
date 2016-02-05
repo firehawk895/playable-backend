@@ -130,24 +130,24 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                  * The title is appended with <matchRoom>
                  * to differentiate it from <connectionRoom>
                  */
-                    //qbchat.createRoom(2, payload["title"] + " : <matchRoom>", function (err, newRoom) {
-                    //    if (err) console.log(err);
-                    //    else {
-                    //        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
-                    //            if (err) console.log(err);
-                    //        })
-                    //        db.merge('matches', payload["id"], {"qbId": newRoom._id})
-                    //            .then(function (result) {
-                    //                //chatObj["id"] = date.getTime() + "@1";
-                    //                //chatObj["channelName"] = payload["title"];
-                    //                //chatObj["channelId"] = newRoom._id;
-                    //                //notify.emit('wordForChat', chatObj);
-                    //            })
-                    //            .fail(function (err) {
-                    //                console.log(err.body.message);
-                    //            });
-                    //    }
-                    //});
+                qbchat.createRoom(2, payload["title"] + " : <matchRoom>", function (err, newRoom) {
+                    if (err) console.log(err);
+                    else {
+                        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
+                            if (err) console.log(err);
+                        })
+                        db.merge('matches', payload["id"], {"qbId": newRoom._id})
+                            .then(function (result) {
+                                //chatObj["id"] = date.getTime() + "@1";
+                                //chatObj["channelName"] = payload["title"];
+                                //chatObj["channelId"] = newRoom._id;
+                                //notify.emit('wordForChat', chatObj);
+                            })
+                            .fail(function (err) {
+                                console.log(err.body.message);
+                            });
+                    }
+                });
                 customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
             })
             .fail(function (err) {
@@ -206,17 +206,17 @@ router.post('/remove', [passport.authenticate('bearer', {session: false}), funct
 }])
 
 router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
-    //qbchat.getSession(function (err, session) {
-    //    if (err) {
-    //        console.log("Recreating session");
-    //        qbchat.createSession(function (err, result) {
-    //            if (err) {
-    //                console.log(err)
-    //                customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
-    //            } else next();
-    //        })
-    //    } else next();
-    //})
+    qbchat.getSession(function (err, session) {
+        if (err) {
+            console.log("Recreating session");
+            qbchat.createSession(function (err, result) {
+                if (err) {
+                    console.log(err)
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                } else next();
+            })
+        } else next();
+    })
 }, function (req, res) {
     console.log("definitely here")
     var matchId = req.body.matchId;
@@ -224,21 +224,22 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
     var responseObj = {}
 
     db.get('matches', matchId)
-        .then(function (result) {
-            var roomId = result.body.qbId
-            if (result.body.slots == result.body.slots_filled) {
+        .then(function (theMatch) {
+            console.log(theMatch.body)
+            var roomId = theMatch.body.qbId
+            if (theMatch.body.slots == theMatch.body.slots_filled) {
                 responseObj["errors"] = ["The Match is already full. Please contact the host"]
                 res.status(422)
                 res.json(responseObj)
                 return
-            }
-            else {
+            } else {
+                console.log("what")
                 //Check if he has already joined the match
                 customUtils.checkMatchParticipationPromise(matchId, userId)
                     .then(function (results) {
                         console.log("just checked match participation")
                         var count = results.body.count
-                        if (count == 0) {
+                        if (true) {
                             console.log("user determined to be not participating in match")
                             //qbchat.addUserToRoom(roomId, [userId], function (err, result) {
                             //    if (err) {
@@ -257,8 +258,9 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                                      * You are hoping that orchestrate handles concurrency
                                      * this sort of modification needs to be safe from race conditions
                                      */
-                                    var slots = result.value.slots
-                                    var slotsFilled = result.value.slots_filled + 1
+                                    console.log(theMatch.body.slots_filled)
+                                    var slots = theMatch.body.slots
+                                    var slotsFilled = theMatch.body.slots_filled + 1
                                     var payload = {
                                         'slots_filled': slotsFilled
                                     }
@@ -267,11 +269,11 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                                     if (slots == slotsFilled) {
                                         payload["isDiscoverable"] = false
                                     }
-
-                                    db.merge('matches', payload)
+                                    db.merge('matches', matchId, payload)
                                     customUtils.updateMatchConnections(userId, matchId)
 
-                                    responseObj["data"] = result
+                                    responseObj["data"] = []
+                                    responseObj["message"] = "Successfully joined"
                                     res.status(200)
                                     res.json(responseObj)
                                 })
@@ -310,7 +312,7 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
             } else {
                 customUtils.createGraphRelation('matches', matchId, 'users', invitedUserId, 'invitees')
                 customUtils.createGraphRelation('users', invitedUserId, 'matches', matchId, 'invited')
-                customUtils.createRequest('invitedToMatch', invitedUserId, matchId, hostUserId)
+                //customUtils.createRequest('invitedToMatch', invitedUserId, matchId, hostUserId)
                 responseObj["data"] = []
                 responseObj["message"] = ["Users have been invited. Duplicate invites are not sent out."]
                 res.status(200)
