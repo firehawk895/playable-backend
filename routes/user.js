@@ -1186,8 +1186,9 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
 }])
 
 router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var userId = req.user.results[0].value.id;
     var responseObj = {}
-    customUtils.getMatchHistoryPromise
+    customUtils.getMatchHistoryPromise(userId)
         .then(function (results) {
             var matchHistory = customUtils.injectId(results)
             responseObj["Data"] = matchHistory
