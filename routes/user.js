@@ -57,8 +57,8 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
         console.log("updating sports")
         db.merge("users", userId, {
             sports: req.body,
-            hasSelectedSports: true,
-            sportsList: Object.keys(req.body)
+            hasSelectedSports: true
+            //sportsList: Object.keys(req.body)
         })
             .then(function (result) {
                 responseObj["data"] = [];
@@ -1128,10 +1128,11 @@ router.post('/connect', [passport.authenticate('bearer', {session: false}), func
 }])
 
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var userId = req.user.results[0].value.id;
     var queries = new Array();
     var responseObj = {}
 
-    queries.push("*")
+    queries.push(customUtils.createPlayerDiscoverableQuery(userId))
 
     var isDistanceQuery = false;
     if (req.query.lat && req.query.long && req.query.radius) {

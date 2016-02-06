@@ -1,4 +1,5 @@
 var config = require('./config.js');
+var constants = require('./constants')
 
 var crypto = require('crypto');
 var randomString = require('random-string');
@@ -11,7 +12,8 @@ var fs = require('fs'),
     S3FS = require('s3fs'),
     s3fsImpl = new S3FS(config.s3.bucket, {
         accessKeyId: config.s3.access,
-        secretAccessKey: config.s3.secret
+        secretAccessKey: config.s3.secret,
+        ACL: 'public-read'
     });
 
 var Firebase = require("firebase");
@@ -38,6 +40,16 @@ function createGraphRelation(from, fromKey, to, toKey, relationName) {
         .related(relationName)
         .to(to, toKey);
 }
+
+function createGraphRelationPromise(from, fromKey, to, toKey, relationName) {
+    return db.newGraphBuilder()
+        .create()
+        .from(from, fromKey)
+        .related(relationName)
+        .to(to, toKey);
+}
+
+
 
 /**
  *
@@ -89,6 +101,18 @@ function createIsDiscoverableQuery() {
     //https://orchestrate.io/docs/apiref#search
     //matches that are not discoverable for any reason are set to isDiscoverable: false
     query = query + " AND value.isDiscoverable:true"
+    return query
+}
+
+/**
+ * basic query to display users in the users discover section
+ * the user should appear only when he has selected his interested sports
+ * also, exclude the searching user itself from the results
+ * @param userId
+ * @returns {string}
+ */
+function createPlayerDiscoverableQuery(userId) {
+    var query = "value.hasSelectedSports:true AND @path.key:* NOT " + userId
     return query
 }
 
@@ -425,9 +449,10 @@ function createConnection(user1id, user2id) {
  * @returns {*}
  */
 function createConnectionRequest(user1id, user2id) {
+    createConnectionRequestInvite(user1id,user2id)
     return kew.all([
-        createGraphRelation('users', user1id, 'users', user2id, 'requestedToConnect'),
-        createGraphRelation('users', user2id, 'users', user1id, 'waitingToAccept')
+        createGraphRelationPromise('users', user1id, 'users', user2id, 'requestedToConnect'),
+        createGraphRelationPromise('users', user2id, 'users', user1id, 'waitingToAccept')
     ])
 }
 
@@ -826,12 +851,12 @@ function rateFacility(rating, facilityId) {
  * @param userId
  */
 function pushRecoToFirebase(jsonPayload, userId) {
-    var newRecoRef = new Firebase(config.firebase.url + "/" + constants.firebase.recommendations + "/" + userId)
+    var newRecoRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.recommendations + "/" + userId)
     newRecoRef.push().set(jsonPayload)
 }
 
 function pushRequestToFirebase(jsonPayload, userId) {
-    var newRequestRef = new Firebase(config.firebase.url + "/" + constants.firebase.requests + "/" + userId)
+    var newRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId)
     newRequestRef.push().set(jsonPayload)
 }
 
@@ -918,6 +943,9 @@ exports.incrementMatchesPlayed = incrementMatchesPlayed;
 exports.getTotalConnections = getTotalConnections;
 exports.removeFromMatch = removeFromMatch;
 exports.connectFacilityToMatch = connectFacilityToMatch;
+
+//players
+exports.createPlayerDiscoverableQuery = createPlayerDiscoverableQuery;
 
 //db
 exports.createGraphRelation = createGraphRelation;
