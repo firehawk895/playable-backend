@@ -1199,6 +1199,7 @@ router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), 
 }])
 
 router.get('/chatrooms', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var username = req.user.results[0].value.username;
     var responseObj = {}
     getUsersDialogs(username, function (err, dialogList) {
         if (err) {
