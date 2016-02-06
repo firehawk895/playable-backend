@@ -57,7 +57,8 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
         console.log("updating sports")
         db.merge("users", userId, {
             sports: req.body,
-            hasSelectedSports: true
+            hasSelectedSports: true,
+            sportsList: Object.keys(req.body)
         })
             .then(function (result) {
                 responseObj["data"] = [];
@@ -1110,14 +1111,15 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
 }])
 
 router.post('/connect', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var responseObj = {}
     var userId = req.user.results[0].value.id;
-    var user2Id = req.body.connectToUserId
+    var user2Id = req.body.userId
 
     customUtils.createConnectionRequest(userId, user2Id)
         .then(function (result) {
             responseObj["data"] = []
             responseObj["message"] = "Connection request successfully sent"
-            res.status(200)
+            res.status(201)
             res.json(responseObj)
         })
         .fail(function (err) {
