@@ -5,6 +5,12 @@ var customUtils = require('../utils.js');
 
 validatePostMatch = function (reqBody) {
     var errors = []
+
+    if (validator.isNull(reqBody.invitedUsersIds)) {
+        reqBody.invitedUserIdList = []
+    } else {
+        reqBody.invitedUserIdList = reqBody.invitedUsersIds.split(',')
+    }
     if (validator.isNull(reqBody.title))
         errors.push("Title field cannot be empty")
 
@@ -55,6 +61,58 @@ validatePostMatch = function (reqBody) {
     }
 }
 
+/**
+ * when 'fix a match' is clicked
+ * @param reqBody
+ */
+validateFixAMatch = function (reqBody) {
+    var errors = []
+
+    reqBody.slots = 2
+    reqBody.slots_filled = 1
+    reqBody.skill_level_min = 1
+    reqBody.skill_level_max = 5
+
+    //special field -- the user that the person has been invited to
+    if (validator.isNull(reqBody.inviteeId))
+        errors.push("Please specify the invited user (inviteeId)")
+
+    //borrowed validations
+    if (validator.isNull(reqBody.title))
+        errors.push("Title field cannot be empty")
+
+    if (validator.isNull(reqBody.description))
+        errors.push("Description field cannot be empty")
+
+    if (!validator.isIn(reqBody.sport, constants.sports))
+        errors.push("Invalid sport type")
+
+    if (validator.isTimeInFuture(reqBody.playing_time))
+        reqBody.playing_time = parseInt(reqBody.playing_time)
+    else
+        errors.push("Match time should be valid and in the future")
+
+    if (validator.isValidLatLong(reqBody.lat))
+        reqBody.lat = parseFloat(reqBody.lat)
+    else
+        errors.push("Enter a valid Latitude")
+
+    if (validator.isValidLatLong(reqBody.long))
+        reqBody.long = parseFloat(reqBody.long)
+    else
+        errors.push("Enter a valid Longitude")
+
+    if (validator.isBoolean(reqBody.isFacility))
+        reqBody.isFacility = customUtils.stringToBoolean(reqBody.isFacility)
+    else
+        errors.push("isFacility can be true or false only")
+
+    return {
+        errors: errors,
+        reqBody: reqBody
+    }
+}
+
 validatePatchMatch = function (reqBody) {
     var errors = []
 
@@ -94,6 +152,12 @@ validatePostEvent = function (req) {
     var reqBody = req.body
     var errors = []
 
+    if (validator.isNull(reqBody.priceText))
+        errors.push(constants.validations.priceText)
+
+    if (validator.isNull(reqBody.contactUs))
+        errors.push(constants.validations.event.contactUs)
+
     if (validator.isNull(reqFiles.image) || !validator.isImage(reqFiles.image.mimetype))
         errors.push(constants.validations.event.cover_photo_invalid);
 
@@ -114,6 +178,11 @@ validatePostEvent = function (req) {
     else
         errors.push(constants.validations.event.time_in_future)
 
+    if (validator.isTimeInFuture(reqBody.lastRegDate))
+        reqBody.playing_time = parseInt(reqBody.lastRegDate)
+    else
+        errors.push(constants.validations.event.reg_time_in_future)
+
     if (validator.isInt(reqBody.slots, {min: constants.validations.event.slot_min}))
         reqBody.slots = parseInt(reqBody.slots)
     else
@@ -132,11 +201,18 @@ validatePostEvent = function (req) {
 
     if (validator.isBoolean(reqBody.isPaid)) {
         reqBody.isPaid = customUtils.stringToBoolean(reqBody.isPaid)
-        if (reqBody.isPaid && !validator.isInt(reqBody.price, {min: 1}))
+        if (reqBody.isPaid && !validator.isInt(reqBody.price, {min: 1})) {
+            reqBody.price = undefined
             errors.push(constants.validations.event.price_invalid_message)
+        } else {
+            reqBody.price = parseInt(reqBody.price)
+        }
     }
-    else
+    else {
         errors.push(constants.validations.event.isPaid_boolean_message)
+        reqBody.price = undefined
+    }
+
 
     if (!validator.isURL(reqBody.google_form))
         errors.push(constants.validations.event.invalid_url)
@@ -258,5 +334,7 @@ validatePostEvent = function (req) {
 
 module.exports = {
     validatePostMatch: validatePostMatch,
-    validatePatchMatch: validatePatchMatch
+    validatePatchMatch: validatePatchMatch,
+    validatePostEvent: validatePostEvent,
+    validateFixAMatch: validateFixAMatch
 }

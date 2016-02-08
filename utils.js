@@ -7,13 +7,16 @@ var randomString = require('random-string');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
+var qbchat = require('./qbchat.js');
+
+var QB = require('quickblox');
+QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 
 var fs = require('fs'),
     S3FS = require('s3fs'),
     s3fsImpl = new S3FS(config.s3.bucket, {
         accessKeyId: config.s3.access,
-        secretAccessKey: config.s3.secret,
-        ACL: 'public-read'
+        secretAccessKey: config.s3.secret
     });
 
 var Firebase = require("firebase");
@@ -48,7 +51,6 @@ function createGraphRelationPromise(from, fromKey, to, toKey, relationName) {
         .related(relationName)
         .to(to, toKey);
 }
-
 
 
 /**
@@ -114,6 +116,23 @@ function createIsDiscoverableQuery() {
 function createPlayerDiscoverableQuery(userId) {
     var query = "value.hasSelectedSports:true AND @path.key:* NOT " + userId
     return query
+}
+
+/**
+ * get a promise of the user's connections
+ * @param userId
+ * @returns {GraphBuilder}
+ */
+function getUsersConnectionsPromise(userId) {
+    return getGraphResultsPromise('users', userId, constants.graphRelations.users.connections)
+}
+
+/**
+ *
+ * @param userId
+ */
+function getUserPromise(userId) {
+    return db.get('users', userId)
 }
 
 /**
@@ -215,8 +234,8 @@ function upload(file, callback) {
                     callback(err);
                 }
                 var info = {
-                    url: "https://s3-ap-southeast-1.amazonaws.com/" + config.s3.bucket + "/" + filename,
-                    urlThumb: "https://s3-ap-southeast-1.amazonaws.com/" + config.s3.bucket + "resized/resized-" + thumb_filename
+                    url: "https://s3.amazonaws.com/" + config.s3.bucket + "/" + filename,
+                    urlThumb: "https://s3.amazonaws.com/" + config.s3.bucket + "resized/resized-" + thumb_filename
                 }
                 callback(info);
             });
@@ -225,6 +244,65 @@ function upload(file, callback) {
         callback(undefined);
     }
 
+}
+
+/**
+ * /**
+ * This is what a qbDialog looks like:
+ //{ _id: '56794ff9a28f9ab1e5000374',
+        //    created_at: '2015-12-22T13:28:25Z',
+        //    last_message: null,
+        //    last_message_date_sent: null,
+        //    last_message_user_id: null,
+        //    name: 'new concept',
+        //    occupants_ids: [ 5372309, 7522231, 7522239, 7522718, 7523428, 7523544, 7533504 ],
+        //    photo: null,
+        //    silent_ids: [],
+        //    type: 2,
+        //    updated_at: '2015-12-24T15:17:36Z',
+        //    user_id: 5372309,
+        //    xmpp_room_jid: '28196_56794ff9a28f9ab1e5000374@muc.chat.quickblox.com',
+ //    unread_messages_count: 0 }
+ * @param username
+ * @param mentorRoomList
+ * @param callback
+ */
+var getUsersDialogs = function (username, callback) {
+    var params = {
+        'login': username,
+        'password': config.qb.defaultPassword
+    }
+
+    /**
+     * disable require cache to get a new QB object for consumer
+     * so that the sessions dont clash!
+     * TODO: find a better way to do this. perhaps create an instance of QB
+     ***/
+    Object.keys(require.cache).forEach(function (key) {
+        //delete require.cache[key]
+        if (key.indexOf("node_modules/quickblox") > -1) {
+            //console.log(key)
+            delete require.cache[key]
+        }
+    })
+
+    var QBconsumer = require('quickblox');
+    QBconsumer.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
+    QBconsumer.createSession(params, function (err, session) {
+        if (err) {
+            log.error({customMessage: "createSession failed for user", username: username, qbError: err})
+            callback(err, null)
+        } else {
+            QBconsumer.chat.dialog.list({limit: config.qb.paginationLimit, skip: 0}, function (err, res) {
+                if (err) {
+                    log.error({customMessage: "getDialoges failed for user", username: username, qbError: err})
+                    callback(err, null)
+                } else {
+                    callback(null, res.items)
+                }
+            })
+        }
+    })
 }
 
 
@@ -440,6 +518,21 @@ function updateMatchConnections(userId, matchId) {
 function createConnection(user1id, user2id) {
     createGraphRelation('users', user1id, 'users', user2id, 'connections')
     createGraphRelation('users', user2id, 'users', user1id, 'connections')
+
+    kew.all([getUserPromise(user1id), getUserPromise(user2id)])
+        .then(function (results) {
+            var user1QBid = results[0].qbId
+            var user2QBid = results[1].qbId
+
+            qbchat.createRoom(2, constants.chats.oneOnOne + ":::" + user1id + ":::" + user2id, function (err, newRoom) {
+                if (err) console.log(err);
+                else {
+                    qbchat.addUserToRoom(newRoom._id, [user1QBid, user2QBid], function (err, result) {
+                        if (err) console.log(err);
+                    })
+                }
+            })
+        })
 }
 
 /**
@@ -449,23 +542,136 @@ function createConnection(user1id, user2id) {
  * @returns {*}
  */
 function createConnectionRequest(user1id, user2id) {
-    createConnectionRequestInvite(user1id,user2id)
+    createConnectionRequestInvite(user1id, user2id)
     return kew.all([
-        createGraphRelationPromise('users', user1id, 'users', user2id, 'requestedToConnect'),
-        createGraphRelationPromise('users', user2id, 'users', user1id, 'waitingToAccept')
+        createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
+        createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
     ])
 }
 
 /**
+ * the connection request sent from user1 to user2 is now
+ * accepted by user2
+ * refer : createConnectionRequest
  * user2 accepts user1
  * @param user1id
  * @param user2id
  */
 function acceptConnectionRequest(user1id, user2id) {
-    deleteGraphRelation('users', user1id, 'users', user2id, 'waitingToAccept')
-    deleteGraphRelation('users', user2id, 'users', user1id, 'requestedToConnect')
+    deleteGraphRelation('users', user1id, 'users', user2id, constants.graphRelations.users.waitingToAccept)
+    deleteGraphRelation('users', user2id, 'users', user1id, constants.graphRelations.users.requestedToConnect)
     createConnection(user1id, user2id)
 }
+
+/**
+ * 'fix a match' request user1 to user2
+ * @param user1id
+ * @param user2id
+ */
+function createMatchRequest(user1id, user2id, matchPayload) {
+    console.log("createMatchRequest")
+    createMatchRequestInvite(user1id, user2id, matchPayload)
+    return kew.all([
+        createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
+        createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
+    ])
+}
+
+/**
+ * the 'fix a match' request sent from user1 to user2 is now
+ * accepted by user2
+ * refer : createMatchRequest
+ * user2 accepts user1's match request
+ * @param user1id
+ * @param user2id
+ */
+function acceptMatchRequest(user1id, user2id, matchPayload) {
+    deleteGraphRelation('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect)
+    deleteGraphRelation('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
+    createConnection(user1id, user2id)
+    function createOneOnOneFixAmatch(user1id, matchPayload) {
+        db.post('matches', matchPayload)
+            .then(function (result) {
+                matchPayload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+                if (matchPayload.isFacility) {
+                    connectFacilityToMatch(matchPayload["id"], matchPayload["facilityId"])
+                }
+                /**
+                 * The numerous graph relations are so that we
+                 * can access the related data from any entry point
+                 */
+                    //The user hosts the match
+                createGraphRelation('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.hostsMatch)
+                //The user plays in the match
+                createGraphRelation('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.playsMatches)
+                //The match is hosted by user
+                createGraphRelation('matches', payload["id"], 'users', user1id, constants.graphRelations.matches.isHostedByUser)
+                //The match has participants (user)
+                createGraphRelation('matches', payload["id"], 'users', user1id, constants.graphRelations.matches.participants)
+
+                /**
+                 * format of match dialog title:
+                 * <matchRoom>:::matchId
+                 * format of user dialog title:
+                 * <connectionRoom>:::user1id:::user2Id
+                 */
+                qbchat.createRoom(2, constants.chats.matchRoom + ":::" + payload["id"], function (err, newRoom) {
+                    if (err) console.log(err);
+                    else {
+                        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
+                            if (err) console.log(err);
+                        })
+                        db.merge('matches', matchPayload["id"], {"qbId": newRoom._id})
+                            .then(function (result) {
+                                //chatObj["id"] = date.getTime() + "@1";
+                                //chatObj["channelName"] = payload["title"];
+                                //chatObj["channelId"] = newRoom._id;
+                                //notify.emit('wordForChat', chatObj);
+                            })
+                            .fail(function (err) {
+                                console.log(err.body.message);
+                            });
+                    }
+                });
+                notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
+
+            })
+    }
+    createOneOnOneFixAmatch(user1id, matchPayload)
+}
+
+/**
+ * create the chat room for a match
+ * @param hostUserId
+ * @param matchId
+ */
+function createChatRoomForMatch(hostUserId, matchId) {
+    /**
+     * format of match dialog title:
+     * <matchRoom>:::matchId
+     * format of user dialog title:
+     * <connectionRoom>:::user1id:::user2Id
+     */
+    qbchat.createRoom(2, constants.chats.matchRoom + ":::" + matchId, function (err, newRoom) {
+        if (err) console.log(err);
+        else {
+            qbchat.addUserToRoom(newRoom._id, [hostUserId], function (err, result) {
+                if (err) console.log(err);
+            })
+            db.merge('matches', matchId, {"qbId": newRoom._id})
+                .then(function (result) {
+                    //chatObj["id"] = date.getTime() + "@1";
+                    //chatObj["channelName"] = payload["title"];
+                    //chatObj["channelId"] = newRoom._id;
+                    //notify.emit('wordForChat', chatObj);
+                })
+                .fail(function (err) {
+                    console.log(err.body.message);
+                });
+        }
+    });
+}
+
 
 function checkIfRequestedToConnect(user1id, user2id) {
     var thePromise = kew.defer()
@@ -524,12 +730,41 @@ function checkIfConnected(user1id, user2id) {
     return thePromise
 }
 
+/**
+ * Create the invite when a 1 on 1 connect request is sent
+ * @param user1id
+ * @param user2id
+ */
 function createConnectionRequestInvite(user1id, user2id) {
     var payload = {
         fromUserId: user1id,
         toUserId: user2id,
         type: constants.requests.type.connect,
         status: constants.requests.status.pending
+    }
+    pushRequestToFirebase(payload, user2id)
+}
+
+/**
+
+ * @param user1id
+ * @param user2id
+ */
+
+/**
+ * Create the invite when a 'fix a match' request is sent
+ * pretty much like 1 on 1 connect request, with the extra match
+ * @param user1id the requester
+ * @param user2id the invitee
+ * @param matchPayload the match to be created
+ */
+function createMatchRequestInvite(user1id, user2id, matchPayload) {
+    var payload = {
+        fromUserId: user1id,
+        toUserId: user2id,
+        type: constants.requests.type.match,
+        status: constants.requests.status.pending,
+        match: matchPayload
     }
     pushRequestToFirebase(payload, user2id)
 }
@@ -559,21 +794,6 @@ function deleteGraphRelation(from, fromKey, to, toKey, relationName) {
         .from(from, fromKey)
         .related(relationName)
         .to(to, toKey);
-}
-
-/**
- * Create a request
- * @param type
- * @param userId
- * @param matchId
- */
-function createRequest(type, userId, matchId, hostUserId) {
-    switch (type) {
-        case "invitedToMatch":
-            ;
-            ;
-            break;
-    }
 }
 
 function sendErrors(errorArray, statusCode, res) {
@@ -780,13 +1000,18 @@ function parseRecObject(recoObj) {
     }
 }
 
+/**
+ * Listened to a "accepted" request event
+ * Now do the needful for each type of request
+ * @param requestObj
+ */
 function parseRequestObject(requestObj) {
     switch (requestObj.type) {
         case constants.requests.type.connect:
             parseConnectRequest(requestObj)
             break;
         case constants.requests.type.match:
-            parseFacilityReco(recoObj)
+            parseMatchRequest(requestObj)
             break;
         default:
     }
@@ -796,8 +1021,20 @@ function parseConnectRequest(requestObj) {
     acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
 }
 
+/**
+ * refer to createMatchRequestInvite for the format of requestObj
+ * @param requestObj
+ */
 function parseMatchRequest(requestObj) {
+    acceptMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
+    //make them a connection
+    //is the create match reusable?
+    //create a match with the specified stuff
+    //make them join the match
 
+    function createThatFixAmatchKaMatch() {
+
+    }
 }
 
 function rateUser(rating, userId) {
@@ -852,12 +1089,23 @@ function rateFacility(rating, facilityId) {
  */
 function pushRecoToFirebase(jsonPayload, userId) {
     var newRecoRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.recommendations + "/" + userId)
-    newRecoRef.push().set(jsonPayload)
+    newRecoRef.child("data").push().set(jsonPayload)
+    newRecoRef.child("count").transaction(function (current_value) {
+        return (current_value || 0) + 1;
+    });
 }
 
+/**
+ * Push a request to Firebase user tree
+ * @param jsonPayload
+ * @param userId
+ */
 function pushRequestToFirebase(jsonPayload, userId) {
     var newRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId)
-    newRequestRef.push().set(jsonPayload)
+    newRequestRef.child("data").push().set(jsonPayload)
+    newRequestRef.child("count").transaction(function (current_value) {
+        return (current_value || 0) + 1;
+    });
 }
 
 function getFacilityOfMatchPromise(matchId) {
@@ -895,8 +1143,8 @@ function createRecoForGroupMatch(matchId) {
 
 function removeFromMatch(userId, matchId) {
     return kew.all([
-        deleteGraphRelation('matches', matchId, 'users', userId, 'participants'),
-        deleteGraphRelation('users', userId, 'matches', matchId, 'plays')
+        deleteGraphRelation('matches', matchId, 'users', userId, constants.graphRelations.matches.participants),
+        deleteGraphRelation('users', userId, 'matches', matchId, constants.graphRelations.users.playsMatches)
     ])
 }
 
@@ -943,9 +1191,12 @@ exports.incrementMatchesPlayed = incrementMatchesPlayed;
 exports.getTotalConnections = getTotalConnections;
 exports.removeFromMatch = removeFromMatch;
 exports.connectFacilityToMatch = connectFacilityToMatch;
+exports.createMatchRequest = createMatchRequest;
+exports.createChatRoomForMatch = createChatRoomForMatch;
 
 //players
 exports.createPlayerDiscoverableQuery = createPlayerDiscoverableQuery;
+exports.getUsersConnectionsPromise = getUsersConnectionsPromise;
 
 //db
 exports.createGraphRelation = createGraphRelation;
@@ -958,6 +1209,9 @@ exports.createRecommendationCron = createRecommendationCron;
 exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
 exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
 exports.getMatchHistoryPromise = getMatchHistoryPromise;
+
+//chat
+exports.getUsersDialogs = getUsersDialogs
 
 //requests
 exports.createConnectionRequest = createConnectionRequest;

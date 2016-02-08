@@ -14,6 +14,8 @@ var db = oio(config.db.key);
 var qbchat = require('../qbchat.js');
 var kew = require('kew')
 
+var constants = require('../constants.js');
+
 var Notifications = require('../notifications');
 //var notify = new Notifications();
 
@@ -23,23 +25,21 @@ var Notifications = require('../notifications');
 
 //TODO: remove sensitive information about host from the json inside the match's host key
 router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
-    //qbchat.getSession(function (err, session) {
-    //    if (err) {
-    //        console.log("Recreating session");
-    //        qbchat.createSession(function (err, result) {
-    //            if (err) {
-    //                customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
-    //            } else next();
-    //        })
-    //    } else next();
-    //})
+    qbchat.getSession(function (err, session) {
+        if (err) {
+            console.log("Recreating session");
+            qbchat.createSession(function (err, result) {
+                if (err) {
+                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                } else next();
+            })
+        } else next();
+    })
 }, function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value
     var userId = req.user.results[0].value.id
     var hostGender = req.user.results[0].value.gender
-    var invitedUsersIds = req.body.invitedUserIds
-    var invitedUserIdList = invitedUsersIds.split(',')
 
     //req.checkBody(matchValidation.postMatch)
     var validationResponse = matchValidation.validatePostMatch(req.body);
@@ -52,7 +52,6 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
         res.status(422);
         res.json(responseObj);
     } else {
-
         //Note only insert in a denormalized manner the host details of what is required
         //hasMale, hasFemale, hasCustomGender make it simpler to search for games that contain
         //males, females or custom gender participants
@@ -95,7 +94,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 res.status(201);
                 res.json(responseObj);
 
-                invitedUserIdList.forEach(function (invitedUserId) {
+                req.body.invitedUserIdList.forEach(function (invitedUserId) {
                     customUtils.createInviteToMatchRequest(user.id, user.name, payload["id"], payload["title"], payload["sport"], invitedUserId)
                 })
 
@@ -108,17 +107,18 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                  * can access the related data from any entry point
                  */
                     //The user hosts the match
-                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], 'hosts')
+                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.hostsMatch)
                 //The user plays in the match
-                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], 'plays')
+                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.playsMatches)
                 //The match is hosted by user
-                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'isHosted')
+                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.isHostedByUser)
                 //The match has participants (user)
-                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, 'participants')
+                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.participants)
 
                 /**
                  * Create the chat room for the match, and make the host join it
                  */
+                customUtils.createChatRoomForMatch(userId, payload["id"])
                 //var chatObj = {
                 //    "created": date.getTime(),
                 //    "type": "newChannel",
@@ -126,28 +126,6 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 //    "pathTitle": reqBody.title
                 //}
 
-                /**
-                 * The title is appended with <matchRoom>
-                 * to differentiate it from <connectionRoom>
-                 */
-                qbchat.createRoom(2, payload["title"] + " : <matchRoom>", function (err, newRoom) {
-                    if (err) console.log(err);
-                    else {
-                        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
-                            if (err) console.log(err);
-                        })
-                        db.merge('matches', payload["id"], {"qbId": newRoom._id})
-                            .then(function (result) {
-                                //chatObj["id"] = date.getTime() + "@1";
-                                //chatObj["channelName"] = payload["title"];
-                                //chatObj["channelId"] = newRoom._id;
-                                //notify.emit('wordForChat', chatObj);
-                            })
-                            .fail(function (err) {
-                                console.log(err.body.message);
-                            });
-                    }
-                });
                 customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
             })
             .fail(function (err) {
