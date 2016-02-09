@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 
+var constants = require('./constants.js');
+
 var passport = require('passport');
 customUtils = require('./utils.js');
 
@@ -16,17 +18,36 @@ var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.fire
 
 /**
  * Listener:
- * listen to requests marked by every user
+ * listen to requests updated by every user
+ *
+ * Request object format:
+ * refer ro customUtils.createMatchRequestInvite
+ * [Keep documentation updated for a good life.]
+ *  var payload = {
+ *      fromUserId: user1id,
+ *      toUserId: user2id,
+ *      type: constants.requests.type.match,
+ *      status: constants.requests.status.pending,
+ *      match: matchPayload
+ *  }
  */
 recommendationsRef.on("child_added", function (snapshot) {
     var userId = snapshot.key()
+    console.log("hello")
     var userRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId, config.firebase.secret)
     /**
      * Register a child_changed listener for one user's request
      * */
-    userRequestRef.on("child_changed", function (childSnapshot, prevChildKey) {
+    userRequestRef.child("data").on("child_changed", function (childSnapshot, prevChildKey) {
+        console.log("child_changed of request")
         var requestObj = childSnapshot.val()
-        customUtils.parseRequestObject(requestObj)
+        console.log(requestObj)
+
+        if (requestObj.status == constants.requests.status.accepted) {
+            console.log("status switched to accepted")
+            customUtils.parseRequestObject(requestObj)
+        }
+
     })
 })
 

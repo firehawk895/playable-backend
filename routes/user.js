@@ -29,6 +29,7 @@ var date = new Date();
 var now = date.getTime();
 
 var CronJob = require('cron').CronJob;
+var matchValidation = require('../validations/Match.js');
 
 var userValidation = require('../validations/User.js');
 
@@ -469,7 +470,9 @@ router.post('/signup', function (req, res, next) {
                         "created": date.getTime(),
                         "cover": constants.cover,
                         "hasSelectedSports": false,
-                        "matchesPlayed": 0
+                        "matchesPlayed": 0,
+                        totalRatings: 0,
+                        thumbsUps: 0
                     };
 
                     qbchat.createUser({
@@ -693,7 +696,6 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
                 }
             }
         )
-
     }
 }]);
 
@@ -732,10 +734,6 @@ router.get('/', function (req, res, next) {
     else next('route');
 }, [passport.authenticate('bearer', {session: false}), function (req, res) {
     var userId = req.user.results[0].value.id;
-    if (!req.query.limit || req.query.limit < 0) req.query.limit = 10;
-    if (!req.query.page || req.query.page < 1) req.query.page = 1;
-    var limit = req.query.limit;
-    var offset = (limit * (req.query.page - 1));
     var responseObj = {};
     var query_user = req.query.userId;
     var allowUpdate;
@@ -755,24 +753,12 @@ router.get('/', function (req, res, next) {
          * The other way to do this is store a property under 1 relation
          * thats cooler I guess?
          */
-        var checkIfConnected = customUtils.checkIfConnected(userId, req.query.userId)
-        var checkIfRequestedToConnect = customUtils.checkIfRequestedToConnect(userId, req.query.userId)
-        var checkIfWaitingToAccept = customUtils.checkIfWaitingToAccept(userId, req.query.userId)
-
-
-        kew.all([getUserStuff, checkIfConnected, checkIfRequestedToConnect, checkIfWaitingToAccept])
+        kew.all([getUserStuff, customUtils.getConnectionStatusPromise])
             .then(function (results) {
-                var connectionStatus = constants.connections.status.none;
-                if (results[1])
-                    connectionStatus = constants.connections.status.connected
-                else if (results[2])
-                    connectionStatus = constants.connections.status.requestedToConnect
-                else if (results[3])
-                    connectionStatus = constants.connections.status.waitingToAccept
                 results[0].body.password = undefined
                 responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
-                responseObj["connectionStatus"] = connectionStatus
+                responseObj["connectionStatus"] = results[1]
                 res.status(200)
                 res.json(responseObj)
             })
@@ -1061,55 +1047,22 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 
 router.get('/connections', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var userId = req.user.results[0].value.id;
-    var removeMatchInvitees = false
-    var matchPlayers = []
     var responseObj = {}
 
-    db.newGraphReader()
-        .get()
-        .from('users', userId)
-        .related('connections')
+    customUtils.getUsersConnectionsPromise
         .then(function (userResults) {
-            if (req.query.matchId) {
-                /**
-                 * the query has a matchId
-                 * remove the already invited participants in that match from that list
-                 */
-                db.newGraphReader()
-                    .get()
-                    .from('matches', req.query.matchId)
-                    .related('invitees')
-                    .then(function (inviteeResults) {
-
-                        var inviteeResultsId = inviteeResults.map(function (inviteeResult) {
-                            return inviteeResult.path.key
-                        })
-
-                        var filteredConnections = []
-                        userResults.forEach(function (userResult) {
-                            if (!(inviteeResultsId[userResult.path.key] > -1))
-                                filteredConnections.push(userResult)
-                        })
-                        responseObj["data"] = customUtils.injectId(filteredConnections)
-                        res.status(200)
-                        res.json(responseObj)
-                    })
-                    .fail(function (err) {
-                        responseObj["data"] = customUtils.injectId(userResults)
-                        res.status(200)
-                        res.json(responseObj)
-                    })
-            } else {
-                responseObj["data"] = customUtils.injectId(userResults)
-                res.status(200)
-                res.json(responseObj)
-            }
+            responseObj["data"] = customUtils.injectId(userResults)
+            res.status(200)
+            res.json(responseObj)
         })
         .fail(function (err) {
             customUtils.sendErrors([err.body.message], 503, res)
         })
 }])
 
+/**
+ * API to send a connect request to a user
+ */
 router.post('/connect', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     var userId = req.user.results[0].value.id;
@@ -1125,6 +1078,36 @@ router.post('/connect', [passport.authenticate('bearer', {session: false}), func
         .fail(function (err) {
             customUtils.sendErrors([err.body.message], 422, res)
         })
+}])
+
+/**
+ * API to send a fix a match request to a user
+ */
+router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var responseObj = {}
+    var userId = req.user.results[0].value.id;
+
+    //req.checkBody(matchValidation.postMatch)
+    var validationResponse = matchValidation.validateFixAMatch(req.body);
+
+    req.body = validationResponse.reqBody
+    var errors = validationResponse.errors
+    var inviteeId = req.body.inviteeId
+
+    if (errors.length > 0) {
+        customUtils.sendErrors(errors, 422, res)
+    } else {
+        customUtils.createMatchRequest(userId, inviteeId, req.body)
+            .then(function (result) {
+                responseObj["data"] = []
+                responseObj["message"] = "Fix A Match request successfully sent"
+                res.status(201)
+                res.json(responseObj)
+            })
+            .fail(function (err) {
+                customUtils.sendErrors([err.body.message], 422, res)
+            })
+    }
 }])
 
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
@@ -1198,20 +1181,6 @@ router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), 
         })
 }])
 
-router.get('/chatrooms', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var username = req.user.results[0].value.username;
-    var responseObj = {}
-    getUsersDialogs(username, function (err, dialogList) {
-        if (err) {
-            customUtils.sendErrors(["Unable to get your chat rooms", err], 503, res)
-        } else {
-            responseObj["data"] = dialogList;
-            res.status(200);
-            res.json(responseObj);
-        }
-    })
-}])
-
 var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
     var responseObj = {};
     var id = customUtils.generateToken(8)
@@ -1241,7 +1210,9 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
         "created": date.getTime(),
         "cover": constants.cover,
         "hasSelectedSports": false,
-        "matchesPlayed": 0
+        "matchesPlayed": 0,
+        totalRatings: 0,
+        thumbsUps: 0
     };
 
     qbchat.createUser({
@@ -1345,7 +1316,9 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "cover": payload['cover'],
         "gender": payload["gender"],
         "hasSelectedSports": false,
-        "matchesPlayed": 0
+        "matchesPlayed": 0,
+        totalRatings: 0,
+        thumbsUps: 0
     };
 
     qbchat.createUser({
@@ -1449,64 +1422,5 @@ var generateTokenAndLogin = function (user, res) {
                 })
         })
 };
-
-/**
- * /**
- * This is what a qbDialog looks like:
- //{ _id: '56794ff9a28f9ab1e5000374',
-        //    created_at: '2015-12-22T13:28:25Z',
-        //    last_message: null,
-        //    last_message_date_sent: null,
-        //    last_message_user_id: null,
-        //    name: 'new concept',
-        //    occupants_ids: [ 5372309, 7522231, 7522239, 7522718, 7523428, 7523544, 7533504 ],
-        //    photo: null,
-        //    silent_ids: [],
-        //    type: 2,
-        //    updated_at: '2015-12-24T15:17:36Z',
-        //    user_id: 5372309,
-        //    xmpp_room_jid: '28196_56794ff9a28f9ab1e5000374@muc.chat.quickblox.com',
- //    unread_messages_count: 0 }
- * @param username
- * @param mentorRoomList
- * @param callback
- */
-var getUsersDialogs = function (username, callback) {
-    var params = {
-        'login': username,
-        'password': config.qb.defaultPassword
-    }
-
-    /**
-     * disable require cache to get a new QB object for consumer
-     * so that the sessions dont clash!
-     * TODO: find a better way to do this. perhaps create an instance of QB
-     ***/
-    Object.keys(require.cache).forEach(function (key) {
-        //delete require.cache[key]
-        if (key.indexOf("node_modules/quickblox") > -1) {
-            //console.log(key)
-            delete require.cache[key]
-        }
-    })
-
-    var QBconsumer = require('quickblox');
-    QBconsumer.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
-    QBconsumer.createSession(params, function (err, session) {
-        if (err) {
-            log.error({customMessage: "createSession failed for user", username: username, qbError: err})
-            callback(err, null)
-        } else {
-            QBconsumer.chat.dialog.list({limit: config.qb.paginationLimit, skip: 0}, function (err, res) {
-                if (err) {
-                    log.error({customMessage: "getDialoges failed for user", username: username, qbError: err})
-                    callback(err, null)
-                } else {
-                    callback(null, res.items)
-                }
-            })
-        }
-    })
-}
 
 module.exports = router;

@@ -605,38 +605,15 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 //The user plays in the match
                 createGraphRelation('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.playsMatches)
                 //The match is hosted by user
-                createGraphRelation('matches', payload["id"], 'users', user1id, constants.graphRelations.matches.isHostedByUser)
+                createGraphRelation('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.isHostedByUser)
                 //The match has participants (user)
-                createGraphRelation('matches', payload["id"], 'users', user1id, constants.graphRelations.matches.participants)
+                createGraphRelation('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants)
 
-                /**
-                 * format of match dialog title:
-                 * <matchRoom>:::matchId
-                 * format of user dialog title:
-                 * <connectionRoom>:::user1id:::user2Id
-                 */
-                qbchat.createRoom(2, constants.chats.matchRoom + ":::" + payload["id"], function (err, newRoom) {
-                    if (err) console.log(err);
-                    else {
-                        qbchat.addUserToRoom(newRoom._id, [user.qbId], function (err, result) {
-                            if (err) console.log(err);
-                        })
-                        db.merge('matches', matchPayload["id"], {"qbId": newRoom._id})
-                            .then(function (result) {
-                                //chatObj["id"] = date.getTime() + "@1";
-                                //chatObj["channelName"] = payload["title"];
-                                //chatObj["channelId"] = newRoom._id;
-                                //notify.emit('wordForChat', chatObj);
-                            })
-                            .fail(function (err) {
-                                console.log(err.body.message);
-                            });
-                    }
-                });
+                createChatRoomForMatch(user1id, matchPayload["id"])
                 notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
-
             })
     }
+
     createOneOnOneFixAmatch(user1id, matchPayload)
 }
 
@@ -653,10 +630,20 @@ function createChatRoomForMatch(hostUserId, matchId) {
      * <connectionRoom>:::user1id:::user2Id
      */
     qbchat.createRoom(2, constants.chats.matchRoom + ":::" + matchId, function (err, newRoom) {
-        if (err) console.log(err);
+        if (err) {
+            console.log("error creating the room")
+            console.log(err);
+        }
         else {
+            console.log("bro add ho gaya bro")
+            console.log(hostUserId)
             qbchat.addUserToRoom(newRoom._id, [hostUserId], function (err, result) {
-                if (err) console.log(err);
+                if (err) {
+                    console.log("error making the dude join the room")
+                    console.log(err);
+                } else {
+                    console.log("bro add ho gaya bro")
+                }
             })
             db.merge('matches', matchId, {"qbId": newRoom._id})
                 .then(function (result) {
@@ -670,6 +657,22 @@ function createChatRoomForMatch(hostUserId, matchId) {
                 });
         }
     });
+}
+
+function getConnectionStatusPromise(user1id, user2id) {
+    var connectionStatus = kew.defer()
+    kew.all([checkIfConnected(user1id, user2id), checkIfRequestedToConnect(user1id, user2id), checkIfWaitingToAccept(user1id, user2id)])
+        .then(function (results) {
+            if (results[0])
+                connectionStatus = connectionStatus.resolve(constants.connections.status.connected)
+            else if (results[1])
+                connectionStatus = connectionStatus.resolve(constants.connections.status.requestedToConnect)
+            else if (results[2])
+                connectionStatus = connectionStatus.resolve(constants.connections.status.waitingToAccept)
+            else
+                connectionStatus = connectionStatus.resolve(constants.connections.status.none)
+        })
+    return connectionStatus
 }
 
 
@@ -860,18 +863,6 @@ function updateGenderInPayload(payload, gender) {
         payload["hasCustomGender"] = true
     }
     return payload
-}
-
-/**
- * Dispatches to firebase the event and information
- * that a match has been created
- */
-function notifyMatchCreated(matchId, playing_time) {
-    var newMatches = myFirebaseRef.child(constants.firebaseNodes.newMatches).push();
-    newMatches.set({
-        matchId: matchId,
-        playing_time: playing_time
-    });
 }
 
 /**
@@ -1197,6 +1188,7 @@ exports.createChatRoomForMatch = createChatRoomForMatch;
 //players
 exports.createPlayerDiscoverableQuery = createPlayerDiscoverableQuery;
 exports.getUsersConnectionsPromise = getUsersConnectionsPromise;
+exports.getConnectionStatusPromise = getConnectionStatusPromise;
 
 //db
 exports.createGraphRelation = createGraphRelation;
@@ -1204,7 +1196,6 @@ exports.deleteGraphRelation = deleteGraphRelation;
 exports.sendErrors = sendErrors;
 
 exports.parseRecObject = parseRecObject;
-exports.notifyMatchCreated = notifyMatchCreated;
 exports.createRecommendationCron = createRecommendationCron;
 exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
 exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
@@ -1216,9 +1207,9 @@ exports.getUsersDialogs = getUsersDialogs
 //requests
 exports.createConnectionRequest = createConnectionRequest;
 exports.acceptConnectionRequest = acceptConnectionRequest;
-exports.checkIfRequestedToConnect = checkIfRequestedToConnect;
-exports.checkIfWaitingToAccept = checkIfWaitingToAccept;
-exports.checkIfConnected = checkIfConnected;
+//exports.checkIfRequestedToConnect = checkIfRequestedToConnect;
+//exports.checkIfWaitingToAccept = checkIfWaitingToAccept;
+//exports.checkIfConnected = checkIfConnected;
 exports.parseRequestObject = parseRequestObject;
 exports.createInviteToMatchRequest = createInviteToMatchRequest;
 //exports.parseConnectRequest = parseConnectRequest;

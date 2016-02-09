@@ -31,12 +31,17 @@ module.exports = {
             "description_max_length_message": "Description should be of maximum 1000 characters",
             "description_max_length": 1000,
             "time_in_future": "Event time should be valid and in the future",
-            "slot_min_message": "An event must have more than 1 slot",
-            "slot_min": 2,
+            "reg_time_in_future": "Registration date end should be valid and in the future",
+            "contactUs": "Enter valid contact us details",
+            "priceText": "Enter a description of the price --> 2000Rs for the team",
+            //event mey toh hai hee nahi
+            //"slot_min_message": "An event must have more than 1 slot",
+            //"slot_min": 2,
             "invalid_url": "Please enter a valid URL (possibly a google form) for the event",
             "cover_photo_invalid": "Please upload a valid image for the cover photo",
             "isPaid_boolean_message": "isPaid must be true/false",
-            "price_invalid_message": "Please enter a valid price of the event"
+            "price_invalid_message": "Please enter a valid price of the event",
+            "price_text_null": "Please enter a valid price of the event"
         },
         "is_not_image_message": "The file uploaded is not an image",
         "invalid_sport_type": "The sport entered is an invalid type",
@@ -45,15 +50,18 @@ module.exports = {
         "invalid_skill_rating_range_message": "The skill level must be a valid integer range"
     },
     "firebaseNodes": {
-        "newMatches": "matches",
         "recommendations": "recommendations",
-        "requests": "requests"
+        "requests": "requests",
+        "events" :{
+            "newMatches": "events/matches"
+        },
+        notifications : "notifications"
     },
     requests: {
         type: {
             connect: "connectRequest",
             match: "OneOnOneMatchRequest",
-            invite : "inviteToMatchRequest"
+            invite: "inviteToMatchRequest"
         },
         status: {
             accepted: "accepted",
@@ -74,11 +82,20 @@ module.exports = {
         }
     },
     graphRelations: {
-        matches : {
-            hostedFacility : 'hostedFacility'
+        matches: {
+            hostedFacility: 'hostedFacility',
+            participants: 'participants',
+            isHostedByUser: 'isHosted'
         },
-        facilities : {
-            hasMatches : 'hasMatches'
+        facilities: {
+            hasMatches: 'hasMatches'
+        },
+        users: {
+            connections: "connections",
+            playsMatches: 'plays',
+            hostsMatch: 'hosts',
+            requestedToConnect: "requestedToConnect",
+            waitingToAccept: "waitingToAccept"
         }
     },
     connections: {
@@ -88,5 +105,40 @@ module.exports = {
             requestedToConnect: "requestedToConnect",
             waitingToAccept: "waitingToAccept"
         }
+    },
+    events: {
+        matches : {
+            created : "events/matches/created"
+        },
+        users : {
+            created : "events/users/created"
+        },
+        events : {
+            created : "events/events/created",
+            userBooked : "events/events/userBooked"
+        },
+        requests : {
+            sent : {
+                connect : "events/requests/sent/connect",
+                fixAmatch : "events/requests/sent/fixAmatch",
+                inviteToMatch : "events/requests/sent/inviteToMatch"
+            },
+            accepted : {
+                connect : "events/requests/sent/connect",
+                fixAmatch : "events/requests/sent/fixAmatch",
+                inviteToMatch : "events/requests/sent/inviteToMatch"
+            }
+        },
+        chats : {
+            message : "events/chats/message"
+        }
+    },
+    /**
+     * These constants are injected into the
+     * chat room's name so the chatdialog can be identified
+     */
+    chats: {
+        oneOnOne: '<oneOnOneRoom>',
+        matchRoom: '<matchRoom>'
     }
 }

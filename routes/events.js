@@ -33,14 +33,15 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
             sub_title: req.body.sub_title,
             description: req.body.description,
             sport: req.body.sport,
-            skill_level_min: req.body.skill_level_min,
-            skill_level_max: req.body.skill_level_max,
             playing_time: req.body.playing_time,
-            slots_filled: 0,
-            slots: req.body.slots,
+            lastRegDate: req.body.lastRegDate,
+            contactUs: req.body.contactUs,
+            //slots_filled: 0,
+            //slots: req.body.slots,
             location_name: req.body.location_name,
             paid: req.body.paid,
             price: req.body.price,
+            priceText : req.body.priceText,
             location: {
                 lat: req.body.lat,
                 long: req.body.long
@@ -49,19 +50,23 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
             type: "Event"
         }
 
-        db.post('events', payload)
-            .then(function (result) {
-                payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
-                responseObj["data"] = payload;
-                res.status(201);
-                res.json(responseObj);
-            })
-            .fail(function (err) {
-                responseObj["errors"] = [err.body.message];
-                res.status(422);
-                res.json(responseObj);
-            })
-        //TODO: isFacility is true, set up graph relation and access codes
+        customUtils.upload(req.files.image, function (coverPhotoInfo) {
+            console.log(coverPhotoInfo)
+            payload["coverPhoto"] = coverPhotoInfo.url
+            payload["coverPhotoThumb"] = coverPhotoInfo.urlThumb
+            db.post('events', payload)
+                .then(function (result) {
+                    payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+                    responseObj["data"] = payload;
+                    res.status(201);
+                    res.json(responseObj);
+                })
+                .fail(function (err) {
+                    responseObj["errors"] = [err.body.message];
+                    res.status(422);
+                    res.json(responseObj);
+                })
+        })
     }
 }])
 
@@ -92,17 +97,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         console.log("we have a distance query")
         queries.push(customUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
         isDistanceQuery = true;
-    }
-
-    if (req.query.sports) {
-        console.log("we have a sports filter")
-        var sportsArray = req.query.sports.split(',');
-        queries.push(customUtils.createSportsQuery(sportsArray))
-    }
-
-    if (req.query.skill_level_min && req.query.skill_level_max) {
-        console.log("we have a skill level filter")
-        queries.push(customUtils.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
     }
 
     var theFinalQuery = customUtils.queryJoiner(queries)

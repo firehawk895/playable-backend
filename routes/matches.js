@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 var passport = require('passport');
-customUtils = require('../utils.js');
+customUtils = mod('utils');
 
 var config = require('../config.js');
 //var config = require('../models/Match.js');
@@ -16,7 +16,7 @@ var kew = require('kew')
 
 var constants = require('../constants.js');
 
-var Notifications = require('../notifications');
+//var Notifications = require('../notifications');
 //var notify = new Notifications();
 
 //var expressValidator = require('express-validator')

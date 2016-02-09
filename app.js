@@ -2,6 +2,9 @@
  * TODO: switch to schema based validation
  */
 var express = require('express');
+global.mod = function (file){
+    return require ("./" + file)
+}
 var path = require('path');
 var fs = require('fs')
 var morgan = require('morgan');
@@ -18,9 +21,13 @@ var matches = require('./routes/matches');
 var facilities = require('./routes/facilities');
 var sports = require('./routes/sports');
 var events = require('./routes/events');
+var chats = require('./routes/chats');
 
 var config = require('./config.js');
 var customUtils = require('./utils.js');
+
+var requests = require('./requests');
+var recommendations = require('./recommendations');
 
 //----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');
@@ -31,7 +38,7 @@ validator.extend('isTimeInFuture', function (time) {
     var date = new Date()
     var currentTime = date.getTime()
     console.log(currentTime)
-    if (parseInt(time) > (currentTime / 1000))
+    if (validator.isInt(time) && parseInt(time) > (currentTime / 1000))
         return true
     else
         return false
@@ -121,6 +128,7 @@ app.use('/matches', matches);
 app.use('/facilities', facilities);
 app.use('/sports', sports);
 app.use('/events', events);
+app.use('/chats', chats);
 
 
 app.all('/ping', function (req, res) {

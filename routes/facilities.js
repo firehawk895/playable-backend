@@ -32,6 +32,10 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
         function (err) {
             // All tasks are done now
             var payload = {
+                //sports : req.body.sports,
+                timings : req.body.timings,
+                contactEmail : req.body.contactEmail,
+                contactNumber: req.body.contactNumber,
                 name: req.body.name,
                 location_name: req.body.location_name,
                 location: {
@@ -50,7 +54,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                 })
                 .fail(function (err) {
                     responseObj["errors"] = [err.body.message]
-                    res.status(201);
+                    res.status(503);
                     res.json(responseObj);
                 })
         }

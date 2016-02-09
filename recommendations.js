@@ -3,6 +3,7 @@ var router = express.Router();
 
 var passport = require('passport');
 customUtils = require('./utils.js');
+var constants = require('./constants.js');
 
 var config = require('./config.js');
 //var config = require('../models/Match.js');
@@ -14,8 +15,8 @@ var db = oio(config.db.key);
 var qbchat = require('./qbchat.js');
 var kew = require('kew')
 var Firebase = require("firebase");
-var newMatchesRef = new Firebase(config.firebase.url + "/" + constants.firebase.newMatches)
-var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebase.recommendations)
+var newMatchesRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.newMatches)
+var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.recommendations)
 
 /**
  * listener:
@@ -26,7 +27,7 @@ newMatchesRef.on("child_added", function (snapshot) {
      * dispatch recommendations rating requests for each user
      */
     var newMatchObj = snapshot.val()
-    customUtils.createReccomendationCron(newMatchObj.matchId, newMatchObj.playing_time)
+    customUtils.createRecommendationCron(newMatchObj.matchId, newMatchObj.playing_time)
 })
 
 /**
