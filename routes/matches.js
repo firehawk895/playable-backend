@@ -11,7 +11,7 @@ var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-var qbchat = require('../qbchat.js');
+var qbchat = mod('qbchat.js');
 var kew = require('kew')
 
 var constants = require('../constants.js');
@@ -217,7 +217,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                     .then(function (results) {
                         console.log("just checked match participation")
                         var count = results.body.count
-                        if (true) {
+                        if (count == 0) {
                             console.log("user determined to be not participating in match")
                             //qbchat.addUserToRoom(roomId, [userId], function (err, result) {
                             //    if (err) {

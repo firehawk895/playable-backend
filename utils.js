@@ -375,9 +375,16 @@ function createGenderQuery(genderArray) {
  */
 function checkMatchParticipationPromise(matchId, userId) {
     var checkMatchParticipation =
-        db.newSearchBuilder("*")
+        db.newSearchBuilder()
             .query(createGetOneOnOneGraphRelationQuery('matches', matchId, 'participants', 'users', userId))
     return checkMatchParticipation
+}
+
+function checkEventParticipationPromise(eventId, userId) {
+    var checkEventParticipationPromise =
+        db.newSearchBuilder()
+            .query(createGetOneOnOneGraphRelationQuery('events', eventId, 'participants', 'users', userId))
+    return checkEventParticipationPromise
 }
 
 
@@ -1184,6 +1191,7 @@ exports.removeFromMatch = removeFromMatch;
 exports.connectFacilityToMatch = connectFacilityToMatch;
 exports.createMatchRequest = createMatchRequest;
 exports.createChatRoomForMatch = createChatRoomForMatch;
+exports.checkEventParticipationPromise = checkEventParticipationPromise;
 
 //players
 exports.createPlayerDiscoverableQuery = createPlayerDiscoverableQuery;
