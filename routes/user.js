@@ -1065,10 +1065,10 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
  */
 router.post('/connect', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
-    var userId = req.user.results[0].value.id;
-    var user2Id = req.body.userId
+    var user1 = req.user.results[0].value
+    var user2id = req.body.userId
 
-    customUtils.createConnectionRequest(userId, user2Id)
+    customUtils.createConnectionRequest(user1.id, user2id, user1.name, user1.avatar)
         .then(function (result) {
             responseObj["data"] = []
             responseObj["message"] = "Connection request successfully sent"
@@ -1086,6 +1086,7 @@ router.post('/connect', [passport.authenticate('bearer', {session: false}), func
 router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     var userId = req.user.results[0].value.id;
+    var usersName = req.user.results[0].value.name;
 
     //req.checkBody(matchValidation.postMatch)
     var validationResponse = matchValidation.validateFixAMatch(req.body);
@@ -1097,7 +1098,7 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
     if (errors.length > 0) {
         customUtils.sendErrors(errors, 422, res)
     } else {
-        customUtils.createMatchRequest(userId, inviteeId, req.body)
+        customUtils.createMatchRequest(userId, inviteeId, req.body, usersName)
             .then(function (result) {
                 responseObj["data"] = []
                 responseObj["message"] = "Fix A Match request successfully sent"

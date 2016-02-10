@@ -548,8 +548,8 @@ function createConnection(user1id, user2id) {
  * @param user2id
  * @returns {*}
  */
-function createConnectionRequest(user1id, user2id) {
-    createConnectionRequestInvite(user1id, user2id)
+function createConnectionRequest(user1id, user2id, user1name, user1photo) {
+    createConnectionRequestInvite(user1id, user2id, user1name, user1photo)
     return kew.all([
         createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
         createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
@@ -575,9 +575,9 @@ function acceptConnectionRequest(user1id, user2id) {
  * @param user1id
  * @param user2id
  */
-function createMatchRequest(user1id, user2id, matchPayload) {
+function createMatchRequest(user1id, user2id, matchPayload, user1name) {
     console.log("createMatchRequest")
-    createMatchRequestInvite(user1id, user2id, matchPayload)
+    createMatchRequestInvite(user1id, user2id, matchPayload, user1name)
     return kew.all([
         createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
         createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
@@ -745,12 +745,14 @@ function checkIfConnected(user1id, user2id) {
  * @param user1id
  * @param user2id
  */
-function createConnectionRequestInvite(user1id, user2id) {
+function createConnectionRequestInvite(user1id, user2id, user1name, user1photo) {
     var payload = {
         fromUserId: user1id,
         toUserId: user2id,
         type: constants.requests.type.connect,
-        status: constants.requests.status.pending
+        status: constants.requests.status.pending,
+        msg: user1name + " has requested to connect with you",
+        photo: user1photo
     }
     pushRequestToFirebase(payload, user2id)
 }
@@ -768,12 +770,14 @@ function createConnectionRequestInvite(user1id, user2id) {
  * @param user2id the invitee
  * @param matchPayload the match to be created
  */
-function createMatchRequestInvite(user1id, user2id, matchPayload) {
+function createMatchRequestInvite(user1id, user2id, matchPayload, user1name) {
     var payload = {
         fromUserId: user1id,
         toUserId: user2id,
         type: constants.requests.type.match,
         status: constants.requests.status.pending,
+        photo: "",
+        msg: user1name + " wants to play a game of " + matchPayload.sport + " with you",
         match: matchPayload
     }
     pushRequestToFirebase(payload, user2id)
