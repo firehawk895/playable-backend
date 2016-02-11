@@ -34,8 +34,8 @@ exports.createRoom = function(type, name, cb) {
     });
 };
 
-exports.addUserToRoom = function(roomId, userIds, cb) {
-    QB.chat.dialog.update(roomId, {push_all: {occupants_ids: userIds}},
+exports.addUserToRoom = function(roomId, userQbIds, cb) {
+    QB.chat.dialog.update(roomId, {push_all: {occupants_ids: userQbIds}},
         function(err, result) {
             cb(err, result)
         }

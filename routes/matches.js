@@ -118,15 +118,15 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 /**
                  * Create the chat room for the match, and make the host join it
                  */
-                customUtils.createChatRoomForMatch(userId, payload["id"])
+                customUtils.createChatRoomForMatch(user.qbId, payload["id"])
                 //var chatObj = {
                 //    "created": date.getTime(),
                 //    "type": "newChannel",
                 //    "matchId": payload["id"],
                 //    "pathTitle": reqBody.title
                 //}
-
-                customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
+                customUtils.dispatchEvent(constants.events.matches.created, payload)
+                //customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
             })
             .fail(function (err) {
                 responseObj["errors"] = [err.body.message];

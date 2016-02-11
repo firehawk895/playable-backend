@@ -23,6 +23,7 @@ var Firebase = require("firebase");
 var myFirebaseRef = new Firebase(config.firebase.url, config.firebase.secret);
 
 var kew = require('kew')
+var date = new Date()
 
 
 /**
@@ -288,9 +289,10 @@ var getUsersDialogs = function (username, callback) {
 
     var QBconsumer = require('quickblox');
     QBconsumer.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
+    console.log("Im here")
     QBconsumer.createSession(params, function (err, session) {
         if (err) {
-            log.error({customMessage: "createSession failed for user", username: username, qbError: err})
+            console.log({customMessage: "createSession failed for user", username: username, qbError: err})
             callback(err, null)
         } else {
             QBconsumer.chat.dialog.list({limit: config.qb.paginationLimit, skip: 0}, function (err, res) {
@@ -532,7 +534,10 @@ function createConnection(user1id, user2id) {
             var user2QBid = results[1].qbId
 
             qbchat.createRoom(2, constants.chats.oneOnOne + ":::" + user1id + ":::" + user2id, function (err, newRoom) {
-                if (err) console.log(err);
+                if (err) {
+                    console.log("error creating the one on one room")
+                    console.log(err);
+                }
                 else {
                     qbchat.addUserToRoom(newRoom._id, [user1QBid, user2QBid], function (err, result) {
                         if (err) console.log(err);
@@ -626,10 +631,10 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
 
 /**
  * create the chat room for a match
- * @param hostUserId
+ * @param hostUserQbId
  * @param matchId
  */
-function createChatRoomForMatch(hostUserId, matchId) {
+function createChatRoomForMatch(hostUserQbId, matchId) {
     /**
      * format of match dialog title:
      * <matchRoom>:::matchId
@@ -643,25 +648,25 @@ function createChatRoomForMatch(hostUserId, matchId) {
         }
         else {
             console.log("bro add ho gaya bro")
-            console.log(hostUserId)
-            qbchat.addUserToRoom(newRoom._id, [hostUserId], function (err, result) {
+            console.log(hostUserQbId)
+            qbchat.addUserToRoom(newRoom._id, [hostUserQbId], function (err, result) {
                 if (err) {
                     console.log("error making the dude join the room")
                     console.log(err);
                 } else {
                     console.log("bro add ho gaya bro")
+                    db.merge('matches', matchId, {"qbId": newRoom._id})
+                        .then(function (result) {
+                            //chatObj["id"] = date.getTime() + "@1";
+                            //chatObj["channelName"] = payload["title"];
+                            //chatObj["channelId"] = newRoom._id;
+                            //notify.emit('wordForChat', chatObj);
+                        })
+                        .fail(function (err) {
+                            console.log(err.body.message);
+                        });
                 }
             })
-            db.merge('matches', matchId, {"qbId": newRoom._id})
-                .then(function (result) {
-                    //chatObj["id"] = date.getTime() + "@1";
-                    //chatObj["channelName"] = payload["title"];
-                    //chatObj["channelId"] = newRoom._id;
-                    //notify.emit('wordForChat', chatObj);
-                })
-                .fail(function (err) {
-                    console.log(err.body.message);
-                });
         }
     });
 }
@@ -752,7 +757,8 @@ function createConnectionRequestInvite(user1id, user2id, user1name, user1photo) 
         type: constants.requests.type.connect,
         status: constants.requests.status.pending,
         msg: user1name + " has requested to connect with you",
-        photo: user1photo
+        photo: user1photo,
+        timestamp: date.getTime()
     }
     pushRequestToFirebase(payload, user2id)
 }
@@ -778,7 +784,8 @@ function createMatchRequestInvite(user1id, user2id, matchPayload, user1name) {
         status: constants.requests.status.pending,
         photo: "",
         msg: user1name + " wants to play a game of " + matchPayload.sport + " with you",
-        match: matchPayload
+        match: matchPayload,
+        timestamp: date.getTime()
     }
     pushRequestToFirebase(payload, user2id)
 }
@@ -786,10 +793,11 @@ function createMatchRequestInvite(user1id, user2id, matchPayload, user1name) {
 function createInviteToMatchRequest(fromUserId, fromUserName, matchId, matchTitle, sportName, toUserId) {
     var payload = {
         fromUserId: fromUserId,
-        message: "You have been invited to play a game of " + sportName + " by " + fromUserName + "in the match " + matchTitle,
+        msg: "You have been invited to play a game of " + sportName + " by " + fromUserName + "in the match " + matchTitle,
         toUserId: toUserId,
-        matchid: matchId,
-        type: constants.requests.type.invite
+        matchId: matchId,
+        type: constants.requests.type.invite,
+        timestamp: date.getTime()
     }
     pushRequestToFirebase(payload, toUserId)
 }
@@ -1156,6 +1164,31 @@ function connectFacilityToMatch(matchId, facilityId) {
 }
 
 /**
+ * if the time is within the last 1 minute
+ * this is the definition of recent as far as this method
+ * is concerned
+ * @param timestamp
+ * @returns {boolean}
+ */
+function isRecent(timestamp) {
+    if (timestamp > ((date.getTime() / 1000) - 60))
+        return true
+    else
+        return false
+}
+
+/**
+ * dispatch event to firebase,
+ * where the world can listen to
+ * @param type
+ * @param payload
+ */
+function dispatchEvent(type, payload) {
+    payload["eventTimeStamp"] = date.getTime()
+    myFirebaseRef.child(type).push().set(payload)
+}
+
+/**
  * Time capsule:
  * ----------------------------------------------
  * 11:37 Pm, 27th Jan 2016, Malviya Nagar.
@@ -1215,6 +1248,7 @@ exports.getMatchHistoryPromise = getMatchHistoryPromise;
 
 //chat
 exports.getUsersDialogs = getUsersDialogs
+exports.isRecent = isRecent
 
 //requests
 exports.createConnectionRequest = createConnectionRequest;
@@ -1225,3 +1259,6 @@ exports.acceptConnectionRequest = acceptConnectionRequest;
 exports.parseRequestObject = parseRequestObject;
 exports.createInviteToMatchRequest = createInviteToMatchRequest;
 //exports.parseConnectRequest = parseConnectRequest;
+
+//firebase
+exports.dispatchEvent = dispatchEvent

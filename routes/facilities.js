@@ -43,7 +43,9 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                     long: req.body.long
                 },
                 description: req.body.description,
-                images: images
+                images: images,
+                totalRatings: 0,
+                thumbsUps: 0
             }
             db.post('facilities', payload)
                 .then(function (result) {

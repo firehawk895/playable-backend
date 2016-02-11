@@ -11,11 +11,13 @@ var validation = require('../validations/Match.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
+var async = require('async');
 
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     var userId = req.user.results[0].value.id;
+    var username = req.user.results[0].value.username;
 
     //What you should be doing here is converting the quickblox callback
     //into a promise and avoid asyncing this completely
@@ -26,7 +28,9 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             function (callback) {
                 customUtils.getMatchHistoryPromise(userId)
                     .then(function (results) {
+                        console.log("and this")
                         callback(null, results)
+
                     })
                     .fail(function (err) {
                         callback(err, null)
@@ -35,6 +39,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             function (callback) {
                 customUtils.getUsersConnectionsPromise(userId)
                     .then(function (results) {
+                        console.log("how about this")
                         callback(null, results)
                     })
                     .fail(function (err) {
@@ -43,10 +48,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
             },
             function (callback) {
-                customUtils.getUsersDialogs(userId, function (err, results) {
+                customUtils.getUsersDialogs(username, function (err, results) {
                     if (err) {
                         callback(err, null)
                     } else {
+                        console.log("ok this worked")
                         callback(null, results)
                     }
                 })
@@ -54,49 +60,54 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         ],
         // optional callback
         function (err, results) {
-            //results[0] match history
-            //results[1] get users connection
-            //results[2] get user dialogs
+            if (err) {
+                console.log(err)
+                customUtils.sendErrors(["Retreiving chats failed"], 503, res)
+            } else {
+                //results[0] match history
+                //results[1] get users connection
+                //results[2] get user dialogs
 
-            //--------- Match History Map -----------------------
-            var matchHistory = customUtils.injectId(results[0])
-            var matchHistoryMap = {}
-            matchHistory.forEach(function (match) {
-                matchHistoryMap[match.id] = match
-            })
+                //--------- Match History Map -----------------------
+                var matchHistory = customUtils.injectId(results[0])
+                var matchHistoryMap = {}
+                matchHistory.forEach(function (match) {
+                    matchHistoryMap[match.id] = match
+                })
 
-            //-------- Connections Map --------------------------
-            var connections = customUtils.injectId(results[1])
-            var connectionsMap = {}
-            connections.forEach(function (connection) {
-                connectionsMap[connection["id"]] = connection
-            })
+                //-------- Connections Map --------------------------
+                var connections = customUtils.injectId(results[1])
+                var connectionsMap = {}
+                connections.forEach(function (connection) {
+                    connectionsMap[connection["id"]] = connection
+                })
 
-            //-------- make the sweet chat objects --------------
-            //-------- makhan parsed for the front end ----------
+                //-------- make the sweet chat objects --------------
+                //-------- makhan parsed for the front end ----------
 
-            var dialogs = results[2]
+                var dialogs = results[2]
 
-            var chatObjects = {}
-            chatObjects["oneOnOne"] = []
-            chatObjects["matches"] = []
+                var chatObjects = {}
+                chatObjects["oneOnOne"] = []
+                chatObjects["matches"] = []
 
-            dialogs.forEach(function (dialog) {
-                var chatObj = {
-                    dialog: dialog
-                }
-                if (dialog.name.indexOf(constants.chats.oneOnOne) > -1) {
-                    var theUserId = getOpponentUser(userId)
-                    chatObj["user"] = connectionsMap[theUserId]
-                    chatObjects["oneOnOne"].push(chatObj)
-                } else if (dialog.name.indexOf(constants.chats.matchRoom) > -1) {
-                    var theMatchId = getMatchId(dialog.name)
-                    chatObj["match"] = matchHistoryMap[theMatchId]
-                    chatObjects["matches"].push(chatObj)
-                }
-            })
-            res.status(200)
-            res.json(responseObj)
+                dialogs.forEach(function (dialog) {
+                    var chatObj = {
+                        dialog: dialog
+                    }
+                    if (dialog.name.indexOf(constants.chats.oneOnOne) > -1) {
+                        var theUserId = getOpponentUser(userId)
+                        chatObj["user"] = connectionsMap[theUserId]
+                        chatObjects["oneOnOne"].push(chatObj)
+                    } else if (dialog.name.indexOf(constants.chats.matchRoom) > -1) {
+                        var theMatchId = getMatchId(dialog.name)
+                        chatObj["match"] = matchHistoryMap[theMatchId]
+                        chatObjects["matches"].push(chatObj)
+                    }
+                })
+                res.status(200)
+                res.json(responseObj)
+            }
         });
 }])
 
