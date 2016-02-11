@@ -840,17 +840,17 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
         }
     });
 
-    //if (!validator.isNull(reqBody.location_name)) {
-    if (!validator.isDecimal(reqBody.lat))
-        errors.push("Invalid Lattitude value");
-    else
-        reqBody.lat = parseFloat(reqBody.lat)
+    if (!validator.isNull(reqBody.lat))
+        if (!validator.isValidLatLong(reqBody.lat))
+            errors.push("Invalid Lattitude value");
+        else
+            reqBody.lat = parseFloat(reqBody.lat)
 
-    if (!validator.isDecimal(reqBody.long))
-        errors.push("Invalid Longitude value");
-    else
-        reqBody.long = parseFloat(reqBody.long)
-    //}
+    if (!validator.isNull(reqBody.long))
+        if (!validator.isDecimal(reqBody.long))
+            errors.push("Invalid Longitude value");
+        else
+            reqBody.long = parseFloat(reqBody.long)
 
     if (!validator.isNull(reqBody.name))
         if (!reqBody.name.match(/\w*/g)) errors.push("Name contains illegal characters");
