@@ -27,6 +27,7 @@ var db = oio(config.db.key);
 
 var date = new Date();
 var now = date.getTime();
+var bunyan = require('bunyan');
 var log = bunyan.createLogger({
     name: 'users',
     streams: [
