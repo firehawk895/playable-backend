@@ -1178,13 +1178,44 @@ function isRecent(timestamp) {
 }
 
 /**
+ *
+ * @param userIdList
+ * @returns {!Promise}
+ */
+function getGcmIdsForUserIds(userIdList) {
+    var gcmUserIds = kew.defer();
+    var queries = []
+    userIdList.forEach(function (userId) {
+        queries.push(createSearchByIdQuery(userId))
+    })
+
+    var theFinalQuery = queryJoiner(queries)
+
+    db.newSearchBuilder()
+        .collection("users")
+        //.sort('location', 'distance:asc')
+        .query(theFinalQuery)
+        .then(function (result) {
+            var gcmUserIds = result.body.results.map(function (user) {
+                return user.value.gcmId
+            });
+            kew.resolve(gcmUserIds)
+        })
+        .fail(function (err) {
+            kew.reject(err)
+        })
+
+    return gcmUserIds
+}
+
+/**
  * dispatch event to firebase,
  * where the world can listen to
  * @param type
  * @param payload
  */
 function dispatchEvent(type, payload) {
-    payload["eventTimeStamp"] = date.getTime()
+    payload[constants.events.timestampkey] = date.getTime()
     myFirebaseRef.child(type).push().set(payload)
 }
 
@@ -1262,3 +1293,6 @@ exports.createInviteToMatchRequest = createInviteToMatchRequest;
 
 //firebase
 exports.dispatchEvent = dispatchEvent
+
+//gcm Id
+exports.getGcmIdsForUserIds = getGcmIdsForUserIds

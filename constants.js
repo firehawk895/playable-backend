@@ -131,7 +131,8 @@ module.exports = {
         },
         chats : {
             message : "events/chats/message"
-        }
+        },
+        timestampkey : "eventTimeStamp"
     },
     /**
      * These constants are injected into the

@@ -57,6 +57,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
             db.post('events', payload)
                 .then(function (result) {
                     payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+                    customUtils.dispatchEvent(constants.event.events.created, payload)
                     responseObj["data"] = payload;
                     res.status(201);
                     res.json(responseObj);
