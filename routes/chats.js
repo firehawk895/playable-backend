@@ -87,6 +87,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 //-------- makhan parsed for the front end ----------
 
                 var dialogs = results[2]
+                console.log(dialogs)
 
                 var chatObjects = {}
                 chatObjects["oneOnOne"] = []
@@ -97,15 +98,19 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                         dialog: dialog
                     }
                     if (dialog.name.indexOf(constants.chats.oneOnOne) > -1) {
+                        console.log("oneoneone")
                         var theUserId = getOpponentUser(userId)
                         chatObj["user"] = connectionsMap[theUserId]
                         chatObjects["oneOnOne"].push(chatObj)
                     } else if (dialog.name.indexOf(constants.chats.matchRoom) > -1) {
+                        console.log("matchRoom")
                         var theMatchId = getMatchId(dialog.name)
                         chatObj["match"] = matchHistoryMap[theMatchId]
+                        console.log(chatObj)
                         chatObjects["matches"].push(chatObj)
                     }
                 })
+                responseObj = chatObjects
                 res.status(200)
                 res.json(responseObj)
             }
@@ -121,6 +126,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 function getMatchId(matchRoomName) {
     var components = matchRoomName.split(":::")
     var matchId = components[1]
+    console.log("extracted matchId " + matchId)
     return matchId
 }
 
