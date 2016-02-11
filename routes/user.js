@@ -27,6 +27,14 @@ var db = oio(config.db.key);
 
 var date = new Date();
 var now = date.getTime();
+var log = bunyan.createLogger({
+    name: 'users',
+    streams: [
+        {
+            path: __dirname + '/users.log'  // log ERROR and above to a file
+        }
+    ]
+});
 
 var CronJob = require('cron').CronJob;
 var matchValidation = require('../validations/Match.js');
