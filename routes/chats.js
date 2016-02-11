@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
+var constants = require('../constants')
 var multer = require('multer');
 var passport = require('passport');
 customUtils = require('../utils.js');
