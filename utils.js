@@ -66,6 +66,7 @@ function getGraphResultsPromise(collection, id, relation) {
         .get()
         .from(collection, id)
         .related(relation)
+        .limit(100)
 }
 
 /**
