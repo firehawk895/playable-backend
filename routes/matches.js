@@ -91,7 +91,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
             isDiscoverable: true
         }
 
-        payload = customUtils.updateGenderInPayload(payload, hostGender)
+        payload = MatchModel.updateGenderInPayload(payload, hostGender)
 
         db.post('matches', payload)
             .then(function (result) {
@@ -101,11 +101,11 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 res.json(responseObj);
 
                 req.body.invitedUserIdList.forEach(function (invitedUserId) {
-                    customUtils.createInviteToMatchRequest(user.id, user.name, payload["id"], payload["title"], payload["sport"], invitedUserId)
+                    RequestModel.createInviteToMatchRequest(user.id, user.name, payload["id"], payload["title"], payload["sport"], invitedUserId)
                 })
 
                 if (payload.isFacility) {
-                    customUtils.connectFacilityToMatch(payload["id"], payload["facilityId"])
+                    MatchModel.connectFacilityToMatch(payload["id"], payload["facilityId"])
                 }
 
                 /**
@@ -113,25 +113,25 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                  * can access the related data from any entry point
                  */
                     //The user hosts the match
-                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.hostsMatch)
+                dbUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.hostsMatch)
                 //The user plays in the match
-                customUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.playsMatches)
+                dbUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.playsMatches)
                 //The match is hosted by user
-                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.isHostedByUser)
+                dbUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.isHostedByUser)
                 //The match has participants (user)
-                customUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.participants)
+                dbUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.participants)
 
                 /**
                  * Create the chat room for the match, and make the host join it
                  */
-                customUtils.createChatRoomForMatch(user.qbId, payload["id"])
+                MatchModel.createChatRoomForMatch(user.qbId, payload["id"])
                 //var chatObj = {
                 //    "created": date.getTime(),
                 //    "type": "newChannel",
                 //    "matchId": payload["id"],
                 //    "pathTitle": reqBody.title
                 //}
-                customUtils.dispatchEvent(constants.events.matches.created, payload)
+                EventModel.dispatchEvent(constants.events.matches.created, payload)
                 //customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
             })
             .fail(function (err) {
@@ -180,7 +180,7 @@ router.post('/remove', [passport.authenticate('bearer', {session: false}), funct
     //TODO: if a user of the only representing gender is removed
     //update the genderStatus of the match
 
-    customUtils.removeFromMatch(userId, matchId)
+    MatchModel.removeFromMatch(userId, matchId)
         .then(function (result) {
             responseObj["data"] = [];
             res.status(201);
@@ -223,7 +223,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
             } else {
                 console.log("what")
                 //Check if he has already joined the match
-                customUtils.checkMatchParticipationPromise(matchId, userId)
+                MatchModel.checkMatchParticipationPromise(matchId, userId)
                     .then(function (results) {
                         console.log("just checked match participation")
                         var count = results.body.count
@@ -234,7 +234,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                             //        console.log(err)
                             //        customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503, res)
                             //    } else {
-                            customUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
+                            dbUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
                             //customUtils.incrementMatchesPlayed(userId)
                             db.newGraphBuilder()
                                 .create()
@@ -257,9 +257,9 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                                     if (slots == slotsFilled) {
                                         payload["isDiscoverable"] = false
                                     }
-                                    payload = customUtils.updateGenderInPayload(payload, usersGender)
+                                    payload = MatchModel.updateGenderInPayload(payload, usersGender)
                                     db.merge('matches', matchId, payload)
-                                    customUtils.updateMatchConnections(userId, matchId)
+                                    MatchModel.updateMatchConnections(userId, matchId)
 
 
                                     responseObj["data"] = []
@@ -300,8 +300,8 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
                 res.status(403)
                 res.json(responseObj)
             } else {
-                customUtils.createGraphRelation('matches', matchId, 'users', invitedUserId, 'invitees')
-                customUtils.createGraphRelation('users', invitedUserId, 'matches', matchId, 'invited')
+                dbUtils.createGraphRelation('matches', matchId, 'users', invitedUserId, 'invitees')
+                dbUtils.createGraphRelation('users', invitedUserId, 'matches', matchId, 'invited')
                 //customUtils.createRequest('invitedToMatch', invitedUserId, matchId, hostUserId)
                 responseObj["data"] = []
                 responseObj["message"] = ["Users have been invited. Duplicate invites are not sent out."]
@@ -318,15 +318,15 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
 
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var promises = new Array()
+    var promises = []
     var userId = req.user.results[0].value.id
-    var queries = new Array()
+    var queries = []
     var responseObj = {}
     var page = req.query.page || 1
     var limit = req.query.limit || 100
 
     console.log("default time and isDiscoverable query")
-    queries.push(customUtils.createIsDiscoverableQuery())
+    queries.push(MatchModel.createIsDiscoverableQuery())
 
     var isDistanceQuery = false
     var isMatchQuery = false
@@ -341,33 +341,33 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     if (req.query.matchId) {
         isMatchQuery = true
         console.log("we have a specific matchId query")
-        queries.push(customUtils.createSearchByIdQuery(req.query.matchId))
+        queries.push(dbUtils.createSearchByIdQuery(req.query.matchId))
     }
 
     if (req.query.gender) {
         console.log("we have a gender query")
         var genderArray = req.query.gender.split(',')
-        queries.push(customUtils.createGenderQuery(genderArray))
+        queries.push(MatchModel.createGenderQuery(genderArray))
     }
 
     if (req.query.lat && req.query.long && req.query.radius) {
         console.log("we have a distance query")
-        queries.push(customUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
         isDistanceQuery = true;
     }
 
     if (req.query.sports) {
         console.log("we have a sports filter")
         var sportsArray = req.query.sports.split(',');
-        queries.push(customUtils.createSportsQuery(sportsArray))
+        queries.push(MatchModel.createSportsQuery(sportsArray))
     }
 
     if (req.query.skill_level_min && req.query.skill_level_max) {
         console.log("we have a skill level filter")
-        queries.push(customUtils.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
+        queries.push(MatchModel.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
     }
 
-    var theFinalQuery = customUtils.queryJoiner(queries)
+    var theFinalQuery = dbUtils.queryJoiner(queries)
     console.log("The final query")
     console.log(theFinalQuery)
 
@@ -394,7 +394,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     }
 
     if (isMatchQuery) {
-        promises.push(customUtils.checkMatchParticipationPromise(req.query.matchId, userId))
+        promises.push(MatchModel.checkMatchParticipationPromise(req.query.matchId, userId))
     } else {
         //pass a resolved dummy promise so the order of the array is always constant
         promises.push(kew.resolve([]))
@@ -402,7 +402,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     //if (req.query.featured) {
         getFeatured = true;
-        promises.push(customUtils.getFeaturedEventsPromise())
+        promises.push(EventModel.getFeaturedEventsPromise())
     //} else {
         //pass a resolved dummy promise so the order of the array is always constant
         //promises.push(kew.resolve([]))
@@ -410,7 +410,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     //push match participants
     if (isMatchQuery) {
-        promises.push(customUtils.getMatchParticipantsPromise(req.query.matchId))
+        promises.push(MatchModel.getMatchParticipantsPromise(req.query.matchId))
     } else {
         promises.push(kew.resolve([]))
     }
@@ -422,10 +422,10 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             //result[2] is the featured matches query
             //result[3] is the match participants
             if (distanceQuery) {
-                results[0] = customUtils.insertDistance(results[0], req.query.lat, req.query.long)
+                results[0] = MatchModel.insertDistance(results[0], req.query.lat, req.query.long)
             }
             responseObj["total_count"] = results[0].body.total_count
-            responseObj["data"] = customUtils.injectId(results[0])
+            responseObj["data"] = dbUtils.injectId(results[0])
 
             //isJoined tells if the current user is part of the match or not
             if (isMatchQuery) {
@@ -437,11 +437,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                     responseObj["isJoined"] = true
                 }
                 console.log("this is the results -->")
-                var matchParticipants = customUtils.injectId(results[3])
+                var matchParticipants = dbUtils.injectId(results[3])
                 responseObj["players"] = matchParticipants
             }
             if (getFeatured) {
-                var featuredEvents = customUtils.injectId(results[2].body)
+                var featuredEvents = dbUtils.injectId(results[2].body)
                 responseObj["featuredEvents"] = featuredEvents
             }
             res.status(200)

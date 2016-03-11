@@ -273,5 +273,13 @@ module.exports = {
     createSportsQuery : createSportsQuery,
     getMatchHistoryPromise : getMatchHistoryPromise,
     createOnlyFutureTypeQuery : createOnlyFutureTypeQuery,
-    connectFacilityToMatch : connectFacilityToMatch
+    connectFacilityToMatch : connectFacilityToMatch,
+    checkMatchParticipationPromise:checkMatchParticipationPromise,
+    updateGenderInPayload:updateGenderInPayload,
+    updateMatchConnections:updateMatchConnections,
+    createIsDiscoverableQuery:createIsDiscoverableQuery,
+    createGenderQuery:createGenderQuery,
+    createChatRoomForMatch:createChatRoomForMatch,
+    removeFromMatch:removeFromMatch,
+    createSkillRatingQuery:createSkillRatingQuery
 }

@@ -14,7 +14,16 @@ var EventSystem = require(__base + './events/events');
  * @returns {*}
  */
 function createConnectionRequest(user1id, user2id, user1name, user1photo) {
-    createConnectionRequestInvite(user1id, user2id, user1name, user1photo)
+    var payload = {
+        fromUserId: user1id,
+        toUserId: user2id,
+        type: constants.requests.type.connect,
+        status: constants.requests.status.pending,
+        msg: user1name + " has requested to connect with you",
+        photo: user1photo,
+        timestamp: date.getTime()
+    }
+    pushRequestToFirebase(payload, user2id)
     return kew.all([
         dbUtils.createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
         dbUtils.createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
@@ -28,47 +37,6 @@ function createConnectionRequest(user1id, user2id, user1name, user1photo) {
  */
 function createMatchRequest(user1id, user2id, matchPayload, user1name) {
     console.log("createMatchRequest")
-    createMatchRequestInvite(user1id, user2id, matchPayload, user1name)
-    return kew.all([
-        dbUtils.createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
-        dbUtils.createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
-    ])
-}
-
-function createInvitedToMatchRequest() {
-
-}
-
-/**
- * Internal methods:
- */
-
-/**
- * Create the invite when a 1 on 1 connect request is sent
- * @param user1id
- * @param user2id
- */
-function createConnectionRequestInvite(user1id, user2id, user1name, user1photo) {
-    var payload = {
-        fromUserId: user1id,
-        toUserId: user2id,
-        type: constants.requests.type.connect,
-        status: constants.requests.status.pending,
-        msg: user1name + " has requested to connect with you",
-        photo: user1photo,
-        timestamp: date.getTime()
-    }
-    pushRequestToFirebase(payload, user2id)
-}
-
-/**
- * Create the invite when a 'fix a match' request is sent
- * pretty much like 1 on 1 connect request, with the extra match
- * @param user1id the requester
- * @param user2id the invitee
- * @param matchPayload the match to be created
- */
-function createMatchRequestInvite(user1id, user2id, matchPayload, user1name) {
     var payload = {
         fromUserId: user1id,
         toUserId: user2id,
@@ -80,21 +48,21 @@ function createMatchRequestInvite(user1id, user2id, matchPayload, user1name) {
         timestamp: date.getTime()
     }
     pushRequestToFirebase(payload, user2id)
+    return kew.all([
+        dbUtils.createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
+        dbUtils.createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
+    ])
 }
 
 /**
- * This is the request sent when someone invites a user to a match
+ * The host of a match while creating or editing a match
+ * invites users to join in
  * @param hostId
  * @param inviteeId
  * @param matchPayload
- * @param matchSport
+ * @param hostName
  */
-function createInvitedToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
-    //matchPayload requirements:
-    //matchPayload = {
-    //  id :
-    //  sport :
-    //}
+function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
     var payload = {
         fromUserId: hostId,
         toUserId: inviteeId,
@@ -107,6 +75,17 @@ function createInvitedToMatchRequest(hostId, inviteeId, matchPayload, hostName) 
     }
     pushRequestToFirebase(payload, inviteeId)
 }
+
+/**
+ * a match has been hosted, a user requests to join it
+ * @param requesterId
+ * @param matchId
+ */
+function createRequestToJoinMatch(requesterId, matchId) {
+
+}
+
+
 
 /**
  * the connection request sent from user1 to user2 is now
@@ -217,7 +196,7 @@ function parseConnectRequest(requestObj) {
 module.exports = {
     createConnectionRequest: createConnectionRequest,
     createMatchRequest: createMatchRequest,
-    createInvitedToMatchRequest : createInvitedToMatchRequest,
+    createInviteToMatchRequest : createInviteToMatchRequest,
     acceptConnectionRequest: acceptConnectionRequest,
-    parseRequestObject: parseRequestObject
+    parseRequestObject: parseRequestObject,
 }
