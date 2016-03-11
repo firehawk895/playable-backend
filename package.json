@@ -36,6 +36,10 @@
     "s3fs": "^2.0.1",
     "validator": "4.5.0",
     "express-validator": "2.18.0",
-    "kew": "0.7.0"
+    "kew": "0.7.0",
+    "xml2js" : "0.4.16",
+    "youtube-api" : "1.4.0",
+    "node-youtubeapi-simplifier" : "1.4.2",
+    "youtube-playlist-info" : "0.1.0"
   }
 }

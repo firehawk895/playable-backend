@@ -4,13 +4,22 @@ var router = express.Router();
 var passport = require('passport');
 var multer = require('multer');
 var fs = require('fs');
-customUtils = require('../utils.js');
-
-var config = require('../config.js');
 var async = require('async')
+
+//kardo sab import, node only uses it once
+var config = require(__base + './config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
+var customUtils = require(__base + './utils.js');
+var constants = require(__base + './constants');
+var qbchat = require(__base + './Chat/qbchat');
+var UserModel = require(__base + './models/User');
+var MatchModel = require(__base + './models/Match');
+var EventModel = require(__base + './models/Event');
+var RequestModel = require(__base + './requests/Request');
+var dbUtils = require(__base + './dbUtils');
+var EventSystem = require(__base + './events/events');;
 
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
@@ -71,7 +80,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         .query("*")
         .then(function (results) {
             responseObj["total_count"] = results.body.total_count
-            responseObj["data"] = customUtils.injectId(results)
+            responseObj["data"] = dbUtils.injectId(results)
             res.status(200)
             res.json(responseObj)
         })

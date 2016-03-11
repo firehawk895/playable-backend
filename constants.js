@@ -45,7 +45,7 @@ module.exports = {
         },
         "is_not_image_message": "The file uploaded is not an image",
         "invalid_sport_type": "The sport entered is an invalid type",
-        "invalid_lat_message": "The Lattitude value is invalid",
+        "invalid_lat_message": "The Latitude value is invalid",
         "invalid_long_message": "The Longitude value is invalid",
         "invalid_skill_rating_range_message": "The skill level must be a valid integer range"
     },

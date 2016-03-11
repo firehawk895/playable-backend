@@ -12,7 +12,7 @@ var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-var qbchat = require('./../qbchat.js');
+var qbchat = require(__base + './Chat/qbchat.js');
 var dispatchers = require('./dispatchers')
 var kew = require('kew')
 var Firebase = require("firebase");

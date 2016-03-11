@@ -2,19 +2,25 @@ var express = require('express');
 var router = express.Router();
 
 var passport = require('passport');
-customUtils = mod('utils');
 
-var config = require('../config.js');
 //var config = require('../models/Match.js');
 var matchValidation = require('../validations/Match.js');
+var kew = require('kew')
+
+//kardo sab import, node only uses it once
+var config = require(__base + './config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-
-var qbchat = mod('qbchat.js');
-var kew = require('kew')
-
-var constants = require('../constants.js');
+var customUtils = require(__base + './utils.js');
+var constants = require(__base + './constants');
+var qbchat = require(__base + './Chat/qbchat');
+var UserModel = require(__base + './models/User');
+var MatchModel = require(__base + './models/Match');
+var EventModel = require(__base + './models/Event');
+var RequestModel = require(__base + './requests/Request');
+var dbUtils = require(__base + './dbUtils');
+var EventSystem = require(__base + './events/events');
 
 //var Notifications = require('../notifications');
 //var notify = new Notifications();
@@ -171,6 +177,9 @@ router.post('/remove', [passport.authenticate('bearer', {session: false}), funct
     var matchId = req.body.matchId
     var userId = req.body.userId
 
+    //TODO: if a user of the only representing gender is removed
+    //update the genderStatus of the match
+
     customUtils.removeFromMatch(userId, matchId)
         .then(function (result) {
             responseObj["data"] = [];
@@ -199,6 +208,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
     console.log("definitely here")
     var matchId = req.body.matchId;
     var userId = req.user.results[0].value.id;
+    var usersGender = req.user.results[0].value.gender;
     var responseObj = {}
 
     db.get('matches', matchId)
@@ -247,8 +257,10 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                                     if (slots == slotsFilled) {
                                         payload["isDiscoverable"] = false
                                     }
+                                    payload = customUtils.updateGenderInPayload(payload, usersGender)
                                     db.merge('matches', matchId, payload)
                                     customUtils.updateMatchConnections(userId, matchId)
+
 
                                     responseObj["data"] = []
                                     responseObj["message"] = "Successfully joined"
@@ -310,8 +322,8 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var userId = req.user.results[0].value.id
     var queries = new Array()
     var responseObj = {}
-    var page = 1
-    var limit = 100
+    var page = req.query.page || 1
+    var limit = req.query.limit || 100
 
     console.log("default time and isDiscoverable query")
     queries.push(customUtils.createIsDiscoverableQuery())
@@ -320,10 +332,10 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var isMatchQuery = false
     var getFeatured = false
 
-    if (req.query.limit && req.query.page) {
-        page = req.query.page
-        limit = req.query.limit
-    }
+    //if (req.query.limit && req.query.page) {
+    //    page = req.query.page
+    //    limit = req.query.limit
+    //}
     var offset = limit * (page - 1)
 
     if (req.query.matchId) {
@@ -388,13 +400,13 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         promises.push(kew.resolve([]))
     }
 
-    if (req.query.featured) {
+    //if (req.query.featured) {
         getFeatured = true;
         promises.push(customUtils.getFeaturedEventsPromise())
-    } else {
+    //} else {
         //pass a resolved dummy promise so the order of the array is always constant
-        promises.push(kew.resolve([]))
-    }
+        //promises.push(kew.resolve([]))
+    //}
 
     //push match participants
     if (isMatchQuery) {

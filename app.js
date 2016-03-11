@@ -5,13 +5,14 @@ var express = require('express');
 global.mod = function (file){
     return require ("./" + file)
 }
+global.__base = __dirname + '/';
 var path = require('path');
 var fs = require('fs')
 var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var request = require('request')
-var qbchat = require('./qbchat');
+var qbchat = require('./Chat/qbchat');
 
 var passport = require('passport');
 var BearerStrategy = require('passport-http-bearer').Strategy;
@@ -26,8 +27,8 @@ var chats = require('./routes/chats');
 var config = require('./config.js');
 var customUtils = require('./utils.js');
 
-var requests = require('./requests');
-var recommendations = require('./recommendations');
+var requests = require('./requests/requests');
+var recommendations = require('./recommendations/recommendations');
 
 //----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');

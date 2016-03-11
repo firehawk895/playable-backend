@@ -18,8 +18,18 @@ var customUtils = require('../utils.js');
 var QB = require('quickblox');
 QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 
+
+//TODO: it is better to remove this dependency and have a proper chat abstraction
+//in such a way that the underlying implementation of chat can be removed
+//this is legacyish code
 var constants = require('../constants.js');
-var qbchat = require('../qbchat.js');
+var qbchat = require(__base + './Chat/qbchat');
+var UserModel = require(__base + './models/User');
+var MatchModel = require(__base + './models/Match');
+var EventModel = require(__base + './models/Event');
+var RequestModel = require(__base + './requests/Request');
+var dbUtils = require(__base + './dbUtils');
+var EventSystem = require(__base + './events/events');
 
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
@@ -673,38 +683,50 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
             'otpExpiry': now + config.msg91.otpExpiry
         }
 
-        async.parallel([
-                function (callback) {
-                    db.merge('users', userId, payload)
-                        .then(function (result) {
-                            callback(null, "")
-                        })
-                        .fail(function (err) {
-                            callback(err, "")
-                        })
-                },
-                function (callback) {
-                    var message = "Your OTP is " + otp + ". Please verify it in the playable app."
-                    console.log(message)
-                    msg91.send(req.body.phoneNumber, message, function (err, response) {
-                        if (err) {
-                            callback(err, "")
-                        } else {
-                            callback(null, response)
-                        }
-                    });
-                }
-            ],
-            function (err, results) {
-                if (err) {
-                    customUtils.sendErrors(["Saving/Sending the OTP failed. Please try again later."], 503, res)
-                } else {
-                    responseObj["data"] = []
-                    res.status(200)
-                    res.json(responseObj)
-                }
-            }
-        )
+        var mergeDataPromise = db.merge('users', userId, payload)
+        var message = "Your OTP is " + otp + ". Please verify it in the playable app."
+        kew.all([mergeDataPromise, customUtils.sendSms(message, payload.phoneNumber)])
+            .then(function (results) {
+                responseObj["data"] = []
+                res.status(200)
+                res.json(responseObj)
+            })
+            .fail(function (err) {
+                customUtils.sendErrors(["Saving/Sending the OTP failed. Please try again later."], 503, res)
+            })
+
+        //async.parallel([
+        //        function (callback) {
+        //            db.merge('users', userId, payload)
+        //                .then(function (result) {
+        //                    callback(null, "")
+        //                })
+        //                .fail(function (err) {
+        //                    callback(err, "")
+        //                })
+        //        },
+        //        function (callback) {
+        //            var message = "Your OTP is " + otp + ". Please verify it in the playable app."
+        //            console.log(message)
+        //            msg91.send(req.body.phoneNumber, message, function (err, response) {
+        //                if (err) {
+        //                    callback(err, "")
+        //                } else {
+        //                    callback(null, response)
+        //                }
+        //            });
+        //        }
+        //    ],
+        //    function (err, results) {
+        //        if (err) {
+        //            customUtils.sendErrors(["Saving/Sending the OTP failed. Please try again later."], 503, res)
+        //        } else {
+        //            responseObj["data"] = []
+        //            res.status(200)
+        //            res.json(responseObj)
+        //        }
+        //    }
+        //)
     }
 }]);
 
@@ -762,7 +784,7 @@ router.get('/', function (req, res, next) {
          * The other way to do this is store a property under 1 relation
          * thats cooler I guess?
          */
-        kew.all([getUserStuff, customUtils.getConnectionStatusPromise])
+        kew.all([getUserStuff, UserModel.getConnectionStatusPromise])
             .then(function (results) {
                 results[0].body.password = undefined
                 responseObj["data"] = results[0].body
@@ -791,7 +813,7 @@ router.get('/', function (req, res) {
     var getUserInfo = function (userId, allowUpdate) {
 
         var getUserDataPromise = db.get('users', userId)
-        var getTotalCountPromise = customUtils.getTotalConnections
+        var getTotalCountPromise = UserModel.getTotalConnections
 
         kew.all([getUserDataPromise, getTotalCountPromise])
             .then(function (results) {
@@ -1057,10 +1079,19 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 router.get('/connections', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var userId = req.user.results[0].value.id;
     var responseObj = {}
+    var promisesArray = [UserModel.getUsersConnectionsPromise(userId)]
+    //remove the existing match participants from the connections
+    //so that they dont appear in the suggestions :)
+    if (req.query.matchId)
+        promisesArray.push(MatchModel.getMatchParticipantsPromise(req.query.matchId))
 
-    customUtils.getUsersConnectionsPromise
-        .then(function (userResults) {
-            responseObj["data"] = customUtils.injectId(userResults)
+    kew.all(promisesArray)
+        .then(function (results) {
+            responseObj["data"] = dbUtils.injectId(results[0])
+            if (req.query.matchId) {
+                var matchParticipants = dbUtils.injectId(results[1])
+                responseObj["data"] = customUtils.removeSubArray(responseObj["data"], matchParticipants)
+            }
             res.status(200)
             res.json(responseObj)
         })
@@ -1077,7 +1108,7 @@ router.post('/connect', [passport.authenticate('bearer', {session: false}), func
     var user1 = req.user.results[0].value
     var user2id = req.body.userId
 
-    customUtils.createConnectionRequest(user1.id, user2id, user1.name, user1.avatar)
+    RequestModel.createConnectionRequest(user1.id, user2id, user1.name, user1.avatar)
         .then(function (result) {
             responseObj["data"] = []
             responseObj["message"] = "Connection request successfully sent"
@@ -1107,7 +1138,7 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
     if (errors.length > 0) {
         customUtils.sendErrors(errors, 422, res)
     } else {
-        customUtils.createMatchRequest(userId, inviteeId, req.body, usersName)
+        RequestModel.createMatchRequest(userId, inviteeId, req.body, usersName)
             .then(function (result) {
                 responseObj["data"] = []
                 responseObj["message"] = "Fix A Match request successfully sent"
@@ -1125,22 +1156,22 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     var queries = new Array();
     var responseObj = {}
 
-    queries.push(customUtils.createPlayerDiscoverableQuery(userId))
+    queries.push(UserModel.createPlayerDiscoverableQuery(userId))
 
     var isDistanceQuery = false;
     if (req.query.lat && req.query.long && req.query.radius) {
         console.log("we have a distance query")
-        queries.push(customUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
         isDistanceQuery = true;
     }
 
     if (req.query.sports) {
         console.log("we have a sports filter")
         var sportsArray = req.query.sports.split(',');
-        queries.push(customUtils.createSportsQuery(sportsArray))
+        queries.push(MatchModel.createSportsQuery(sportsArray))
     }
 
-    var theFinalQuery = customUtils.queryJoiner(queries)
+    var theFinalQuery = dbUtils.queryJoiner(queries)
     console.log("The final query")
     console.log(theFinalQuery)
 
@@ -1155,7 +1186,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
             .query(theFinalQuery)
             .then(function (results) {
                 responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = customUtils.injectId(results)
+                responseObj["data"] = dbUtils.injectId(results)
                 res.status(200)
                 res.json(responseObj)
             })
@@ -1169,7 +1200,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
             .query(theFinalQuery)
             .then(function (results) {
                 responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = customUtils.injectId(results)
+                responseObj["data"] = dbUtils.injectId(results)
                 res.status(200)
                 res.json(responseObj)
             })
@@ -1182,7 +1213,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
 router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var userId = req.user.results[0].value.id;
     var responseObj = {}
-    customUtils.getMatchHistoryPromise(userId)
+    MatchModel.getMatchHistoryPromise(userId)
         .then(function (results) {
             var matchHistory = customUtils.injectId(results)
             responseObj["data"] = matchHistory

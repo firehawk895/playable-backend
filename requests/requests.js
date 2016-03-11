@@ -1,17 +1,17 @@
 var express = require('express');
 var router = express.Router();
 
-var constants = require('./constants.js');
+var constants = require('constants.js');
 
 var passport = require('passport');
-customUtils = require('./utils.js');
+customUtils = require('utils.js');
 
-var config = require('./config.js');
+var config = require('config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-var qbchat = require('./qbchat.js');
+var qbchat = require('qbchat.js');
 var kew = require('kew')
 var Firebase = require("firebase");
 var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)

@@ -2,17 +2,17 @@ var express = require('express');
 var router = express.Router();
 
 var passport = require('passport');
-customUtils = require('./utils.js');
-var constants = require('./constants.js');
+customUtils = require('./../utils.js');
+var constants = require('./../constants.js');
 
-var config = require('./config.js');
+var config = require('./../config.js');
 //var config = require('../models/Match.js');
-var matchValidation = require('./validations/Match.js');
+var matchValidation = require('./../validations/Match.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-var qbchat = require('./qbchat.js');
+var qbchat = require(__base + './Chat/qbchat.js');
 var kew = require('kew')
 var Firebase = require("firebase");
 var newMatchesRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.newMatches)
@@ -42,8 +42,8 @@ recommendationsRef.on("child_added", function (snapshot) {
      * */
     userRecoRef.on("child_changed", function (childSnapshot, prevChildKey) {
         var recoObj = childSnapshot.val()
-        customUtils.parseRecObject(recoObj)
-     })
+        if (customUtils.isRecent(recoObj.timestamp)) customUtils.parseRecObject(recoObj)
+    })
 })
 
 module.exports = router;

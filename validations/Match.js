@@ -183,10 +183,10 @@ validatePostEvent = function (req) {
     else
         errors.push(constants.validations.event.reg_time_in_future)
 
-    if (validator.isInt(reqBody.slots, {min: constants.validations.event.slot_min}))
-        reqBody.slots = parseInt(reqBody.slots)
-    else
-        errors.push(constants.validations.event.slot_min_message)
+    //if (validator.isInt(reqBody.slots, {min: constants.validations.event.slot_min}))
+    //    reqBody.slots = parseInt(reqBody.slots)
+    //else
+    //    errors.push(constants.validations.event.slot_min_message)
 
     //reqBody.location_name is optional
     if (validator.isValidLatLong(reqBody.lat))

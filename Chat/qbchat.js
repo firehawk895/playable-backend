@@ -1,4 +1,4 @@
-var config = require('./config.js');
+var config = require('./../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);

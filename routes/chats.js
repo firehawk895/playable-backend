@@ -1,19 +1,26 @@
 var express = require('express');
 var router = express.Router();
 
-var constants = require('../constants')
 var multer = require('multer');
 var passport = require('passport');
-customUtils = require('../utils.js');
 
-var config = require('../config.js');
-//var config = require('../models/Match.js');
 var validation = require('../validations/Match.js');
+var async = require('async');
+
+//kardo sab import, node only uses it once
+var config = require(__base + './config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var async = require('async');
-
+var customUtils = require(__base + './utils.js');
+var constants = require(__base + './constants');
+var qbchat = require(__base + './Chat/qbchat');
+var UserModel = require(__base + './models/User');
+var MatchModel = require(__base + './models/Match');
+var EventModel = require(__base + './models/Event');
+var RequestModel = require(__base + './requests/Request');
+var dbUtils = require(__base + './dbUtils');
+var EventSystem = require(__base + './events/events');
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
@@ -27,7 +34,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     //idea where we let the dialogs come from the backend
     async.parallel([
             function (callback) {
-                customUtils.getMatchHistoryPromise(userId)
+                MatchModel.getMatchHistoryPromise(userId)
                     .then(function (results) {
                         console.log("and this")
                         callback(null, results)
@@ -38,7 +45,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                     })
             },
             function (callback) {
-                customUtils.getUsersConnectionsPromise(userId)
+                UserModel.getUsersConnectionsPromise(userId)
                     .then(function (results) {
                         console.log("how about this")
                         callback(null, results)
@@ -49,7 +56,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
             },
             function (callback) {
-                customUtils.getUsersDialogs(username, function (err, results) {
+                ChatModel.getUsersDialogs(username, function (err, results) {
                     if (err) {
                         callback(err, null)
                     } else {
@@ -70,14 +77,14 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 //results[2] get user dialogs
 
                 //--------- Match History Map -----------------------
-                var matchHistory = customUtils.injectId(results[0])
+                var matchHistory = dbUtils.injectId(results[0])
                 var matchHistoryMap = {}
                 matchHistory.forEach(function (match) {
                     matchHistoryMap[match.id] = match
                 })
 
                 //-------- Connections Map --------------------------
-                var connections = customUtils.injectId(results[1])
+                var connections = dbUtils.injectId(results[1])
                 var connectionsMap = {}
                 connections.forEach(function (connection) {
                     connectionsMap[connection["id"]] = connection
