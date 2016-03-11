@@ -24,6 +24,7 @@ var dbUtils = require(__base + './dbUtils');
 var EventSystem = require(__base + './events/events');
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
+    //TODO : move this to the model class
     var responseObj = {}
     var user = req.user.results[0].value;
     var userId = req.user.results[0].value.id;
@@ -88,7 +89,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     //    'lat': req.user.results[0].value.location.lat,
     //    'long': req.user.results[0].value.location.long
     //}
-    var queries = new Array();
+    var queries = []
     var responseObj = {}
 
     console.log("the future query : " + MatchModel.createOnlyFutureTypeQuery())
@@ -185,19 +186,19 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
                                  * You are hoping that orchestrate handles concurrency
                                  * this sort of modification needs to be safe from race conditions
                                  */
-                                //console.log(theEvent.body.slots_filled)
-                                //var slots = theEvent.body.slots
-                                //var slotsFilled = theEvent.body.slots_filled + 1
-                                //var payload = {
-                                //    'slots_filled': slotsFilled
-                                //}
+                                    //console.log(theEvent.body.slots_filled)
+                                    //var slots = theEvent.body.slots
+                                    //var slotsFilled = theEvent.body.slots_filled + 1
+                                    //var payload = {
+                                    //    'slots_filled': slotsFilled
+                                    //}
 
-                                //if match is full make it undiscoverable
-                                //if (slots == slotsFilled) {
-                                //    payload["isDiscoverable"] = false
-                                //}
-                                //db.merge('events', eventId, payload)
-                                //customUtils.updateMatchConnections(userId, matchId)
+                                    //if match is full make it undiscoverable
+                                    //if (slots == slotsFilled) {
+                                    //    payload["isDiscoverable"] = false
+                                    //}
+                                    //db.merge('events', eventId, payload)
+                                    //customUtils.updateMatchConnections(userId, matchId)
 
                                 responseObj["data"] = []
                                 responseObj["message"] = "Successfully joined"

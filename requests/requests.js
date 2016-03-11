@@ -1,18 +1,34 @@
 var express = require('express');
 var router = express.Router();
+//
+//var constants = require('constants.js');
+//
+//var passport = require('passport');
+//customUtils = require('utils.js');
+//
+//var config = require('config.js');
+//var oio = require('orchestrate');
+//oio.ApiEndPoint = config.db.region;
+//var db = oio(config.db.key);
+//
+//var qbchat = require('qbchat.js');
+//var kew = require('kew')
 
-var constants = require('constants.js');
-
-var passport = require('passport');
-customUtils = require('utils.js');
-
-var config = require('config.js');
+//kardo sab import, node only uses it once
+var config = require(__base + './config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
+var customUtils = require(__base + './utils.js');
+var constants = require(__base + './constants');
+var qbchat = require(__base + './Chat/qbchat');
+var UserModel = require(__base + './models/User');
+var MatchModel = require(__base + './models/Match');
+var EventModel = require(__base + './models/Event');
+var RequestModel = require(__base + './requests/Request');
+var dbUtils = require(__base + './dbUtils');
+var EventSystem = require(__base + './events/events');
 
-var qbchat = require('qbchat.js');
-var kew = require('kew')
 var Firebase = require("firebase");
 var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
 

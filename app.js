@@ -28,7 +28,7 @@ var config = require('./config.js');
 var customUtils = require('./utils.js');
 
 var requests = require('./requests/requests');
-var recommendations = require('./recommendations/recommendations');
+//var recommendations = require('./recommendations/recommendations');
 
 //----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');
@@ -121,9 +121,9 @@ passport.use(new BearerStrategy({},
 ));
 
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-app.use('/public', express.static(path.join(__dirname, 'public')));
+//app.set('views', path.join(__dirname, 'views'));
+//app.set('view engine', 'jade');
+//app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/user', user);
 app.use('/matches', matches);
 app.use('/facilities', facilities);

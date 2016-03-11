@@ -223,67 +223,67 @@ exports.stringToBoolean = stringToBoolean;
 exports.getRandomArbitrary = getRandomArbitrary;
 exports.removeSubArray = removeSubArray;
 exports.getDistanceFromLatLonInKm = getDistanceFromLatLonInKm;
-
-exports.queryJoiner = queryJoiner;
-exports.createDistanceQuery = createDistanceQuery;
-exports.createSportsQuery = createSportsQuery;
-exports.createSkillRatingQuery = createSkillRatingQuery;
-exports.injectId = injectId;
-exports.insertDistance = insertDistance;
-exports.createSearchByIdQuery = createSearchByIdQuery;
-exports.createIsDiscoverableQuery = createIsDiscoverableQuery;
-exports.createOnlyFutureTypeQuery = createOnlyFutureTypeQuery;
-
-//matches/events
-exports.updateMatchConnections = updateMatchConnections;
-exports.updateGenderInPayload = updateGenderInPayload;
-exports.createGenderQuery = createGenderQuery;
-exports.createConnection = createConnection;
-exports.getFeaturedEventsPromise = getFeaturedEventsPromise;
-exports.incrementMatchesPlayed = incrementMatchesPlayed;
-exports.getTotalConnections = getTotalConnections;
-exports.removeFromMatch = removeFromMatch;
-exports.connectFacilityToMatch = connectFacilityToMatch;
-exports.createMatchRequest = createMatchRequest;
-exports.createChatRoomForMatch = createChatRoomForMatch;
-exports.checkEventParticipationPromise = checkEventParticipationPromise;
-
-//players
-exports.createPlayerDiscoverableQuery = createPlayerDiscoverableQuery;
-exports.getUsersConnectionsPromise = getUsersConnectionsPromise;
-exports.getConnectionStatusPromise = getConnectionStatusPromise;
-
-//db
-exports.createGraphRelation = createGraphRelation;
-exports.deleteGraphRelation = deleteGraphRelation;
 exports.sendErrors = sendErrors;
-exports.createGraphRelationPromise = createGraphRelationPromise;
-
-exports.parseRecObject = parseRecObject;
-exports.createRecommendationCron = createRecommendationCron;
-exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
-exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
-exports.getMatchHistoryPromise = getMatchHistoryPromise;
-
-//chat
-exports.getUsersDialogs = getUsersDialogs
 exports.isRecent = isRecent
 
+//exports.queryJoiner = queryJoiner;
+//exports.createDistanceQuery = createDistanceQuery;
+//exports.createSportsQuery = createSportsQuery;
+//exports.createSkillRatingQuery = createSkillRatingQuery;
+//exports.injectId = injectId;
+//exports.insertDistance = insertDistance;
+//exports.createSearchByIdQuery = createSearchByIdQuery;
+//exports.createIsDiscoverableQuery = createIsDiscoverableQuery;
+//exports.createOnlyFutureTypeQuery = createOnlyFutureTypeQuery;
+
+//matches/events
+//exports.updateMatchConnections = updateMatchConnections;
+//exports.updateGenderInPayload = updateGenderInPayload;
+//exports.createGenderQuery = createGenderQuery;
+//exports.createConnection = createConnection;
+//exports.getFeaturedEventsPromise = getFeaturedEventsPromise;
+//exports.incrementMatchesPlayed = incrementMatchesPlayed;
+//exports.getTotalConnections = getTotalConnections;
+//exports.removeFromMatch = removeFromMatch;
+//exports.connectFacilityToMatch = connectFacilityToMatch;
+//exports.createMatchRequest = createMatchRequest;
+//exports.createChatRoomForMatch = createChatRoomForMatch;
+//exports.checkEventParticipationPromise = checkEventParticipationPromise;
+
+//players
+//exports.createPlayerDiscoverableQuery = createPlayerDiscoverableQuery;
+//exports.getUsersConnectionsPromise = getUsersConnectionsPromise;
+//exports.getConnectionStatusPromise = getConnectionStatusPromise;
+
+//db
+//exports.createGraphRelation = createGraphRelation;
+//exports.deleteGraphRelation = deleteGraphRelation;
+//exports.createGraphRelationPromise = createGraphRelationPromise;
+
+//exports.parseRecObject = parseRecObject;
+//exports.createRecommendationCron = createRecommendationCron;
+//exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
+//exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
+//exports.getMatchHistoryPromise = getMatchHistoryPromise;
+
+//chat
+//exports.getUsersDialogs = getUsersDialogs
+
 //requests
-exports.createConnectionRequest = createConnectionRequest;
-exports.acceptConnectionRequest = acceptConnectionRequest;
+//exports.createConnectionRequest = createConnectionRequest;
+//exports.acceptConnectionRequest = acceptConnectionRequest;
 //exports.checkIfRequestedToConnect = checkIfRequestedToConnect;
 //exports.checkIfWaitingToAccept = checkIfWaitingToAccept;
 //exports.checkIfConnected = checkIfConnected;
-exports.parseRequestObject = parseRequestObject;
-exports.createInviteToMatchRequest = createInviteToMatchRequest;
+//exports.parseRequestObject = parseRequestObject;
+//exports.createInviteToMatchRequest = createInviteToMatchRequest;
 //exports.parseConnectRequest = parseConnectRequest;
 
 //firebase
-exports.dispatchEvent = dispatchEvent
+//exports.dispatchEvent = dispatchEvent
 
 //gcm Id
-exports.getGcmIdsForUserIds = getGcmIdsForUserIds
+//exports.getGcmIdsForUserIds = getGcmIdsForUserIds
 
 //sms
 exports.sendSms = sendSms
