@@ -27,6 +27,15 @@ var chats = require('./routes/chats');
 var config = require('./config.js');
 var customUtils = require('./utils.js');
 
+//kardo sab import, node only uses it once
+var constants = require('./constants');
+var UserModel = require('./models/User');
+var MatchModel = require('./models/Match');
+var EventModel = require('./models/Event');
+var RequestModel = require('./requests/Request');
+var dbUtils = require('./dbUtils');
+var EventSystem = require('./events/events');
+
 var requests = require('./requests/requests');
 //var recommendations = require('./recommendations/recommendations');
 
@@ -61,14 +70,14 @@ var db = oio(config.db.key);
 
 var app = express();
 
-qbchat.init();
-qbchat.createSession(function (err, session) {
-        if (session) {
-            console.log("Quickblox Session created");
-        }
-        else if (err) console.log(err)
-    }
-);
+//qbchat.init();
+//qbchat.createSession(function (err, session) {
+//        if (session) {
+//            console.log("Quickblox Session created");
+//        }
+//        else if (err) console.log(err)
+//    }
+//);
 
 function failure() {
     return false;
@@ -167,6 +176,7 @@ app.use(function (req, res, next) {
 // will print stacktrace
 //if (app.get('env') === 'development') {
 app.use(function (err, req, res, next) {
+    console.log(err)
     res.status(err.status || 500);
     res.json({
         errors: [err.message],

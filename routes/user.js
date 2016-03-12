@@ -8,12 +8,10 @@ var request = require('request');
 
 var kew = require('kew');
 var async = require('async');
+var config = require(__base + 'config.js');
 
 var multer = require('multer'),
     fs = require('fs');
-
-var config = require('../config.js');
-var customUtils = require('../utils.js');
 
 var QB = require('quickblox');
 QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
@@ -22,18 +20,20 @@ QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 //TODO: it is better to remove this dependency and have a proper chat abstraction
 //in such a way that the underlying implementation of chat can be removed
 //this is legacyish code
-var constants = require('../constants.js');
-var qbchat = require(__base + './Chat/qbchat');
-var UserModel = require(__base + './models/User');
-var MatchModel = require(__base + './models/Match');
-var EventModel = require(__base + './models/Event');
-var RequestModel = require(__base + './requests/Request');
-var dbUtils = require(__base + './dbUtils');
-var EventSystem = require(__base + './events/events');
+//kardo sab import, node only uses it once
 
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
+var customUtils = require(__base + 'utils.js');
+var constants = require(__base + 'constants');
+var qbchat = require(__base + 'Chat/qbchat');
+var UserModel = require(__base + 'models/User');
+var MatchModel = require(__base + 'models/Match');
+var EventModel = require(__base + 'models/Event');
+var RequestModel = require(__base + 'requests/Request');
+var dbUtils = require(__base + 'dbUtils');
+var EventSystem = require(__base + 'events/events');
 
 var date = new Date();
 var now = date.getTime();

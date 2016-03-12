@@ -193,7 +193,7 @@ function parseConnectRequest(requestObj) {
     acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
 }
 
-module.exports = {
+exports = {
     createConnectionRequest: createConnectionRequest,
     createMatchRequest: createMatchRequest,
     createInviteToMatchRequest : createInviteToMatchRequest,

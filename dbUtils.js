@@ -10,7 +10,6 @@ var UserModel = require(__base + './models/User');
 var MatchModel = require(__base + './models/Match');
 var EventModel = require(__base + './models/Event');
 var RequestModel = require(__base + './requests/Request');
-var dbUtils = require(__base + './dbUtils');
 var EventSystem = require(__base + './events/events');
 
 /**
@@ -161,7 +160,7 @@ function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relatio
     return query
 }
 
-exports.module = {
+module.exports = {
     injectId : injectId,
     createGetOneOnOneGraphRelationQuery : createGetOneOnOneGraphRelationQuery,
     createGraphRelation : createGraphRelation,

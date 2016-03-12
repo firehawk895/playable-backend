@@ -1,17 +1,17 @@
 //kardo sab import, node only uses it once
-var config = require(__base + './config.js');
+var config = require(__base + 'config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require(__base + './utils.js');
-var constants = require(__base + './constants');
-var qbchat = require(__base + './Chat/qbchat');
-var UserModel = require(__base + './models/User');
-var MatchModel = require(__base + './models/Match');
-var EventModel = require(__base + './models/Event');
-var RequestModel = require(__base + './requests/Request');
-var dbUtils = require(__base + './dbUtils');
-var EventSystem = require(__base + './events/events');
+var customUtils = require('../utils.js');
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('../models/User');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
+var date = new Date()
 
 /**
  * LUCENE query generators ------------------------------------->
@@ -70,6 +70,8 @@ function createIsDiscoverableQuery() {
  * @returns {string}
  */
 function createSportsQuery(sportsArray) {
+    //TODO : red alert, why does this require have to be here!
+    var dbUtils = require('../dbUtils');
     return dbUtils.createFieldORQuery(sportsArray, "value.sports")
 }
 
@@ -98,6 +100,8 @@ function createOnlyFutureTypeQuery() {
  * @returns {SearchBuilder}
  */
 function checkMatchParticipationPromise(matchId, userId) {
+    //TODO : red alert, why does this require have to be here!
+    var dbUtils = require('../dbUtils');
     var checkMatchParticipation =
         db.newSearchBuilder()
             .query(dbUtils.createGetOneOnOneGraphRelationQuery('matches', matchId, constants.graphRelations.matches.participants, 'users', userId))
@@ -281,5 +285,6 @@ module.exports = {
     createGenderQuery:createGenderQuery,
     createChatRoomForMatch:createChatRoomForMatch,
     removeFromMatch:removeFromMatch,
-    createSkillRatingQuery:createSkillRatingQuery
+    createSkillRatingQuery:createSkillRatingQuery,
+    insertDistance:insertDistance
 }

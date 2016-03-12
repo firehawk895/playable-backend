@@ -8,19 +8,22 @@ var matchValidation = require('../validations/Match.js');
 var kew = require('kew')
 
 //kardo sab import, node only uses it once
-var config = require(__base + './config.js');
+var config = require(__base + 'config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require(__base + './utils.js');
-var constants = require(__base + './constants');
-var qbchat = require(__base + './Chat/qbchat');
-var UserModel = require(__base + './models/User');
-var MatchModel = require(__base + './models/Match');
-var EventModel = require(__base + './models/Event');
-var RequestModel = require(__base + './requests/Request');
-var dbUtils = require(__base + './dbUtils');
-var EventSystem = require(__base + './events/events');
+var customUtils = require(__base + 'utils.js');
+var constants = require(__base + 'constants');
+var qbchat = require(__base + 'Chat/qbchat');
+var UserModel = require(__base + 'models/User');
+
+var EventModel = require('../models/Event');
+console.log("Event model")
+console.log(EventModel)
+var RequestModel = require(__base + 'requests/Request');
+var dbUtils = require(__base + 'dbUtils');
+var EventSystem = require(__base + 'events/events');
+var MatchModel = require('../models/Match.js')
 
 //var Notifications = require('../notifications');
 //var notify = new Notifications();
@@ -399,8 +402,8 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         //pass a resolved dummy promise so the order of the array is always constant
         promises.push(kew.resolve([]))
     }
-
     //if (req.query.featured) {
+    //console.log(EventModel.constants)
         getFeatured = true;
         promises.push(EventModel.getFeaturedEventsPromise())
     //} else {
