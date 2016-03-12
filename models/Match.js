@@ -101,7 +101,7 @@ function createOnlyFutureTypeQuery() {
  */
 function checkMatchParticipationPromise(matchId, userId) {
     //TODO : red alert, why does this require have to be here!
-    var dbUtils = require('../dbUtils');
+    //var dbUtils = require('../dbUtils');
     var checkMatchParticipation =
         db.newSearchBuilder()
             .query(dbUtils.createGetOneOnOneGraphRelationQuery('matches', matchId, constants.graphRelations.matches.participants, 'users', userId))
@@ -135,7 +135,7 @@ var insertDistance = function (results, usersLat, usersLong) {
         return aResult;
         //console.log(aResult["value"]["distance"])
     })
-    console.log(newResults)
+    //console.log(newResults)
     results.body.results = newResults
     return results
 }

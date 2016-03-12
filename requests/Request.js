@@ -183,11 +183,10 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 dbUtils.createGraphRelation('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants)
 
                 MatchModel.createChatRoomForMatch(user1id, matchPayload["id"])
-                EventSystem.dispatchEvent(constants.events.matches.created)
+                EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
             })
     }
-
     createOneOnOneFixAmatch(user1id, matchPayload)
 }
 

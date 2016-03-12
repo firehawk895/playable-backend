@@ -420,7 +420,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     kew.all(promises)
         .then(function (results) {
-            //result[0] is the main query
+            //result[0] is the main quelocalhost:3002/matches?access_token=461b9f4c1abe77abb26bb965234ab40f&lat=28.5330441&long=77.2111807&radius=20037.5kmry
             //result[1] is the match participation query (if isMatchQuery is true)
             //result[2] is the featured matches query
             //result[3] is the match participants
@@ -429,22 +429,19 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             }
             responseObj["total_count"] = results[0].body.total_count
             responseObj["data"] = dbUtils.injectId(results[0])
-
             //isJoined tells if the current user is part of the match or not
             if (isMatchQuery) {
                 var count = results[1].body.count
-                console.log("count is " + count)
                 if (count == 0) {
                     responseObj["isJoined"] = false
                 } else {
                     responseObj["isJoined"] = true
                 }
-                console.log("this is the results -->")
                 var matchParticipants = dbUtils.injectId(results[3])
                 responseObj["players"] = matchParticipants
             }
             if (getFeatured) {
-                var featuredEvents = dbUtils.injectId(results[2].body)
+                var featuredEvents = dbUtils.injectId(results[2])
                 responseObj["featuredEvents"] = featuredEvents
             }
             res.status(200)
