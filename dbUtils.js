@@ -83,8 +83,8 @@ function createFieldORQuery(theArray, searchKey) {
     theArray.forEach(function (oneItem) {
         theQuery += "`" + oneItem + "` OR "
     })
-    theQuery += ")"
     theQuery = theQuery.substring(0, theQuery.length - 4);
+    theQuery += ")"
     return theQuery
 }
 
@@ -161,16 +161,16 @@ function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relatio
 }
 
 module.exports = {
-    injectId : injectId,
-    createGetOneOnOneGraphRelationQuery : createGetOneOnOneGraphRelationQuery,
-    createGraphRelation : createGraphRelation,
-    createGraphRelationPromise : createGraphRelationPromise,
-    createFieldORQuery : createFieldORQuery,
-    getGraphResultsPromise : getGraphResultsPromise,
-    createSearchByIdQuery : createSearchByIdQuery,
-    createDistanceQuery : createDistanceQuery,
-    deleteGraphRelation : deleteGraphRelation,
-    queryJoiner : queryJoiner
+    injectId: injectId,
+    createGetOneOnOneGraphRelationQuery: createGetOneOnOneGraphRelationQuery,
+    createGraphRelation: createGraphRelation,
+    createGraphRelationPromise: createGraphRelationPromise,
+    createFieldORQuery: createFieldORQuery,
+    getGraphResultsPromise: getGraphResultsPromise,
+    createSearchByIdQuery: createSearchByIdQuery,
+    createDistanceQuery: createDistanceQuery,
+    deleteGraphRelation: deleteGraphRelation,
+    queryJoiner: queryJoiner
 }
 
 
