@@ -28,8 +28,8 @@ var db = oio(config.db.key);
 var customUtils = require(__base + 'utils.js');
 var constants = require(__base + 'constants');
 var qbchat = require(__base + 'Chat/qbchat');
-var UserModel = require(__base + 'models/User');
-var MatchModel = require(__base + 'models/Match');
+var UserModel = require('../models/User.js');
+var MatchModel = require(__base + 'models/Match.js');
 var EventModel = require(__base + 'models/Event');
 var RequestModel = require(__base + 'requests/Request');
 var dbUtils = require(__base + 'dbUtils');
@@ -1153,7 +1153,7 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
 
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var userId = req.user.results[0].value.id;
-    var queries = new Array();
+    var queries = []
     var responseObj = {}
 
     queries.push(UserModel.createPlayerDiscoverableQuery(userId))

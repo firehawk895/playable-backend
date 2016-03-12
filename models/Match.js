@@ -71,7 +71,7 @@ function createIsDiscoverableQuery() {
  */
 function createSportsQuery(sportsArray) {
     //TODO : red alert, why does this require have to be here!
-    var dbUtils = require('../dbUtils');
+    //var dbUtils = require('../dbUtils');
     return dbUtils.createFieldORQuery(sportsArray, "value.sports")
 }
 
