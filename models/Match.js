@@ -260,6 +260,7 @@ function getMatchParticipantsPromise(matchId) {
 }
 
 function getMatchHistoryPromise(userId) {
+    console.log("something is up")
     return dbUtils.getGraphResultsPromise('users', userId, constants.graphRelations.users.playsMatches)
 }
 

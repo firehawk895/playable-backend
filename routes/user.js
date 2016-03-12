@@ -31,7 +31,7 @@ var qbchat = require(__base + 'Chat/qbchat');
 var UserModel = require('../models/User.js');
 var MatchModel = require(__base + 'models/Match.js');
 var EventModel = require(__base + 'models/Event');
-var RequestModel = require(__base + 'requests/Request');
+var RequestModel = require('../requests/Request');
 var dbUtils = require(__base + 'dbUtils');
 var EventSystem = require(__base + 'events/events');
 
@@ -1215,7 +1215,7 @@ router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), 
     var responseObj = {}
     MatchModel.getMatchHistoryPromise(userId)
         .then(function (results) {
-            var matchHistory = customUtils.injectId(results)
+            var matchHistory = dbUtils.injectId(results)
             responseObj["data"] = matchHistory
             res.status(200)
             res.json(responseObj)

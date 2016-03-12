@@ -1,11 +1,15 @@
-var constants = require(__base + './constants.js');
-var qbchat = require(__base + './Chat/qbchat');
-var UserModel = require(__base + './models/User');
-var MatchModel = require(__base + './models/Match');
-var EventModel = require(__base + './models/Event');
-var RequestModel = require(__base + './requests/Request');
-var dbUtils = require(__base + './dbUtils');
-var EventSystem = require(__base + './events/events');
+var constants = require('../constants.js');
+var config = require('../config.js');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('../models/User');
+var MatchModel = require('../models/Match');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
+var Firebase = require("firebase");
+var date = new Date()
+var kew = require('kew')
 
 /**
  * create a connection request from user1 to user2
@@ -84,7 +88,6 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
 function createRequestToJoinMatch(requesterId, matchId) {
 
 }
-
 
 
 /**
@@ -180,9 +183,8 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 dbUtils.createGraphRelation('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants)
 
                 MatchModel.createChatRoomForMatch(user1id, matchPayload["id"])
-                EventModel.dispatchEvent(constants.events.matches)
+                EventSystem.dispatchEvent(constants.events.matches.created)
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
-
             })
     }
 
@@ -193,10 +195,10 @@ function parseConnectRequest(requestObj) {
     acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
 }
 
-exports = {
+module.exports = {
     createConnectionRequest: createConnectionRequest,
     createMatchRequest: createMatchRequest,
-    createInviteToMatchRequest : createInviteToMatchRequest,
+    createInviteToMatchRequest: createInviteToMatchRequest,
     acceptConnectionRequest: acceptConnectionRequest,
-    parseRequestObject: parseRequestObject,
+    parseRequestObject: parseRequestObject
 }

@@ -72,7 +72,7 @@ var getUsersDialogs = function (username, callback) {
     })
 }
 
-modules.export = {
+module.exports = {
     getUsersDialogs : getUsersDialogs
 }
 
