@@ -1,17 +1,17 @@
 //kardo sab import, node only uses it once
-var config = require(__base + 'config.js');
+var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require(__base + 'utils.js');
-var constants = require(__base + 'constants');
-var qbchat = require(__base + 'Chat/qbchat');
-var UserModel = require(__base + 'models/User');
-var MatchModel = require(__base + 'models/Match');
-var EventModel = require(__base + 'models/Event');
-var RequestModel = require(__base + 'requests/Request');
-var dbUtils = require(__base + 'dbUtils');
-var EventSystem = require(__base + 'events/events');
+var customUtils = require('../utils.js');
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('../models/User');
+var MatchModel = require('../models/Match');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
 /**
  * /**
  * This is what a qbDialog looks like:
@@ -72,7 +72,72 @@ var getUsersDialogs = function (username, callback) {
     })
 }
 
+function createGroupChatRoom(roomName) {
+    var newChatRoom = kew.defer()
+    getSession()
+        .then(function (result) {
+            qbchat.createRoom(2, roomName, function (err, newRoom) {
+                if (err) {
+                    newChatRoom.reject(err)
+                    console.log("error creating the one on one room")
+                    console.log(err);
+                }
+                else {
+                    newChatRoom.resolve(newRoom)
+                }
+            })
+        })
+        .fail(function (err) {
+            newChatRoom.reject(err)
+        })
+    return newChatRoom
+}
+
+function addUsersToRoom(newRoomQbId, arrayOfQbIds) {
+    var joined = kew.defer()
+    getSession()
+        .then(function (result) {
+            qbchat.addUserToRoom(newRoomQbId, arrayOfQbIds, function (err, result) {
+                if (err) {
+                    console.log(err);
+                    joined.reject(err)
+                } else {
+                    joined.resolve(result)
+                }
+            })
+        })
+        .fail(function (err) {
+            joined.reject(err)
+        })
+    return joined
+}
+
+function getSession() {
+    var sessionStatus = kew.defer()
+    qbchat.getSession(function (err, session) {
+        if (err) {
+            console.log("Recreating session");
+            qbchat.createSession(function (err, result) {
+                if (err) {
+                    console.log(err)
+                    sessionStatus.reject(err)
+                    //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                } else {
+                    sessionStatus.resolve(result)
+                }
+                ;
+            })
+        } else {
+            sessionStatus.resolve(session)
+        }
+        ;
+    })
+    return sessionStatus
+}
+
 module.exports = {
-    getUsersDialogs : getUsersDialogs
+    getUsersDialogs: getUsersDialogs,
+    createGroupChatRoom: createGroupChatRoom,
+    addUsersToRoom: addUsersToRoom
 }
 

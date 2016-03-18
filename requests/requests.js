@@ -15,24 +15,30 @@ var router = express.Router();
 //var kew = require('kew')
 
 //kardo sab import, node only uses it once
-var config = require(__base + './config.js');
+var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require(__base + './utils.js');
-var constants = require(__base + './constants');
-var qbchat = require(__base + './Chat/qbchat');
-var UserModel = require(__base + './models/User');
-var MatchModel = require(__base + './models/Match');
-var EventModel = require(__base + './models/Event');
-var RequestModel = require(__base + './requests/Request');
-var dbUtils = require(__base + './dbUtils');
-var EventSystem = require(__base + './events/events');
+var customUtils = require('../utils.js');
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('../models/User');
+var MatchModel = require('../models/Match');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
 
 var Firebase = require("firebase");
 var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
 
 /**
+ *
+ * //TODO: Scaling notes:
+ * The number of entries will keep increasing, on("child_added") will be called
+ * for each entry, parsing each of them. slash the retrieved records or move them to
+ * another tree in firebase
+ *
  * Listener:
  * listen to requests updated by every user
  *
@@ -46,6 +52,8 @@ var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.fire
  *      status: constants.requests.status.pending,
  *      match: matchPayload
  *  }
+ *  a sanity check is required, an additional boolean flag "backendParsed"
+ *  will tell you if it needs to be parsed or not
  */
 recommendationsRef.on("child_added", function (snapshot) {
     var userId = snapshot.key()
@@ -59,14 +67,15 @@ recommendationsRef.on("child_added", function (snapshot) {
         var requestObj = childSnapshot.val()
         console.log(requestObj)
 
-        if (requestObj.status == constants.requests.status.accepted) {
+        //if (requestObj.status == constants.requests.status.accepted) {
             console.log("status switched to accepted")
             customUtils.parseRequestObject(requestObj)
-        }
+        //}
 
     })
 })
 
+//TODO : set backendParsed true here itself. or backendAttemptedToParse
 module.exports = router;
 
 

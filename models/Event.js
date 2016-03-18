@@ -1,5 +1,5 @@
 //kardo sab import, node only uses it once
-var config = require(__base + 'config.js');
+var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
@@ -8,7 +8,7 @@ var constants = require('../constants');
 var qbchat = require('../Chat/qbchat');
 var UserModel = require('../models/User');
 var MatchModel = require('../models/Match');
-//var EventModel = require(__base + 'models/Event');
+//var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');

@@ -61,7 +61,8 @@ module.exports = {
         type: {
             connect: "connectRequest",
             match: "OneOnOneMatchRequest",
-            invite: "inviteToMatchRequest"
+            invite: "inviteToMatchRequest",
+            join: "joinMatchRequest"
         },
         status: {
             accepted: "accepted",
@@ -85,7 +86,8 @@ module.exports = {
         matches: {
             hostedFacility: 'hostedFacility',
             participants: 'participants',
-            isHostedByUser: 'isHosted'
+            isHostedByUser: 'isHosted',
+            invitedUsers : 'invitees'
         },
         facilities: {
             hasMatches: 'hasMatches'
@@ -95,7 +97,8 @@ module.exports = {
             playsMatches: 'plays',
             hostsMatch: 'hosts',
             requestedToConnect: "requestedToConnect",
-            waitingToAccept: "waitingToAccept"
+            waitingToAccept: "waitingToAccept",
+            invitedToMatch : "invited"
         }
     },
     connections: {

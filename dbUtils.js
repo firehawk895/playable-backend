@@ -3,14 +3,14 @@ var config = require(__base + './config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require(__base + './utils.js');
-var constants = require(__base + './constants');
-var qbchat = require(__base + './Chat/qbchat');
-var UserModel = require(__base + './models/User');
-var MatchModel = require(__base + './models/Match');
-var EventModel = require(__base + './models/Event');
-var RequestModel = require(__base + './requests/Request');
-var EventSystem = require(__base + './events/events');
+var customUtils = require('./utils.js');
+var constants = require('./constants');
+var qbchat = require('./Chat/qbchat');
+var UserModel = require('./models/User');
+var MatchModel = require('./models/Match');
+var EventModel = require('./models/Event');
+var RequestModel = require('./requests/Request');
+var EventSystem = require('./events/events');
 
 /**
  * Orchestrate query wrappers ---------------------------------->
@@ -133,8 +133,8 @@ function injectId(results) {
  * @param toKey
  * @param relationName
  */
-function deleteGraphRelation(from, fromKey, to, toKey, relationName) {
-    db.newGraphBuilder()
+function deleteGraphRelationPromise(from, fromKey, to, toKey, relationName) {
+    return db.newGraphBuilder()
         .remove()
         .from(from, fromKey)
         .related(relationName)
@@ -163,13 +163,13 @@ function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relatio
 module.exports = {
     injectId: injectId,
     createGetOneOnOneGraphRelationQuery: createGetOneOnOneGraphRelationQuery,
-    createGraphRelation: createGraphRelation,
+    //createGraphRelation: createGraphRelation,
     createGraphRelationPromise: createGraphRelationPromise,
     createFieldORQuery: createFieldORQuery,
     getGraphResultsPromise: getGraphResultsPromise,
     createSearchByIdQuery: createSearchByIdQuery,
     createDistanceQuery: createDistanceQuery,
-    deleteGraphRelation: deleteGraphRelation,
+    deleteGraphRelationPromise: deleteGraphRelationPromise,
     queryJoiner: queryJoiner
 }
 

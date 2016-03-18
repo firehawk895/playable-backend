@@ -1,5 +1,5 @@
 //kardo sab import, node only uses it once
-var config = require(__base + 'config.js');
+var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
@@ -7,10 +7,12 @@ var customUtils = require('../utils.js');
 var constants = require('../constants');
 var qbchat = require('../Chat/qbchat');
 var UserModel = require('../models/User');
+//var MatchModel = require('../models/Match');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
+var ChatModel = require('../Chat/Chat');
 var date = new Date()
 
 /**
@@ -36,8 +38,10 @@ function createSkillRatingQuery(minRating, maxRating) {
 }
 
 function connectFacilityToMatch(matchId, facilityId) {
-    dbUtils.createGraphRelation('matches', matchId, 'facilities', facilityId, constants.graphRelations.matches.hostedFacility)
-    dbUtils.createGraphRelation('facilities', facilityId, 'matches', matchId, constants.graphRelations.matches.hasMatches)
+    return kew.all([
+        dbUtils.createGraphRelationPromise('matches', matchId, 'facilities', facilityId, constants.graphRelations.matches.hostedFacility),
+        dbUtils.createGraphRelationPromise('facilities', facilityId, 'matches', matchId, constants.graphRelations.matches.hasMatches)
+    ])
 }
 
 /**
@@ -70,8 +74,6 @@ function createIsDiscoverableQuery() {
  * @returns {string}
  */
 function createSportsQuery(sportsArray) {
-    //TODO : red alert, why does this require have to be here!
-    //var dbUtils = require('../dbUtils');
     return dbUtils.createFieldORQuery(sportsArray, "value.sports")
 }
 
@@ -109,11 +111,21 @@ function checkMatchParticipationPromise(matchId, userId) {
 }
 
 function incrementMatchesPlayed(userId) {
-    db.get("users", userId)
+    return db.get("users", userId)
         .then(function (result) {
             var matchesPlayed = result.body.matchesPlayed;
             db.merge("users", userId, {
                 matchesPlayed: matchesPlayed + 1
+            })
+        })
+}
+
+function decrementMatchesPlayed(userId) {
+    return db.get("users", userId)
+        .then(function (result) {
+            var matchesPlayed = result.body.matchesPlayed;
+            return db.merge("users", userId, {
+                matchesPlayed: matchesPlayed - 1
             })
         })
 }
@@ -133,9 +145,7 @@ var insertDistance = function (results, usersLat, usersLong) {
             usersLong
         )
         return aResult;
-        //console.log(aResult["value"]["distance"])
     })
-    //console.log(newResults)
     results.body.results = newResults
     return results
 }
@@ -153,10 +163,7 @@ function updateMatchConnections(userId, matchId) {
      * create connections of userId to the playerList if no existing connection exists
      * create connections of each player in playerList to the userId if no existing connection exists
      */
-    db.newGraphReader()
-        .get()
-        .from('matches', matchId)
-        .related(constants.graphRelations.matches.participants)
+    dbUtils.getGraphResultsPromise('matches', matchId, constants.graphRelations.matches.participants)
         .then(function (results) {
             //get all the players of the match
             var playerList = results.body.results.map(function (oneUser) {
@@ -170,12 +177,14 @@ function updateMatchConnections(userId, matchId) {
             }
 
             playerList.forEach(function (playerId) {
-                dbUtils.createGraphRelation('users', userId, 'users', playerId, constants.graphRelations.users.connections)
-                dbUtils.createGraphRelation('users', playerId, 'users', userId, constants.graphRelations.users.connections)
+                kew.all([
+                    dbUtils.createGraphRelationPromise('users', userId, 'users', playerId, constants.graphRelations.users.connections),
+                    dbUtils.createGraphRelationPromise('users', playerId, 'users', userId, constants.graphRelations.users.connections)
+                ])
             })
         })
+    //no status really returned here
 }
-
 
 
 /**
@@ -190,35 +199,25 @@ function createChatRoomForMatch(hostUserQbId, matchId) {
      * format of user dialog title:
      * <connectionRoom>:::user1id:::user2Id
      */
-    //TODO: this should be abstracted out into a Chat model that hides this implementation
-    qbchat.createRoom(2, constants.chats.matchRoom + ":::" + matchId, function (err, newRoom) {
-        if (err) {
-            console.log("error creating the room")
-            console.log(err);
-        }
-        else {
-            console.log("bro add ho gaya bro")
-            console.log(hostUserQbId)
-            qbchat.addUserToRoom(newRoom._id, [hostUserQbId], function (err, result) {
-                if (err) {
-                    console.log("error making the dude join the room")
-                    console.log(err);
-                } else {
-                    console.log("bro add ho gaya bro")
-                    db.merge('matches', matchId, {"qbId": newRoom._id})
-                        .then(function (result) {
-                            //chatObj["id"] = date.getTime() + "@1";
-                            //chatObj["channelName"] = payload["title"];
-                            //chatObj["channelId"] = newRoom._id;
-                            //notify.emit('wordForChat', chatObj);
-                        })
-                        .fail(function (err) {
-                            console.log(err.body.message);
-                        });
-                }
-            })
-        }
-    });
+    var chatRoomCreated = kew.defer()
+    var chatRoomName = constants.chats.matchRoom + ":::" + matchId
+    var newRoomId
+    ChatModel.createGroupChatRoom(chatRoomName)
+        .then(function (newRoom) {
+            newRoomId = newRoom._id
+            return ChatModel.addUsersToRoom(newRoomId, [hostUserQbId])
+        })
+        .then(function (roomJoinStatus) {
+            return db.merge('matches', matchId, {"qbId": newRoomId})
+        })
+        .then(function (mergeSuccess) {
+            chatRoomCreated.resolve(mergeSuccess)
+        })
+        .fail(function (err) {
+            chatRoomCreated.reject(err)
+        })
+
+    return chatRoomCreated
 }
 
 /**
@@ -260,7 +259,6 @@ function getMatchParticipantsPromise(matchId) {
 }
 
 function getMatchHistoryPromise(userId) {
-    console.log("something is up")
     return dbUtils.getGraphResultsPromise('users', userId, constants.graphRelations.users.playsMatches)
 }
 
@@ -268,24 +266,192 @@ function removeFromMatch(userId, matchId) {
     //decrease slots_filled of the given match
     //remove from chat channel
     return kew.all([
-        dbUtils.deleteGraphRelation('matches', matchId, 'users', userId, constants.graphRelations.matches.participants),
-        dbUtils.deleteGraphRelation('users', userId, 'matches', matchId, constants.graphRelations.users.playsMatches)
+        dbUtils.deleteGraphRelationPromise('matches', matchId, 'users', userId, constants.graphRelations.matches.participants),
+        dbUtils.deleteGraphRelationPromise('users', userId, 'matches', matchId, constants.graphRelations.users.playsMatches),
+        decrementMatchesPlayed(userId)
     ])
 }
 
+/**
+ * that massive createMatch method
+ * match payload expectations:
+ * keep this updated if you want a good life.
+ * var payload = {
+            title: req.body.title,
+            description: req.body.description,
+            sport: req.body.sport,
+            skill_level_min: req.body.skill_level_min,
+            skill_level_max: req.body.skill_level_max,
+            playing_time: req.body.playing_time,
+            slots_filled: 1, //the host is a participant of the match
+            slots: req.body.slots,
+            location_name: req.body.location_name,
+            location: {
+                lat: req.body.lat,
+                long: req.body.long
+            },
+            host: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                avatar: user.avatar,
+                avatarThumb: user.avatarThumb
+            },
+            isFacility: req.body.isFacility,
+            facilityId: req.body.facilityId,
+            type: "match",
+            hasMale: false,
+            hasFemale: false,
+            hasCustomGender: false,
+            isDiscoverable: true
+        }
+
+ * hostData = {
+ *      id, name, qbId,
+ * }
+ *
+ * creates a match, creates its cha
+ * @param payload
+ * @param hostData
+ */
+function createMatch(payload, hostData) {
+    var matchCreated = kew.defer()
+    payload = updateGenderInPayload(payload, hostData.gender)
+    db.post('matches', payload)
+        .then(function (result) {
+            payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+            matchCreated.resolve(payload)
+
+            var promises = []
+
+            req.body.invitedUserIdList.forEach(function (invitedUserId) {
+                RequestModel.createInviteToMatchRequest(hostData.id, hostData.name, payload, invitedUserId)
+            })
+
+            if (payload.isFacility) {
+                promises.push(connectFacilityToMatch(payload["id"], payload["facilityId"]))
+            }
+
+            /**
+             * The numerous graph relations are so that we
+             * can access the related data from any entry point
+             */
+
+            //The user hosts the match
+            promises.push(dbUtils.createGraphRelationPromise('users', hostData.id, 'matches', payload["id"], constants.graphRelations.users.hostsMatch))
+            //The user plays in the match
+            promises.push(dbUtils.createGraphRelationPromise('users', hostData.id, 'matches', payload["id"], constants.graphRelations.users.playsMatches))
+            //The match is hosted by user
+            promises.push(dbUtils.createGraphRelationPromise('matches', payload["id"], 'users', hostData.id, constants.graphRelations.matches.isHostedByUser))
+            //The match has participants (user)
+            promises.push(dbUtils.createGraphRelationPromise('matches', payload["id"], 'users', hostData.id, constants.graphRelations.matches.participants))
+
+            /**
+             * Create the chat room for the match, and make the host join it
+             */
+            promises.push(createChatRoomForMatch(hostData.qbId, payload["id"]))
+
+            kew.all(promises)
+                .then(function(results) {
+                    console.log("match creation fully complete")
+                    matchCreated.resolve()
+                })
+                .fail(function(err) {
+                    console.log("match creation failed")
+                    matchCreated.reject(err)
+                    console.log(err)
+                })
+            //var chatObj = {
+            //    "created": date.getTime(),
+            //    "type": "newChannel",
+            //    "matchId": payload["id"],
+            //    "pathTitle": reqBody.title
+            //}
+            EventModel.dispatchEvent(constants.events.matches.created, payload)
+        })
+        .fail(function(err) {
+            matchCreated.reject(err)
+        })
+    return matchCreated
+}
+
+function joinMatch(matchId, joineeId) {
+    var joineeGender
+    var joineeQBid
+
+    function incrementFilledSlots(slots, slotsFilled) {
+        slots
+        slotsFilled++
+        var payload = {
+            'slots_filled': slotsFilled
+        }
+
+        //if match is full make it undiscoverable
+        if (slots == slotsFilled) {
+            payload["isDiscoverable"] = false
+        }
+        payload = updateGenderInPayload(payload, joineeGender)
+        db.merge('matches', matchId, payload)
+        updateMatchConnections(joineeId, matchId)
+    }
+
+    var joinStatus = kew.defer()
+    /**
+     * how do you share data between promise chains?
+     * http://stackoverflow.com/questions/28250680/how-do-i-access-previous-promise-results-in-a-then-chain
+     */
+    var matchDetails
+
+    kew.all([getMatchPromise(matchId), UserModel.getUserPromise(joineeId)])
+        .then(function(results) {
+            matchDetails = results[0]
+            joineeGender = results[1].gender
+            joineeQBid = results[1].qbId
+            if (matchDetails.slots == matchDetails.slots_filled)
+                return kew.reject(new Error("The Match is already full. Please contact the host"))
+            else
+                return checkMatchParticipationPromise(matchId, joineeId)
+        })
+        .then(function(results) {
+            var count = results.body.count
+            if (count == 0) {
+                return kew.all([
+                    dbUtils.createGraphRelationPromise('matches', matchId, 'users', joineeId, constants.graphRelations.matches.participants),
+                    dbUtils.createGraphRelationPromise('users', joineeId, 'matches', matchId, constants.graphRelations.users.playsMatches)
+                ])
+            } else {
+                return kew.reject(new Error("You are already part of this match"))
+            }
+        })
+        .then(function(results) {
+            incrementFilledSlots()
+            return ChatModel.addUsersToRoom(matchDetails.qbId, [joineeQBid])
+        })
+        .then(function(joinedMatchChat) {
+            return joinStatus.resolve()
+        })
+        .fail(function(err) {
+            joinStatus.reject(err)
+        })
+    return joinStatus
+}
+
+
 module.exports = {
-    getMatchParticipantsPromise : getMatchParticipantsPromise,
-    createSportsQuery : createSportsQuery,
-    getMatchHistoryPromise : getMatchHistoryPromise,
-    createOnlyFutureTypeQuery : createOnlyFutureTypeQuery,
-    connectFacilityToMatch : connectFacilityToMatch,
-    checkMatchParticipationPromise:checkMatchParticipationPromise,
-    updateGenderInPayload:updateGenderInPayload,
-    updateMatchConnections:updateMatchConnections,
-    createIsDiscoverableQuery:createIsDiscoverableQuery,
-    createGenderQuery:createGenderQuery,
-    createChatRoomForMatch:createChatRoomForMatch,
-    removeFromMatch:removeFromMatch,
-    createSkillRatingQuery:createSkillRatingQuery,
-    insertDistance:insertDistance
+    getMatchParticipantsPromise: getMatchParticipantsPromise,
+    createSportsQuery: createSportsQuery,
+    getMatchHistoryPromise: getMatchHistoryPromise,
+    createOnlyFutureTypeQuery: createOnlyFutureTypeQuery,
+    connectFacilityToMatch: connectFacilityToMatch,
+    checkMatchParticipationPromise: checkMatchParticipationPromise,
+    updateGenderInPayload: updateGenderInPayload,
+    updateMatchConnections: updateMatchConnections,
+    createIsDiscoverableQuery: createIsDiscoverableQuery,
+    createGenderQuery: createGenderQuery,
+    createChatRoomForMatch: createChatRoomForMatch,
+    removeFromMatch: removeFromMatch,
+    createSkillRatingQuery: createSkillRatingQuery,
+    insertDistance: insertDistance,
+    createMatch : createMatch,
+    joinMatch : joinMatch
 }

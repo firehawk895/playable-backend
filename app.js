@@ -2,10 +2,6 @@
  * TODO: switch to schema based validation
  */
 var express = require('express');
-global.mod = function (file){
-    return require ("./" + file)
-}
-global.__base = __dirname + '/';
 var path = require('path');
 var fs = require('fs')
 var morgan = require('morgan');

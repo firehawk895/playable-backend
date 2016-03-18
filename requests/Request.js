@@ -67,6 +67,18 @@ function createMatchRequest(user1id, user2id, matchPayload, user1name) {
  * @param hostName
  */
 function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
+    /**
+     * Expectations :
+     * wait is there a better way to design this?
+     * objects passed reduce the number of arguments but hide the details of the object
+     * increasing complexity and allowing the possibility of errors.
+     * probably even making a not so clean interface
+     *
+     * matchPayload = {
+     *      id
+     *      sport
+     * }
+     */
     var payload = {
         fromUserId: hostId,
         toUserId: inviteeId,
@@ -74,7 +86,9 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
         status: constants.requests.status.pending,
         photo: "",
         msg: hostName + " has invited you to play a game of " + matchPayload.sport + " with you",
-        match: matchPayload,
+        match: {
+            id : matchPayload.id
+        },
         timestamp: date.getTime()
     }
     pushRequestToFirebase(payload, inviteeId)
@@ -85,10 +99,20 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
  * @param requesterId
  * @param matchId
  */
-function createRequestToJoinMatch(requesterId, matchId) {
-
+function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterName) {
+    //matchPayload expected to have : id, sport, playing_time
+    var payload = {
+        fromUserId: requesterId,
+        toUserId: hostId,
+        type: constants.requests.type.join,
+        status: constants.requests.status.pending,
+        photo: "",
+        msg: requesterName + " wants to join your game of " + matchPayload.sport + " on " + matchPayload.playing_time,
+        match: matchPayload,
+        timestamp: date.getTime()
+    }
+    pushRequestToFirebase(payload, requesterId)
 }
-
 
 /**
  * the connection request sent from user1 to user2 is now
@@ -97,11 +121,15 @@ function createRequestToJoinMatch(requesterId, matchId) {
  * user2 accepts user1
  * @param user1id
  * @param user2id
+ * @returns {!Promise.<!Array>}
  */
 function acceptConnectionRequest(user1id, user2id) {
-    dbUtils.deleteGraphRelation('users', user1id, 'users', user2id, constants.graphRelations.users.waitingToAccept)
-    dbUtils.deleteGraphRelation('users', user2id, 'users', user1id, constants.graphRelations.users.requestedToConnect)
-    UserModel.createConnection(user1id, user2id)
+    var UserModel = require('../models/User');
+    return kew.all([
+        dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.waitingToAccept),
+        dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.requestedToConnect),
+        UserModel.createConnection(user1id, user2id)
+    ])
 }
 
 /**
@@ -125,11 +153,18 @@ function pushRequestToFirebase(jsonPayload, userId) {
 function parseRequestObject(requestObj) {
     switch (requestObj.type) {
         case constants.requests.type.connect:
-            parseConnectRequest(requestObj)
-            break;
+            return parseConnectRequest(requestObj)
+            break
         case constants.requests.type.match:
-            parseMatchRequest(requestObj)
-            break;
+            return parseMatchRequest(requestObj)
+            break
+        //not required to parse - android will parse invite requests and auto join
+        //case constants.requests.type.invite:
+        //    return parseInviteToMatchRequest(requestObj)
+        //    break
+        case constants.requests.type.join:
+            return parseJoinMatchRequest(requestObj)
+            break
         default:
     }
 }
@@ -139,14 +174,36 @@ function parseRequestObject(requestObj) {
  * @param requestObj
  */
 function parseMatchRequest(requestObj) {
-    acceptMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
-    //make them a connection
-    //is the create match reusable?
-    //create a match with the specified stuff
-    //make them join the match
+    if (requestObj.status == constants.requests.status.accepted) {
+        acceptMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
+    } else {
+        //nothing on rejection
+    }
+}
 
-    function createThatFixAmatchKaMatch() {
+function parseInviteToMatchRequest(requestObj) {
 
+}
+
+function parseJoinMatchRequest(requestObj) {
+    if (requestObj.status == constants.requests.status.accepted) {
+        acceptJoinMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
+    } else {
+        rejectJoinMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
+    }
+
+    function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
+        MatchModel.joinMatch(matchPayload["id"], fromUserId)
+            .then(function(result) {
+                //what to do?
+            })
+            .fail(function(err) {
+                //what to do?
+            })
+    }
+
+    function rejectJoinMatchRequest(fromUserId, toUserId, matchPayload) {
+        //dispatch some negetive notification
     }
 }
 
@@ -159,11 +216,23 @@ function parseMatchRequest(requestObj) {
  * @param user2id
  */
 function acceptMatchRequest(user1id, user2id, matchPayload) {
-    dbUtils.deleteGraphRelation('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect)
-    dbUtils.deleteGraphRelation('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
-    createConnection(user1id, user2id)
+    return kew.all([
+        dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
+        dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept),
+        UserModel.createConnection(user1id, user2id)
+    ])
+        .then(function(result) {
+            return createOneOnOneFixAmatch(user1id, matchPayload)
+        })
+        .then(function(result) {
+            console.log("accepting OneOnOneFixAmatch fully done")
+        })
+        .err(function(err) {
+            console.log("accepting OneOnOneFixAmatch, attempt to reparse")
+        })
+
     function createOneOnOneFixAmatch(user1id, matchPayload) {
-        db.post('matches', matchPayload)
+        return db.post('matches', matchPayload)
             .then(function (result) {
                 matchPayload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
                 if (matchPayload.isFacility) {
@@ -173,25 +242,44 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                  * The numerous graph relations are so that we
                  * can access the related data from any entry point
                  */
+                var promises = []
                     //The user hosts the match
-                dbUtils.createGraphRelation('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.hostsMatch)
+                promises.push(dbUtils.createGraphRelationPromise('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.hostsMatch))
                 //The user plays in the match
-                dbUtils.createGraphRelation('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.playsMatches)
+                promises.push(dbUtils.createGraphRelationPromise('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.playsMatches))
                 //The match is hosted by user
-                dbUtils.createGraphRelation('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.isHostedByUser)
+                promises.push(dbUtils.createGraphRelationPromise('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.isHostedByUser))
                 //The match has participants (user)
-                dbUtils.createGraphRelation('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants)
+                promises.push(dbUtils.createGraphRelationPromise('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants))
+                promises.push(MatchModel.createChatRoomForMatch(user1id, matchPayload["id"]))
 
-                MatchModel.createChatRoomForMatch(user1id, matchPayload["id"])
-                EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
+                return kew.all(promises)
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
+            })
+            .then(function(results) {
+                EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
+
             })
     }
     createOneOnOneFixAmatch(user1id, matchPayload)
 }
 
 function parseConnectRequest(requestObj) {
-    acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
+    if (requestObj.status == constants.requests.status.accepted) {
+        acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
+            .then(function(results) {
+
+            })
+            .fail(function(err) {
+
+            })
+    } else {
+        //no action so far
+    }
+}
+
+function markParsedByBackend(firebasePath, payload) {
+
 }
 
 module.exports = {
@@ -199,5 +287,6 @@ module.exports = {
     createMatchRequest: createMatchRequest,
     createInviteToMatchRequest: createInviteToMatchRequest,
     acceptConnectionRequest: acceptConnectionRequest,
-    parseRequestObject: parseRequestObject
+    parseRequestObject: parseRequestObject,
+    createRequestToJoinMatch: createRequestToJoinMatch
 }

@@ -8,21 +8,21 @@ var matchValidation = require('../validations/Match.js');
 var kew = require('kew')
 
 //kardo sab import, node only uses it once
-var config = require(__base + 'config.js');
+var config = require('config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require(__base + 'utils.js');
-var constants = require(__base + 'constants');
-var qbchat = require(__base + 'Chat/qbchat');
-var UserModel = require(__base + 'models/User');
+var customUtils = require('../utils.js');
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('models/User');
 
 var EventModel = require('../models/Event');
 console.log("Event model")
 console.log(EventModel)
-var RequestModel = require(__base + 'requests/Request');
-var dbUtils = require(__base + 'dbUtils');
-var EventSystem = require(__base + 'events/events');
+var RequestModel = require('requests/Request');
+var dbUtils = require('dbUtils');
+var EventSystem = require('events/events');
 var MatchModel = require('../models/Match.js')
 
 //var Notifications = require('../notifications');
@@ -94,55 +94,67 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
             isDiscoverable: true
         }
 
-        payload = MatchModel.updateGenderInPayload(payload, hostGender)
-
-        db.post('matches', payload)
-            .then(function (result) {
-                payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+        MatchModel.createMatch(payload, user)
+            .then(function (results) {
                 responseObj["data"] = payload;
                 res.status(201);
                 res.json(responseObj);
-
-                req.body.invitedUserIdList.forEach(function (invitedUserId) {
-                    RequestModel.createInviteToMatchRequest(user.id, user.name, payload["id"], payload["title"], payload["sport"], invitedUserId)
-                })
-
-                if (payload.isFacility) {
-                    MatchModel.connectFacilityToMatch(payload["id"], payload["facilityId"])
-                }
-
-                /**
-                 * The numerous graph relations are so that we
-                 * can access the related data from any entry point
-                 */
-                    //The user hosts the match
-                dbUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.hostsMatch)
-                //The user plays in the match
-                dbUtils.createGraphRelation('users', userId, 'matches', payload["id"], constants.graphRelations.users.playsMatches)
-                //The match is hosted by user
-                dbUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.isHostedByUser)
-                //The match has participants (user)
-                dbUtils.createGraphRelation('matches', payload["id"], 'users', userId, constants.graphRelations.matches.participants)
-
-                /**
-                 * Create the chat room for the match, and make the host join it
-                 */
-                MatchModel.createChatRoomForMatch(user.qbId, payload["id"])
-                //var chatObj = {
-                //    "created": date.getTime(),
-                //    "type": "newChannel",
-                //    "matchId": payload["id"],
-                //    "pathTitle": reqBody.title
-                //}
-                EventModel.dispatchEvent(constants.events.matches.created, payload)
-                //customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
             })
             .fail(function (err) {
-                responseObj["errors"] = [err.body.message];
+                responseObj["errors"] = [err];
                 res.status(422);
                 res.json(responseObj);
             })
-        //TODO: isFacility is true, set up graph relation and access codes
+
+        //payload = MatchModel.updateGenderInPayload(payload, hostGender)
+        //db.post('matches', payload)
+        //    .then(function (result) {
+        //        payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+        //        responseObj["data"] = payload;
+        //        res.status(201);
+        //        res.json(responseObj);
+        //
+        //        req.body.invitedUserIdList.forEach(function (invitedUserId) {
+        //            RequestModel.createInviteToMatchRequest(user.id, user.name, payload["id"], payload["title"], payload["sport"], invitedUserId)
+        //        })
+        //
+        //        if (payload.isFacility) {
+        //            MatchModel.connectFacilityToMatch(payload["id"], payload["facilityId"])
+        //        }
+        //
+        //        /**
+        //         * The numerous graph relations are so that we
+        //         * can access the related data from any entry point
+        //         */
+        //        var promises = []
+        //            //The user hosts the match
+        //        promises.push(dbUtils.createGraphRelationPromise('users', userId, 'matches', payload["id"], constants.graphRelations.users.hostsMatch))
+        //        //The user plays in the match
+        //        promises.push(dbUtils.createGraphRelationPromise('users', userId, 'matches', payload["id"], constants.graphRelations.users.playsMatches))
+        //        //The match is hosted by user
+        //        promises.push(dbUtils.createGraphRelationPromise('matches', payload["id"], 'users', userId, constants.graphRelations.matches.isHostedByUser))
+        //        //The match has participants (user)
+        //        promises.push(dbUtils.createGraphRelationPromise('matches', payload["id"], 'users', userId, constants.graphRelations.matches.participants))
+        //        kew.all(promises)
+        //        /**
+        //         * Create the chat room for the match, and make the host join it
+        //         */
+        //        MatchModel.createChatRoomForMatch(user.qbId, payload["id"])
+        //
+        //        //var chatObj = {
+        //        //    "created": date.getTime(),
+        //        //    "type": "newChannel",
+        //        //    "matchId": payload["id"],
+        //        //    "pathTitle": reqBody.title
+        //        //}
+        //        EventModel.dispatchEvent(constants.events.matches.created, payload)
+        //        //customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
+        //    })
+        //    .fail(function (err) {
+        //        responseObj["errors"] = [err.body.message];
+        //        res.status(422);
+        //        res.json(responseObj);
+        //    })
     }
 }])
 
@@ -150,7 +162,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
     var responseObj = {}
     var user = req.user.results[0].value
     var matchId = req.body.matchId
-    var invitedUsersIds = req.body.invitedUserIds
+    //var invitedUsersIds = req.body.invitedUserIds
 
     var validationResponse = matchValidation.validatePatchMatch(req.body);
     req.body = validationResponse.reqBody
@@ -195,99 +207,99 @@ router.post('/remove', [passport.authenticate('bearer', {session: false}), funct
 
 }])
 
-router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
-    qbchat.getSession(function (err, session) {
-        if (err) {
-            console.log("Recreating session");
-            qbchat.createSession(function (err, result) {
-                if (err) {
-                    console.log(err)
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
-                } else next();
-            })
-        } else next();
-    })
-}, function (req, res) {
+router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {
     console.log("definitely here")
     var matchId = req.body.matchId;
     var userId = req.user.results[0].value.id;
-    var usersGender = req.user.results[0].value.gender;
     var responseObj = {}
 
-    db.get('matches', matchId)
-        .then(function (theMatch) {
-            console.log(theMatch.body)
-            var roomId = theMatch.body.qbId
-            if (theMatch.body.slots == theMatch.body.slots_filled) {
-                responseObj["errors"] = ["The Match is already full. Please contact the host"]
-                res.status(422)
-                res.json(responseObj)
-                return
-            } else {
-                console.log("what")
-                //Check if he has already joined the match
-                MatchModel.checkMatchParticipationPromise(matchId, userId)
-                    .then(function (results) {
-                        console.log("just checked match participation")
-                        var count = results.body.count
-                        if (count == 0) {
-                            console.log("user determined to be not participating in match")
-                            //qbchat.addUserToRoom(roomId, [userId], function (err, result) {
-                            //    if (err) {
-                            //        console.log(err)
-                            //        customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503, res)
-                            //    } else {
-                            dbUtils.createGraphRelation('matches', matchId, 'users', userId, 'participants')
-                            //customUtils.incrementMatchesPlayed(userId)
-                            db.newGraphBuilder()
-                                .create()
-                                .from('users', userId)
-                                .related('plays')
-                                .to('matches', matchId)
-                                .then(function (result) {
-                                    /**
-                                     * You are hoping that orchestrate handles concurrency
-                                     * this sort of modification needs to be safe from race conditions
-                                     */
-                                    console.log(theMatch.body.slots_filled)
-                                    var slots = theMatch.body.slots
-                                    var slotsFilled = theMatch.body.slots_filled + 1
-                                    var payload = {
-                                        'slots_filled': slotsFilled
-                                    }
-
-                                    //if match is full make it undiscoverable
-                                    if (slots == slotsFilled) {
-                                        payload["isDiscoverable"] = false
-                                    }
-                                    payload = MatchModel.updateGenderInPayload(payload, usersGender)
-                                    db.merge('matches', matchId, payload)
-                                    MatchModel.updateMatchConnections(userId, matchId)
-
-
-                                    responseObj["data"] = []
-                                    responseObj["message"] = "Successfully joined"
-                                    res.status(200)
-                                    res.json(responseObj)
-                                })
-                                .fail(function (err) {
-                                    responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
-                                    res.status(503)
-                                    res.json(responseObj)
-                                })
-                            //}
-                            //})
-                        } else {
-                            customUtils.sendErrors(["You are already part of this match"], 422, res)
-                        }
-                    })
-            }
-        })
-        .fail(function (err) {
-            responseObj["errors"] = [err.body.message]
-            res.status(503)
+    MatchModel.joinMatch(matchId, userId)
+        .then(function (result) {
+            responseObj["data"] = []
+            responseObj["message"] = "Successfully joined"
+            res.status(200)
             res.json(responseObj)
         })
+        .fail(function (err) {
+            responseObj["errors"] = [err]
+            res.status(422)
+            res.json(responseObj)
+        })
+
+    //db.get('matches', matchId)
+    //    .then(function (theMatch) {
+    //        console.log(theMatch.body)
+    //        var roomId = theMatch.body.qbId
+    //        if (theMatch.body.slots == theMatch.body.slots_filled) {
+    //            responseObj["errors"] = ["The Match is already full. Please contact the host"]
+    //            res.status(422)
+    //            res.json(responseObj)
+    //            return
+    //        } else {
+    //            console.log("what")
+    //            //Check if he has already joined the match
+    //            MatchModel.checkMatchParticipationPromise(matchId, userId)
+    //                .then(function (results) {
+    //                    console.log("just checked match participation")
+    //                    var count = results.body.count
+    //                    if (count == 0) {
+    //                        console.log("user determined to be not participating in match")
+    //                        //qbchat.addUserToRoom(roomId, [userId], function (err, result) {
+    //                        //    if (err) {
+    //                        //        console.log(err)
+    //                        //        customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503, res)
+    //                        //    } else {
+    //                        dbUtils.createGraphRelationP('matches', matchId, 'users', userId, 'participants')
+    //                        //customUtils.incrementMatchesPlayed(userId)
+    //                        db.newGraphBuilder()
+    //                            .create()
+    //                            .from('users', userId)
+    //                            .related('plays')
+    //                            .to('matches', matchId)
+    //                            .then(function (result) {
+    //                                /**
+    //                                 * You are hoping that orchestrate handles concurrency
+    //                                 * this sort of modification needs to be safe from race conditions
+    //                                 */
+    //                                console.log(theMatch.body.slots_filled)
+    //                                var slots = theMatch.body.slots
+    //                                var slotsFilled = theMatch.body.slots_filled + 1
+    //                                var payload = {
+    //                                    'slots_filled': slotsFilled
+    //                                }
+    //
+    //                                //if match is full make it undiscoverable
+    //                                if (slots == slotsFilled) {
+    //                                    payload["isDiscoverable"] = false
+    //                                }
+    //                                payload = MatchModel.updateGenderInPayload(payload, usersGender)
+    //                                db.merge('matches', matchId, payload)
+    //                                MatchModel.updateMatchConnections(userId, matchId)
+    //
+    //
+    //                                responseObj["data"] = []
+    //                                responseObj["message"] = "Successfully joined"
+    //                                res.status(200)
+    //                                res.json(responseObj)
+    //                            })
+    //                            .fail(function (err) {
+    //                                responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
+    //                                res.status(503)
+    //                                res.json(responseObj)
+    //                            })
+    //                        //}
+    //                        //})
+    //                    } else {
+    //                        customUtils.sendErrors(["You are already part of this match"], 422, res)
+    //                    }
+    //                })
+    //        }
+    //    })
+    //    .fail(function (err) {
+    //        responseObj["errors"] = [err.body.message]
+    //        res.status(503)
+    //        res.json(responseObj)
+    //    })
 }])
 
 router.post('/invite', [passport.authenticate('bearer', {session: false}), function (req, res) {
@@ -303,14 +315,18 @@ router.post('/invite', [passport.authenticate('bearer', {session: false}), funct
                 res.status(403)
                 res.json(responseObj)
             } else {
-                dbUtils.createGraphRelation('matches', matchId, 'users', invitedUserId, 'invitees')
-                dbUtils.createGraphRelation('users', invitedUserId, 'matches', matchId, 'invited')
+                return kew.all([
+                    dbUtils.createGraphRelationPromise('matches', matchId, 'users', invitedUserId, constants.graphRelations.matches.invitedUsers),
+                    dbUtils.createGraphRelationPromise('users', invitedUserId, 'matches', matchId, constants.graphRelations.users.invitedToMatch)
+                ])
                 //customUtils.createRequest('invitedToMatch', invitedUserId, matchId, hostUserId)
-                responseObj["data"] = []
-                responseObj["message"] = ["Users have been invited. Duplicate invites are not sent out."]
-                res.status(200)
-                res.json(responseObj)
             }
+        })
+        .then(function (result) {
+            responseObj["data"] = []
+            responseObj["message"] = ["Users have been invited. Duplicate invites are not sent out."]
+            res.status(200)
+            res.json(responseObj)
         })
         .fail(function (err) {
             responseObj["errors"] = [err.body.message]
@@ -404,11 +420,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     }
     //if (req.query.featured) {
     //console.log(EventModel.constants)
-        getFeatured = true;
-        promises.push(EventModel.getFeaturedEventsPromise())
+    getFeatured = true;
+    promises.push(EventModel.getFeaturedEventsPromise())
     //} else {
-        //pass a resolved dummy promise so the order of the array is always constant
-        //promises.push(kew.resolve([]))
+    //pass a resolved dummy promise so the order of the array is always constant
+    //promises.push(kew.resolve([]))
     //}
 
     //push match participants

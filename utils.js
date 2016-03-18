@@ -7,7 +7,7 @@ var randomString = require('random-string');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var qbchat = require(__base + './Chat/qbchat.js');
+var qbchat = require('./Chat/qbchat.js');
 
 var QB = require('quickblox');
 QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);

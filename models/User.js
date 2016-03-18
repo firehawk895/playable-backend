@@ -6,12 +6,13 @@ var db = oio(config.db.key);
 var customUtils = require('../utils.js');
 var constants = require('../constants');
 var qbchat = require('../Chat/qbchat');
-var UserModel = require('../models/User');
+//var UserModel = require('../models/User');
 var MatchModel = require('../models/Match');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
+var ChatModel = require('../Chat/Chat');
 
 /**
  * basic query to display users in the users discover section
@@ -47,28 +48,47 @@ function getUserPromise(userId) {
  * who have accepted each others request
  * @param user1id
  * @param user2id
+ * @returns {number|*|!Promise|Object}
  */
 function createConnection(user1id, user2id) {
-    dbUtils.createGraphRelation('users', user1id, 'users', user2id, constants.graphRelations.users.connections)
-    dbUtils.createGraphRelation('users', user2id, 'users', user1id, constants.graphRelations.users.connections)
+    var connectionCreated = kew.defer()
+    var promises = [
+        getUserPromise(user1id),
+        getUserPromise(user2id),
+        dbUtils.createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.connections),
+        dbUtils.createGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.connections),
+    ]
 
-    kew.all([getUserPromise(user1id), getUserPromise(user2id)])
+    var user1QBid
+    var user2QBid
+    kew.all(promises)
         .then(function (results) {
-            var user1QBid = results[0].qbId
-            var user2QBid = results[1].qbId
-
-            qbchat.createRoom(2, constants.chats.oneOnOne + ":::" + user1id + ":::" + user2id, function (err, newRoom) {
-                if (err) {
-                    console.log("error creating the one on one room")
-                    console.log(err);
-                }
-                else {
-                    qbchat.addUserToRoom(newRoom._id, [user1QBid, user2QBid], function (err, result) {
-                        if (err) console.log(err);
-                    })
-                }
-            })
+            user1QBid = results[0].qbId
+            user2QBid = results[1].qbId
+            var chatRoomName = constants.chats.oneOnOne + ":::" + user1id + ":::" + user2id
+            return ChatModel.createGroupChatRoom(chatRoomName)
+            //qbchat.createRoom(2, , function (err, newRoom) {
+            //    if (err) {
+            //        console.log("error creating the one on one room")
+            //        console.log(err);
+            //    }
+            //    else {
+            //        qbchat.addUserToRoom(newRoom._id, [user1QBid, user2QBid], function (err, result) {
+            //            if (err) console.log(err);
+            //        })
+            //    }
+            //})
         })
+        .then(function(newChatRoom) {
+            return ChatModel.addUsersToRoom(newChatRoom._id, [user1QBid, user2QBid])
+        })
+        .then(function(joinedRoomStatus) {
+            return connectionCreated.resolve(joinedRoomStatus)
+        })
+        .fail(function(err) {
+            connectionCreated.reject(err)
+        })
+    return connectionCreated
 }
 
 function getConnectionStatusPromise(user1id, user2id) {
@@ -192,10 +212,15 @@ function getGcmIdsForUserIds(userIdList) {
     return gcmUserIds
 }
 
+function getUserPromise(userId) {
+    return db.get('users', userId)
+}
+
 module.exports = {
     getConnectionStatusPromise : getConnectionStatusPromise,
     getTotalConnections : getTotalConnections,
     getUsersConnectionsPromise : getUsersConnectionsPromise,
     createPlayerDiscoverableQuery : createPlayerDiscoverableQuery,
-    createConnection : createConnection
+    createConnection : createConnection,
+    getUserPromise : getUserPromise
 }
