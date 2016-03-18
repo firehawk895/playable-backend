@@ -8,7 +8,7 @@ var request = require('request');
 
 var kew = require('kew');
 var async = require('async');
-var config = require(__base + 'config.js');
+var config = require('../config.js');
 
 var multer = require('multer'),
     fs = require('fs');

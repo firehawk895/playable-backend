@@ -8,21 +8,21 @@ var matchValidation = require('../validations/Match.js');
 var kew = require('kew')
 
 //kardo sab import, node only uses it once
-var config = require('config.js');
+var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 var customUtils = require('../utils.js');
 var constants = require('../constants');
 var qbchat = require('../Chat/qbchat');
-var UserModel = require('models/User');
+var UserModel = require('../models/User');
 
 var EventModel = require('../models/Event');
 console.log("Event model")
 console.log(EventModel)
-var RequestModel = require('requests/Request');
-var dbUtils = require('dbUtils');
-var EventSystem = require('events/events');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
 var MatchModel = require('../models/Match.js')
 
 //var Notifications = require('../notifications');

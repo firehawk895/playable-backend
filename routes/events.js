@@ -9,19 +9,19 @@ customUtils = require('../utils.js');
 var validation = require('../validations/Match.js');
 
 //kardo sab import, node only uses it once
-var config = require(__base + 'config.js');
+var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require(__base + 'utils.js');
-var constants = require(__base + 'constants');
-var qbchat = require(__base + 'Chat/qbchat');
-var UserModel = require(__base + 'models/User');
-var MatchModel = require(__base + 'models/Match');
-var EventModel = require(__base + 'models/Event');
-var RequestModel = require(__base + 'requests/Request');
-var dbUtils = require(__base + 'dbUtils');
-var EventSystem = require(__base + 'events/events');
+var customUtils = require('../utils.js');
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('../models/User');
+var MatchModel = require('../models/Match');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
     //TODO : move this to the model class

@@ -8,7 +8,7 @@ var validation = require('../validations/Match.js');
 var async = require('async');
 
 //kardo sab import, node only uses it once
-var config = require(__base + 'config.js');
+var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
