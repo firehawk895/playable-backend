@@ -1,11 +1,12 @@
 var express = require('express')
 var router = express.Router()
 
+var config = require('../config')
 var gcm = require('node-gcm');
 var sender = new gcm.Sender(config.gcm.apiKey);
 var message = new gcm.Message();
-var config = require('./../config')
-customUtils = require('./../utils.js');
+var customUtils = require('../utils.js');
+var UserModel = require('../models/User');
 
 var Firebase = require("firebase");
 var notificationsRef = new Firebase(config.firebase.url, config.firebase.secret);
@@ -47,8 +48,25 @@ function newEvent(eventId, eventName) {
     everyoneNotificationDispatcer(0, nofObj, "both")
 }
 
+function joinedEvent(eventId, eventName, userId) {
+    var nofObj = {
+        "eventId": eventId,
+        "created": date.getTime(),
+        "is_clicked": false,
+        "is_read": false,
+        "link": 'events',
+        "title": "You successfully joined the event " + eventName,
+        "text": "New event " + eventName + " hosted! Check it out now!",
+        "photo": ""
+    };
+    UserModel.getGcmIdsForUserIds([userId])
+        .then(function(gcmIds) {
+            NF.sendNotification(nofObj, [userId], gcmIds, "both");
+        })
+}
+
 function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, hostName) {
-    customUtils.getGcmIdsForUserIds(invitedUserIdList)
+    UserModel.getGcmIdsForUserIds(invitedUserIdList)
         .then(function (invitedUserGCMidList) {
             var nofObj = {
                 "matchId": matchId,
@@ -107,6 +125,9 @@ function NotificationFactory() {
         //console.log(recieverIds)
         //console.log("receivers GCMs: ")
         //console.log(recieverGcmIds)
+        /**
+         * obviously you can compress this
+         */
         switch (type) {
             case "both":
             {
@@ -153,5 +174,6 @@ function NotificationFactory() {
 module.exports = {
     welcome: welcome,
     newEvent: newEvent,
-    invitedToMatch: invitedToMatch
+    invitedToMatch: invitedToMatch,
+    joinedEvent : joinedEvent
 }

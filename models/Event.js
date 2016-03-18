@@ -11,7 +11,7 @@ var MatchModel = require('../models/Match');
 //var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
-var EventSystem = require('../events/events');
+var EventSystem = require('../notifications/dispatchers');
 console.log("yay")
 
 function checkEventParticipationPromise(eventId, userId) {
@@ -42,7 +42,61 @@ function getFeaturedEventsPromise() {
     return featuredMatches
 }
 
+function getEventPromise(eventid) {
+    return db.get('events', eventid)
+}
+
+function joinEvent(userId, eventId) {
+    var joinedEventStatus = kew.defer()
+    var theEventDetails
+    getEventPromise(eventId)
+        .then(function (theEvent) {
+            theEventDetails = theEvent
+            console.log(theEvent.body)
+            console.log("what")
+            //Check if he has already joined the match
+            return checkEventParticipationPromise(eventId, userId)
+        })
+        .then(function (results) {
+            console.log(results.body)
+            console.log("just checked event participation")
+            var count = results.body.count
+            if (count == 0) {
+                console.log("user determined to be not participating in event")
+                return kew.all([
+                    dbUtils.createGraphRelationPromise('events', eventId, 'users', userId, constants.graphRelations.events.participants),
+                    dbUtils.createGraphRelationPromise('users', userId, 'events', eventId, constants.graphRelations.users.playsMatches)
+                ])
+            } else {
+                return joinedEventStatus.reject(new Error("You are already part of this event. Roll back any payments if made."))
+            }
+        })
+        .then(function (result) {
+            /**
+             * You are hoping that orchestrate handles concurrency
+             * this sort of modification needs to be safe from race conditions,
+             * but if you are solving this problem
+             * Playable would have IPO'd
+             */
+                console.log(theEventDetails.slots_filled)
+                var slotsFilled = theEventDetails.slots_filled + 1
+                var payload = {
+                    'slots_filled': slotsFilled
+                }
+
+                db.merge('events', eventId, payload)
+                joinedEventStatus.resolve()
+                EventSystem.joinedEvent()
+        })
+        .fail(function(err) {
+            joinedEventStatus.reject(err)
+        })
+
+    return joinedEventStatus
+}
+
 module.exports = {
-    checkEventParticipationPromise : checkEventParticipationPromise,
-    getFeaturedEventsPromise : getFeaturedEventsPromise
+    checkEventParticipationPromise: checkEventParticipationPromise,
+    getFeaturedEventsPromise: getFeaturedEventsPromise,
+    joinEvent : joinEvent
 }

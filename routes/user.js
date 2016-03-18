@@ -33,7 +33,7 @@ var MatchModel = require('../models/Match.js');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
-var EventSystem = require('../events/events');
+var EventSystem = require('../notifications/dispatchers');
 
 var date = new Date();
 var now = date.getTime();
@@ -523,7 +523,7 @@ router.post('/signup', function (req, res, next) {
                                         chatObj['gcmId'] = 'undefined'
 
                                     //notify.emit("wordForChat", chatObj)
-
+                                    EventSystem.we
                                     user['password'] = undefined;
 
                                     var notifObj = {
@@ -531,6 +531,7 @@ router.post('/signup', function (req, res, next) {
                                         name: user.name
                                     };
                                     //notify.emit('welcome', notifObj)
+                                    EventSystem.welcome(notifObj.id, notifObj.name)
                                 })
                                 .then(function () {
 
@@ -1294,6 +1295,7 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                         name: user.name
                     };
                     //notify.emit('welcome', notifObj)
+                    EventSystem.welcome(notifObj.id, notifObj.name)
                 })
                 .then(function () {
                     var accessToken = customUtils.generateToken();
@@ -1407,6 +1409,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                         name: user.name
                     };
                     //notify.emit('welcome', notifObj)
+                    EventSystem.welcome(notifObj.id, notifObj.name)
                 })
                 .then(function () {
                     var accessToken = customUtils.generateToken();

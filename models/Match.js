@@ -367,7 +367,7 @@ function createMatch(payload, hostData) {
             //    "matchId": payload["id"],
             //    "pathTitle": reqBody.title
             //}
-            EventModel.dispatchEvent(constants.events.matches.created, payload)
+            EventSystem.dispatchEvent(constants.events.matches.created, payload)
         })
         .fail(function(err) {
             matchCreated.reject(err)

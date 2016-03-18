@@ -222,5 +222,6 @@ module.exports = {
     getUsersConnectionsPromise : getUsersConnectionsPromise,
     createPlayerDiscoverableQuery : createPlayerDiscoverableQuery,
     createConnection : createConnection,
-    getUserPromise : getUserPromise
+    getUserPromise : getUserPromise,
+    getGcmIdsForUserIds : getGcmIdsForUserIds
 }

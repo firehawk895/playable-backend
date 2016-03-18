@@ -99,6 +99,9 @@ module.exports = {
             requestedToConnect: "requestedToConnect",
             waitingToAccept: "waitingToAccept",
             invitedToMatch : "invited"
+        },
+        events: {
+            participants : "participants"
         }
     },
     connections: {
