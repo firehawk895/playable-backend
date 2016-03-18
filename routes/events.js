@@ -21,7 +21,7 @@ var MatchModel = require('../models/Match');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
-var EventSystem = require('../events/events');
+var EventSystem = require('../notifications/dispatchers');
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
     //TODO : move this to the model class
@@ -74,8 +74,8 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                     //EventModel.dispatchEvent(constants.event.events.created, payload)
                     //someday, I think this should be decoupled
                     console.log("ssup")
-                    //EventSystem.newEvent(payload["id"], payload["title"])
-                    console.log("asdasdasdsd")
+                    EventSystem.newEvent(payload["id"], payload["title"])
+                    console.log("made it past nofs")
                     responseObj["data"] = payload;
                     res.status(201);
                     res.json(responseObj);

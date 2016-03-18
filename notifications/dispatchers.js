@@ -8,6 +8,17 @@ var message = new gcm.Message();
 var customUtils = require('../utils.js');
 var UserModel = require('../models/User');
 
+//kardo sab import, node only uses it once
+var oio = require('orchestrate');
+oio.ApiEndPoint = config.db.region;
+var db = oio(config.db.key);
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var MatchModel = require('../models/Match');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+
 var Firebase = require("firebase");
 var notificationsRef = new Firebase(config.firebase.url, config.firebase.secret);
 
@@ -35,6 +46,7 @@ function welcome(userId, usersName) {
 }
 
 function newEvent(eventId, eventName) {
+    console.log("disaptching everyone! new Event!")
     var nofObj = {
         "eventId": eventId,
         "created": date.getTime(),
@@ -60,7 +72,7 @@ function joinedEvent(eventId, eventName, userId) {
         "photo": ""
     };
     UserModel.getGcmIdsForUserIds([userId])
-        .then(function(gcmIds) {
+        .then(function (gcmIds) {
             NF.sendNotification(nofObj, [userId], gcmIds, "both");
         })
 }
@@ -90,12 +102,14 @@ function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, host
  * @param type
  */
 var everyoneNotificationDispatcer = function (offset, nofObj, type) {
+    console.log("everyone time")
     var params = {
         limit: config.pagination.limit,
         offset: offset
     }
     db.search('users', "*", params)
         .then(function (result) {
+            console.log("user recursion")
             var recieverIds = result.body.results.map(function (user) {
                 return user.value.id
             });
@@ -104,6 +118,9 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
                 return user.value.gcmId
             });
 
+            console.log("sending")
+            console.log(recieverIds)
+            console.log(recieverGcmIds)
             NF.sendNotification(nofObj, recieverIds, recieverGcmIds, type);
 
             if (result.body.next) {
@@ -117,12 +134,12 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
 
 
 function NotificationFactory() {
-    this.sendNotification = function (nofObj, recieverIds, recieverGcmIds, type) {
+    this.sendNotification = function (nofObj, receiverIds, recieverGcmIds, type) {
         //console.log("----------------nofObj : ----------------------")
         //console.log("----------------" + type)
         //console.log(nofObj)
         //console.log("receivers : ")
-        //console.log(recieverIds)
+        //console.log(receiverIds)
         //console.log("receivers GCMs: ")
         //console.log(recieverGcmIds)
         /**
@@ -135,22 +152,16 @@ function NotificationFactory() {
                 sender.send(message, recieverGcmIds, function (err, result) {
                     if (err) console.error(err);
                 });
-                recieverIds.forEach(function (recieverId) {
-                    notificationsRef.child(recieverId + "/nof/").push().set(nofObj);
-                    notificationsRef.child(recieverId + "/count").transaction(function (current_value) {
-                        return (current_value || 0) + 1;
-                    });
+                receiverIds.forEach(function (recieverId) {
+                    pushToFireBase(recieverId, nofObj)
                 })
                 console.log("Both")
             }
                 break;
             case "app":
             {
-                recieverIds.forEach(function (recieverId) {
-                    notificationsRef.child(recieverId + "/nof/").push().set(nofObj);
-                    notificationsRef.child(recieverId + "/count").transaction(function (current_value) {
-                        return (current_value || 0) + 1;
-                    });
+                receiverIds.forEach(function (receiverId) {
+                    pushToFireBase(receiverId, nofObj)
                 })
                 console.log("App")
             }
@@ -170,10 +181,17 @@ function NotificationFactory() {
     }
 }
 
+function pushToFireBase(receiverId, nofObj) {
+    notificationsRef.child("/nof/" + receiverId + "/data").push().set(nofObj);
+    notificationsRef.child("/nof/" + receiverId + "/count").transaction(function (current_value) {
+        return (current_value || 0) + 1;
+    });
+}
+
 
 module.exports = {
     welcome: welcome,
     newEvent: newEvent,
     invitedToMatch: invitedToMatch,
-    joinedEvent : joinedEvent
+    joinedEvent: joinedEvent
 }
