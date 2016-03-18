@@ -62,16 +62,20 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
             type: "Event"
         }
 
+        console.log("yaha")
         customUtils.upload(req.files.image, function (coverPhotoInfo) {
             console.log(coverPhotoInfo)
             payload["coverPhoto"] = coverPhotoInfo.url
             payload["coverPhotoThumb"] = coverPhotoInfo.urlThumb
             db.post('events', payload)
                 .then(function (result) {
+                    console.log("kaha")
                     payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
                     //EventModel.dispatchEvent(constants.event.events.created, payload)
                     //someday, I think this should be decoupled
-                    EventSystem.newEvent(payload["id"], payload["title"])
+                    console.log("ssup")
+                    //EventSystem.newEvent(payload["id"], payload["title"])
+                    console.log("asdasdasdsd")
                     responseObj["data"] = payload;
                     res.status(201);
                     res.json(responseObj);

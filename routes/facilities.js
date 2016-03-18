@@ -74,10 +74,20 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
+    var queries = []
+
+    queries.push("@path.kind:item")
+    if (req.query.facilityId) {
+        console.log("we have a specific facilityId query")
+        queries.push(dbUtils.createSearchByIdQuery(req.query.facilityId))
+    }
+
+    var theFinalQuery = dbUtils.queryJoiner(queries)
+
     db.newSearchBuilder()
         .collection("facilities")
         //.sort('location', 'distance:asc')
-        .query("*")
+        .query(theFinalQuery)
         .then(function (results) {
             responseObj["total_count"] = results.body.total_count
             responseObj["data"] = dbUtils.injectId(results)

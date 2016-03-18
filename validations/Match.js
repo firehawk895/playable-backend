@@ -153,7 +153,7 @@ validatePostEvent = function (req) {
     var errors = []
 
     if (validator.isNull(reqBody.priceText))
-        errors.push(constants.validations.priceText)
+        errors.push(constants.validations.price_text_null)
 
     if (validator.isNull(reqBody.contactUs))
         errors.push(constants.validations.event.contactUs)
@@ -163,7 +163,7 @@ validatePostEvent = function (req) {
 
     if (validator.isNull(reqBody.title))
         errors.push(constants.validations.event.title_empty_message)
-
+    //
     if (validator.isLength(reqBody.sub_title, {min: 0, max: constants.validations.event.sub_title_max_length}))
         errors.push(constants.validations.event.title_empty_message)
 
@@ -182,11 +182,6 @@ validatePostEvent = function (req) {
         reqBody.playing_time = parseInt(reqBody.lastRegDate)
     else
         errors.push(constants.validations.event.reg_time_in_future)
-
-    //if (validator.isInt(reqBody.slots, {min: constants.validations.event.slot_min}))
-    //    reqBody.slots = parseInt(reqBody.slots)
-    //else
-    //    errors.push(constants.validations.event.slot_min_message)
 
     //reqBody.location_name is optional
     if (validator.isValidLatLong(reqBody.lat))
