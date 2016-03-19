@@ -19,6 +19,8 @@ var fs = require('fs'),
         secretAccessKey: config.s3.secret
     });
 
+var msg91 = require("msg91")(config.msg91.authkey, config.msg91.senderId, config.msg91.routeNumber);
+
 var Firebase = require("firebase");
 var myFirebaseRef = new Firebase(config.firebase.url, config.firebase.secret);
 

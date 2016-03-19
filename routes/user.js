@@ -55,7 +55,6 @@ var userValidation = require('../validations/User.js');
 //var mailgun = require('mailgun-js')({apiKey: config.mailgun.key, domain: config.mailgun.domain});
 var validator = require('validator');
 var jwt = require('jsonwebtoken');
-var msg91 = require("msg91")(config.msg91.authkey, config.msg91.senderId, config.msg91.routeNumber);
 
 validator.extend('isImage', function (mimetype) {
     if (mimetype.match(/^image.*/)) return true;
