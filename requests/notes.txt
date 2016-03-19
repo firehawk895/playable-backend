@@ -1,0 +1,34 @@
+Incorrect/outdated documentation is worse than NO documentation
+If you, Mr. Developer aren't keeping this updated. Delete this file.
+
+The request object in firebase will have the "type" key with the following:
+type: {
+    connect: "connectRequest", //connect
+    match: "OneOnOneMatchRequest", //fix a match
+    invite: "inviteToMatchRequest", //host invites someone for a match
+    join: "joinMatchRequest" //player requests to play in a match
+}
+
+the status of the request will be:
+status: {
+    accepted: "accepted",
+    rejected: "rejected",
+    pending: "pending"
+}
+
+Here are the actions that need to be performed:
+1. send connect request: call POST /user/connect
+   accept/reject a connect request: just change the status to "accepted"/"rejected" in firebase
+
+2. send fix a match request - call POST /user/fixamatch
+	(a) open host a match screen with slots = 2, invitedUserIds with the other person's id. disable adding any more players or changing slots. POST user/fixamatch expects the same format as
+	accept/reject a fix a match request: just change the status to "accepted"/"rejected" in firebase
+
+3. host invites someone for a match:
+	1. if you are hosting a match, just send the comma seperated invited users in the key invitedUserIds (already in postman)
+	2. If you are editing an already hosted match, call the POST matches/invite API and send a comma seperated list of userIds in the key invitedUserids
+
+	accept a invite: when accepting an invite, switch firebase key to accepted and call the /join API with the details in the request object
+	reject a invite: set firebase key to rejected
+
+4. joinMatch mey bas firebase ka keys set kar like (1)(2)(3)

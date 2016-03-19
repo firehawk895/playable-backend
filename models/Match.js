@@ -314,7 +314,7 @@ function removeFromMatch(userId, matchId) {
  * @param payload
  * @param hostData
  */
-function createMatch(payload, hostData) {
+function createMatch(payload, hostData, invitedUserIdList) {
     var matchCreated = kew.defer()
     payload = updateGenderInPayload(payload, hostData.gender)
     db.post('matches', payload)
@@ -324,7 +324,7 @@ function createMatch(payload, hostData) {
 
             var promises = []
 
-            req.body.invitedUserIdList.forEach(function (invitedUserId) {
+            invitedUserIdList.forEach(function (invitedUserId) {
                 RequestModel.createInviteToMatchRequest(hostData.id, hostData.name, payload, invitedUserId)
             })
 

@@ -1134,7 +1134,8 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
 
     req.body = validationResponse.reqBody
     var errors = validationResponse.errors
-    var inviteeId = req.body.inviteeId
+    //expecting this to be 1 user id
+    var inviteeId = req.body.invitedUserIds
 
     if (errors.length > 0) {
         customUtils.sendErrors(errors, 422, res)

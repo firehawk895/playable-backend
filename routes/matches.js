@@ -33,18 +33,7 @@ var MatchModel = require('../models/Match.js')
 //passport.authenticate('bearer', {session: false}),
 
 //TODO: remove sensitive information about host from the json inside the match's host key
-router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
-    qbchat.getSession(function (err, session) {
-        if (err) {
-            console.log("Recreating session");
-            qbchat.createSession(function (err, result) {
-                if (err) {
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
-                } else next();
-            })
-        } else next();
-    })
-}, function (req, res) {
+router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value
     var userId = req.user.results[0].value.id
@@ -94,7 +83,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
             isDiscoverable: true
         }
 
-        MatchModel.createMatch(payload, user)
+        MatchModel.createMatch(payload, user, req.body.invitedUserIds)
             .then(function (results) {
                 responseObj["data"] = payload;
                 res.status(201);
@@ -305,7 +294,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
 router.post('/invite', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var matchId = req.body.matchId
     var hostUserId = req.user.results[0].value.id
-    var invitedUserId = req.body.invitedUserId
+    var invitedUserId = req.body.invitedUserIds.split(",")
     var responseObj = {}
 
     db.get('matches', matchId)
