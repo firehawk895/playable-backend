@@ -288,5 +288,5 @@ module.exports = {
     createInviteToMatchRequest: createInviteToMatchRequest,
     acceptConnectionRequest: acceptConnectionRequest,
     parseRequestObject: parseRequestObject,
-    createRequestToJoinMatch: createRequestToJoinMatch
+    createRequestToJoinMatch: createRequestToJoinMatch,
 }

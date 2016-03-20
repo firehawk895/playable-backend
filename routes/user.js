@@ -62,7 +62,7 @@ validator.extend('isImage', function (mimetype) {
 });
 
 router.post('/mysports', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    responseObj = {}
+    var responseObj = {}
     var userId = req.user.results[0].value.id;
 
     var validationResponse = userValidation.validateUpdateSports(req.body);

@@ -453,5 +453,6 @@ module.exports = {
     createSkillRatingQuery: createSkillRatingQuery,
     insertDistance: insertDistance,
     createMatch : createMatch,
-    joinMatch : joinMatch
+    joinMatch : joinMatch,
+    getMatchPromise : getMatchPromise
 }

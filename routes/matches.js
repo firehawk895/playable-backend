@@ -291,6 +291,26 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
     //    })
 }])
 
+router.post('/join/request', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var matchId = req.body.matchId;
+    var userId = req.user.results[0].value.id;
+    var usersFullName = req.user.results[0].value.name;
+    var responseObj = {}
+
+    MatchModel.getMatchPromise
+        .then(function(theMatch) {
+            RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName)
+            responseObj["errors"] = [err.body.message]
+            res.status(503)
+            res.json(responseObj)
+        })
+        .fail(function(err) {
+            responseObj["errors"] = [err.body.message]
+            res.status(503)
+            res.json(responseObj)
+        })
+}])
+
 router.post('/invite', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var matchId = req.body.matchId
     var hostUserId = req.user.results[0].value.id
