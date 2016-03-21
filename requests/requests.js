@@ -69,7 +69,7 @@ recommendationsRef.on("child_added", function (snapshot) {
 
         //if (requestObj.status == constants.requests.status.accepted) {
             console.log("status switched to accepted")
-            customUtils.parseRequestObject(requestObj)
+            RequestModel.parseRequestObject(requestObj)
         //}
 
     })

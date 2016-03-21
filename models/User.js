@@ -13,6 +13,7 @@ var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
 var ChatModel = require('../Chat/Chat');
+var kew = require('kew');
 
 /**
  * basic query to display users in the users discover section
