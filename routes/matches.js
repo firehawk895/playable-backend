@@ -344,34 +344,35 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     var theMasterResults
     kew.all(promises)
-        .then(function(results) {
-            //result[0] is the main query
-            //result[1] is the match participation query (if isMatchQuery is true)
-            //result[2] is the featured events query
-            //result[3] is the match participants
-            theMasterResults = results
-            //inject isJoined
-            return MatchModel.injectIsJoined(theMasterResults[0], userId)
-        })
-        .then(function (injectedResults) {
+        //.then(function(results) {
+        //    //result[0] is the main query
+        //    //result[1] is the match participation query (if isMatchQuery is true)
+        //    //result[2] is the featured events query
+        //    //result[3] is the match participants
+        //    theMasterResults = results
+        //    //inject isJoined
+        //    return theMasterResults
+        //    //return MatchModel.injectIsJoined(theMasterResults[0], userId)
+        //})
+        .then(function (results) {
             if (distanceQuery) {
-                injectedResults = MatchModel.insertDistance(injectedResults, req.query.lat, req.query.long)
+                results[0] = MatchModel.insertDistance(results[0], req.query.lat, req.query.long)
             }
-            responseObj["total_count"] = injectedResults.body.total_count
-            responseObj["data"] = dbUtils.injectId(injectedResults)
+            responseObj["total_count"] = results[0].body.total_count
+            responseObj["data"] = dbUtils.injectId(results[0])
             //isJoined tells if the current user is part of the match or not
             if (isMatchQuery) {
-                var count = theMasterResults[1].body.count
+                var count = results[1].body.count
                 if (count == 0) {
                     responseObj["isJoined"] = false
                 } else {
                     responseObj["isJoined"] = true
                 }
-                var matchParticipants = dbUtils.injectId(theMasterResults[3])
+                var matchParticipants = dbUtils.injectId(results[3])
                 responseObj["players"] = matchParticipants
             }
             if (getFeatured) {
-                var featuredEvents = dbUtils.injectId(theMasterResults[2])
+                var featuredEvents = dbUtils.injectId(results[2])
                 responseObj["featuredEvents"] = featuredEvents
             }
             res.status(200)
