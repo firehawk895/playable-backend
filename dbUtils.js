@@ -47,10 +47,14 @@ function createGraphRelationPromise(from, fromKey, to, toKey, relationName) {
  * @returns {GraphBuilder}
  */
 function getGraphResultsPromise(collection, id, relation) {
+    var offset = 0
+    var limit = constants.db.limit
     return db.newGraphReader()
         .get()
         .from(collection, id)
         .related(relation)
+        .offset(offset)
+        .limit(limit)
 }
 
 

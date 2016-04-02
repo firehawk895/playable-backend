@@ -41,7 +41,24 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
         function (err) {
             // All tasks are done now
             var payload = {
-                //sports : req.body.sports,
+                sports : {
+                    "badminton" : req.body.badminton,
+                    "basketball" : req.body.basketball,
+                    "bowling" : req.body.bowling,
+                    "cricket" : req.body.cricket,
+                    "cycling" : req.body.cycling,
+                    "football" : req.body.football,
+                    "golf" : req.body.golf,
+                    "hockey" : req.body.hockey,
+                    "pool" : req.body.pool,
+                    "running" : req.body.running,
+                    "snooker" : req.body.snooker,
+                    "squash" : req.body.squash,
+                    "swimming" : req.body.swimming,
+                    "tennis" : req.body.tennis,
+                    "tt" : req.body.tt,
+                    "ultimatefrisbee" : req.body.ultimatefrisbee
+                },
                 timings : req.body.timings,
                 contactEmail : req.body.contactEmail,
                 contactNumber: req.body.contactNumber,

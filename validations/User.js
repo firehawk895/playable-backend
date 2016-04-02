@@ -91,7 +91,7 @@ validateUpdateSports = function (reqBody) {
 
 
 /**
- * The great schema validation failure.
+ * The great schema matchValidation failure.
  * This was a neater way of doing it.
  * But not great enough documentation to make it work!
  * You go bro!

@@ -147,5 +147,8 @@ module.exports = {
     chats: {
         oneOnOne: '<oneOnOneRoom>',
         matchRoom: '<matchRoom>'
+    },
+    db : {
+        limit : 100
     }
 }

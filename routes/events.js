@@ -6,7 +6,7 @@ var passport = require('passport');
 customUtils = require('../utils.js');
 
 //var config = require('../models/Match.js');
-var validation = require('../validations/Match.js');
+var matchValidation = require('../validations/Match.js');
 
 //kardo sab import, node only uses it once
 var config = require('../config.js');
@@ -29,7 +29,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
     var user = req.user.results[0].value;
     var userId = req.user.results[0].value.id;
     //req.checkBody(matchValidation.postMatch)
-    var validationResponse = validation.validatePostEvent(req);
+    var validationResponse = matchValidation.validatePostEvent(req);
 
     req.body = validationResponse.reqBody
     req.files = validationResponse.reqFiles
@@ -44,7 +44,6 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
             title: req.body.title,
             sub_title: req.body.sub_title,
             description: req.body.description,
-            sport: req.body.sport,
             playing_time: req.body.playing_time,
             lastRegDate: req.body.lastRegDate,
             contactUs: req.body.contactUs,
@@ -174,6 +173,59 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
             res.status(503)
             res.json(responseObj)
         })
+}])
+
+router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
+    var responseObj = {}
+    var user = req.user.results[0].value
+    var eventId = req.query.eventId
+    //var invitedUsersIds = req.body.invitedUserIds
+
+    var validationResponse = matchValidation.validatePatchEvent(req.body);
+    req.body = validationResponse.reqBody
+    req.files = validationResponse.reqFiles
+    var errors = validationResponse.errors
+
+    if (errors.length > 0) {
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
+    } else {
+        var sanitizedPayload = {
+            title: req.body.title,
+            sub_title: req.body.sub_title,
+            description: req.body.description,
+            playing_time: req.body.playing_time,
+            lastRegDate: req.body.lastRegDate,
+            contactUs: req.body.contactUs,
+            slots_filled: 0,
+            location_name: req.body.location_name,
+            paid: req.body.paid,
+            price: req.body.price,
+            priceText: req.body.priceText,
+            location: {
+                lat: req.body.lat,
+                long: req.body.long
+            },
+            google_form: req.body.google_form,
+            note: req.body.note //TODO : limit the length so this field cannot be exploited
+        }
+
+        console.log(sanitizedPayload)
+
+        db.merge('events', eventId, sanitizedPayload)
+            .then(function (result) {
+                return db.get('events', eventId)
+            })
+            .then(function (theEvent) {
+                responseObj["data"] = theEvent.body;
+                res.status(201);
+                res.json(responseObj);
+            })
+            .fail(function (err) {
+                customUtils.sendErrors([err.body.message], 503, res)
+            })
+    }
 }])
 
 module.exports = router;

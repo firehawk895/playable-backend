@@ -51,7 +51,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
         res.json(responseObj);
     } else {
         //Note only insert in a denormalized manner the host details of what is required
-        //hasMale, hasFemale, hasCustomGender make it simpler to search for games that contain
+        //hasMale, hasFemale, hasCustomGender makes it simpler to search for games that contain
         //males, females or custom gender participants
         var payload = {
             title: req.body.title,
@@ -75,6 +75,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 avatarThumb: user.avatarThumb
             },
             isFacility: req.body.isFacility,
+            isAdminMarked: false, //admins marking this as done -- if its a facility match
             facilityId: req.body.facilityId,
             type: "match",
             hasMale: false,
@@ -94,56 +95,6 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 res.status(422);
                 res.json(responseObj);
             })
-
-        //payload = MatchModel.updateGenderInPayload(payload, hostGender)
-        //db.post('matches', payload)
-        //    .then(function (result) {
-        //        payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
-        //        responseObj["data"] = payload;
-        //        res.status(201);
-        //        res.json(responseObj);
-        //
-        //        req.body.invitedUserIdList.forEach(function (invitedUserId) {
-        //            RequestModel.createInviteToMatchRequest(user.id, user.name, payload["id"], payload["title"], payload["sport"], invitedUserId)
-        //        })
-        //
-        //        if (payload.isFacility) {
-        //            MatchModel.connectFacilityToMatch(payload["id"], payload["facilityId"])
-        //        }
-        //
-        //        /**
-        //         * The numerous graph relations are so that we
-        //         * can access the related data from any entry point
-        //         */
-        //        var promises = []
-        //            //The user hosts the match
-        //        promises.push(dbUtils.createGraphRelationPromise('users', userId, 'matches', payload["id"], constants.graphRelations.users.hostsMatch))
-        //        //The user plays in the match
-        //        promises.push(dbUtils.createGraphRelationPromise('users', userId, 'matches', payload["id"], constants.graphRelations.users.playsMatches))
-        //        //The match is hosted by user
-        //        promises.push(dbUtils.createGraphRelationPromise('matches', payload["id"], 'users', userId, constants.graphRelations.matches.isHostedByUser))
-        //        //The match has participants (user)
-        //        promises.push(dbUtils.createGraphRelationPromise('matches', payload["id"], 'users', userId, constants.graphRelations.matches.participants))
-        //        kew.all(promises)
-        //        /**
-        //         * Create the chat room for the match, and make the host join it
-        //         */
-        //        MatchModel.createChatRoomForMatch(user.qbId, payload["id"])
-        //
-        //        //var chatObj = {
-        //        //    "created": date.getTime(),
-        //        //    "type": "newChannel",
-        //        //    "matchId": payload["id"],
-        //        //    "pathTitle": reqBody.title
-        //        //}
-        //        EventModel.dispatchEvent(constants.events.matches.created, payload)
-        //        //customUtils.notifyMatchCreated(payload["id"], payload["playing_time"])
-        //    })
-        //    .fail(function (err) {
-        //        responseObj["errors"] = [err.body.message];
-        //        res.status(422);
-        //        res.json(responseObj);
-        //    })
     }
 }])
 
@@ -156,16 +107,37 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
     var validationResponse = matchValidation.validatePatchMatch(req.body);
     req.body = validationResponse.reqBody
     var errors = validationResponse.errors
+    var payload = {}
 
     if (errors.length > 0) {
         responseObj["errors"] = errors;
         res.status(422);
         res.json(responseObj);
     } else {
-        db.merge('matches', matchId.req.body)
+        var sanitizedPayload = {
+            title: req.body.title,
+            description: req.body.description,
+            playing_time: req.body.playing_time,
+            location_name: req.body.location_name,
+            location: {
+                lat: req.body.lat,
+                long: req.body.long
+            },
+            isAdminMarked: req.body.isAdminMarked,
+            isFacility: req.body.isFacility,
+            facilityId: req.body.facilityId,
+            note: req.body.note //TODO : limit the length so this field cannot be exploited
+        }
+
+        console.log(sanitizedPayload)
+
+        db.merge('matches', req.query.matchId, sanitizedPayload)
             .then(function (result) {
-                payload["id"] = matchId;
-                responseObj["data"] = req.body;
+                return db.get('matches', req.query.matchId)
+            })
+            .then(function(theMatch) {
+                //payload["id"] = matchId;
+                responseObj["data"] = theMatch.body;
                 res.status(201);
                 res.json(responseObj);
             })
@@ -215,80 +187,6 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
             res.json(responseObj)
         })
 
-    //db.get('matches', matchId)
-    //    .then(function (theMatch) {
-    //        console.log(theMatch.body)
-    //        var roomId = theMatch.body.qbId
-    //        if (theMatch.body.slots == theMatch.body.slots_filled) {
-    //            responseObj["errors"] = ["The Match is already full. Please contact the host"]
-    //            res.status(422)
-    //            res.json(responseObj)
-    //            return
-    //        } else {
-    //            console.log("what")
-    //            //Check if he has already joined the match
-    //            MatchModel.checkMatchParticipationPromise(matchId, userId)
-    //                .then(function (results) {
-    //                    console.log("just checked match participation")
-    //                    var count = results.body.count
-    //                    if (count == 0) {
-    //                        console.log("user determined to be not participating in match")
-    //                        //qbchat.addUserToRoom(roomId, [userId], function (err, result) {
-    //                        //    if (err) {
-    //                        //        console.log(err)
-    //                        //        customUtils.sendErrors(["Couldn't join you into the match's chat room"], 503, res)
-    //                        //    } else {
-    //                        dbUtils.createGraphRelationP('matches', matchId, 'users', userId, 'participants')
-    //                        //customUtils.incrementMatchesPlayed(userId)
-    //                        db.newGraphBuilder()
-    //                            .create()
-    //                            .from('users', userId)
-    //                            .related('plays')
-    //                            .to('matches', matchId)
-    //                            .then(function (result) {
-    //                                /**
-    //                                 * You are hoping that orchestrate handles concurrency
-    //                                 * this sort of modification needs to be safe from race conditions
-    //                                 */
-    //                                console.log(theMatch.body.slots_filled)
-    //                                var slots = theMatch.body.slots
-    //                                var slotsFilled = theMatch.body.slots_filled + 1
-    //                                var payload = {
-    //                                    'slots_filled': slotsFilled
-    //                                }
-    //
-    //                                //if match is full make it undiscoverable
-    //                                if (slots == slotsFilled) {
-    //                                    payload["isDiscoverable"] = false
-    //                                }
-    //                                payload = MatchModel.updateGenderInPayload(payload, usersGender)
-    //                                db.merge('matches', matchId, payload)
-    //                                MatchModel.updateMatchConnections(userId, matchId)
-    //
-    //
-    //                                responseObj["data"] = []
-    //                                responseObj["message"] = "Successfully joined"
-    //                                res.status(200)
-    //                                res.json(responseObj)
-    //                            })
-    //                            .fail(function (err) {
-    //                                responseObj["errors"] = [err.body.message, "Could not join you into the match, Please try again later"]
-    //                                res.status(503)
-    //                                res.json(responseObj)
-    //                            })
-    //                        //}
-    //                        //})
-    //                    } else {
-    //                        customUtils.sendErrors(["You are already part of this match"], 422, res)
-    //                    }
-    //                })
-    //        }
-    //    })
-    //    .fail(function (err) {
-    //        responseObj["errors"] = [err.body.message]
-    //        res.status(503)
-    //        res.json(responseObj)
-    //    })
 }])
 
 router.post('/join/request', [passport.authenticate('bearer', {session: false}), function (req, res) {
@@ -298,13 +196,13 @@ router.post('/join/request', [passport.authenticate('bearer', {session: false}),
     var responseObj = {}
 
     MatchModel.getMatchPromise
-        .then(function(theMatch) {
+        .then(function (theMatch) {
             RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName)
             responseObj["errors"] = [err.body.message]
             res.status(503)
             res.json(responseObj)
         })
-        .fail(function(err) {
+        .fail(function (err) {
             responseObj["errors"] = [err.body.message]
             res.status(503)
             res.json(responseObj)
@@ -360,16 +258,17 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var isMatchQuery = false
     var getFeatured = false
 
-    //if (req.query.limit && req.query.page) {
-    //    page = req.query.page
-    //    limit = req.query.limit
-    //}
     var offset = limit * (page - 1)
 
     if (req.query.matchId) {
         isMatchQuery = true
         console.log("we have a specific matchId query")
         queries.push(dbUtils.createSearchByIdQuery(req.query.matchId))
+    }
+
+    if(req.query.isFacility) {
+        console.log("only facility matches")
+        queries.push("value.isFacility:true")
     }
 
     if (req.query.gender) {
@@ -443,30 +342,36 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         promises.push(kew.resolve([]))
     }
 
+    var theMasterResults
     kew.all(promises)
-        .then(function (results) {
-            //result[0] is the main quelocalhost:3002/matches?access_token=461b9f4c1abe77abb26bb965234ab40f&lat=28.5330441&long=77.2111807&radius=20037.5kmry
+        .then(function(results) {
+            //result[0] is the main query
             //result[1] is the match participation query (if isMatchQuery is true)
-            //result[2] is the featured matches query
+            //result[2] is the featured events query
             //result[3] is the match participants
+            theMasterResults = results
+            //inject isJoined
+            return MatchModel.injectIsJoined(theMasterResults[0], userId)
+        })
+        .then(function (injectedResults) {
             if (distanceQuery) {
-                results[0] = MatchModel.insertDistance(results[0], req.query.lat, req.query.long)
+                injectedResults = MatchModel.insertDistance(injectedResults, req.query.lat, req.query.long)
             }
-            responseObj["total_count"] = results[0].body.total_count
-            responseObj["data"] = dbUtils.injectId(results[0])
+            responseObj["total_count"] = injectedResults.body.total_count
+            responseObj["data"] = dbUtils.injectId(injectedResults)
             //isJoined tells if the current user is part of the match or not
             if (isMatchQuery) {
-                var count = results[1].body.count
+                var count = theMasterResults[1].body.count
                 if (count == 0) {
                     responseObj["isJoined"] = false
                 } else {
                     responseObj["isJoined"] = true
                 }
-                var matchParticipants = dbUtils.injectId(results[3])
+                var matchParticipants = dbUtils.injectId(theMasterResults[3])
                 responseObj["players"] = matchParticipants
             }
             if (getFeatured) {
-                var featuredEvents = dbUtils.injectId(results[2])
+                var featuredEvents = dbUtils.injectId(theMasterResults[2])
                 responseObj["featuredEvents"] = featuredEvents
             }
             res.status(200)

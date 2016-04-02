@@ -337,7 +337,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
              * can access the related data from any entry point
              */
 
-            //The user hosts the match
+                //The user hosts the match
             promises.push(dbUtils.createGraphRelationPromise('users', hostData.id, 'matches', payload["id"], constants.graphRelations.users.hostsMatch))
             //The user plays in the match
             promises.push(dbUtils.createGraphRelationPromise('users', hostData.id, 'matches', payload["id"], constants.graphRelations.users.playsMatches))
@@ -352,11 +352,11 @@ function createMatch(payload, hostData, invitedUserIdList) {
             promises.push(createChatRoomForMatch(hostData.qbId, payload["id"]))
 
             kew.all(promises)
-                .then(function(results) {
+                .then(function (results) {
                     console.log("match creation fully complete")
                     matchCreated.resolve()
                 })
-                .fail(function(err) {
+                .fail(function (err) {
                     console.log("match creation failed")
                     matchCreated.reject(err)
                     console.log(err)
@@ -369,7 +369,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //}
             EventSystem.dispatchEvent(constants.events.matches.created, payload)
         })
-        .fail(function(err) {
+        .fail(function (err) {
             matchCreated.reject(err)
         })
     return matchCreated
@@ -403,7 +403,7 @@ function joinMatch(matchId, joineeId) {
     var matchDetails
 
     kew.all([getMatchPromise(matchId), UserModel.getUserPromise(joineeId)])
-        .then(function(results) {
+        .then(function (results) {
             matchDetails = results[0]
             joineeGender = results[1].gender
             joineeQBid = results[1].qbId
@@ -412,7 +412,7 @@ function joinMatch(matchId, joineeId) {
             else
                 return checkMatchParticipationPromise(matchId, joineeId)
         })
-        .then(function(results) {
+        .then(function (results) {
             var count = results.body.count
             if (count == 0) {
                 return kew.all([
@@ -423,17 +423,48 @@ function joinMatch(matchId, joineeId) {
                 return kew.reject(new Error("You are already part of this match"))
             }
         })
-        .then(function(results) {
+        .then(function (results) {
             incrementFilledSlots()
             return ChatModel.addUsersToRoom(matchDetails.qbId, [joineeQBid])
         })
-        .then(function(joinedMatchChat) {
+        .then(function (joinedMatchChat) {
             return joinStatus.resolve()
         })
-        .fail(function(err) {
+        .fail(function (err) {
             joinStatus.reject(err)
         })
     return joinStatus
+}
+
+/**
+ * inject isJoined flag
+ * this flag tells if the user is part of the match/event
+ * @param results a set of raw orchestrate results to inject flag into
+ * @param userId
+ * @returns {number|*|!Promise|Object}
+ */
+function injectIsJoined(results, userId) {
+    var injectedResults = kew.defer()
+    getMatchHistoryPromise(userId)
+        .then(function (matches) {
+            var theMatches = dbUtils.injectId(matches)
+            var matchIds = theMatches.map(function (match) {
+                return match.id
+            })
+
+            results.body.results = results.body.results.map(function (result) {
+                if (matchIds.indexOf(result.path.key) > -1)
+                    result.value.isJoined = true
+                else
+                    result.value.isJoined = false
+                return result
+            })
+            injectedResults.resolve(results)
+        })
+        .fail(function (err) {
+            injectedResults.reject(err)
+        })
+    return injectedResults
 }
 
 
@@ -452,7 +483,8 @@ module.exports = {
     removeFromMatch: removeFromMatch,
     createSkillRatingQuery: createSkillRatingQuery,
     insertDistance: insertDistance,
-    createMatch : createMatch,
-    joinMatch : joinMatch,
-    getMatchPromise : getMatchPromise
+    createMatch: createMatch,
+    joinMatch: joinMatch,
+    getMatchPromise: getMatchPromise,
+    injectIsJoined : injectIsJoined
 }

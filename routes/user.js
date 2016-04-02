@@ -522,7 +522,7 @@ router.post('/signup', function (req, res, next) {
                                         chatObj['gcmId'] = 'undefined'
 
                                     //notify.emit("wordForChat", chatObj)
-                                    EventSystem.we
+                                    //EventSystem.we
                                     user['password'] = undefined;
 
                                     var notifObj = {
