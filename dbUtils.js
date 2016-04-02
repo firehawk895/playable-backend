@@ -53,8 +53,8 @@ function getGraphResultsPromise(collection, id, relation) {
         .get()
         .from(collection, id)
         .related(relation)
-        .offset(offset)
-        .limit(limit)
+        //.offset(offset)
+        //.limit(limit)
 }
 
 
