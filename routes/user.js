@@ -73,9 +73,27 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
     if (errors.length > 0) {
         customUtils.sendErrors(errors, 422, res)
     } else {
+        //TODO: the following is a sin, sports adding/modification becomes a pain!
         console.log("updating sports")
         db.merge("users", userId, {
-            sports: req.body,
+            sports: {
+                "badminton" : (req.body.badminton || null),
+                "basketball" : (req.body.basketball || null),
+                "bowling" : (req.body.bowling || null),
+                "cricket" :(req.body.cricket || null),
+                "cycling" :(req.body.cycling || null),
+                "football" :(req.body.football || null),
+                "golf" :(req.body.golf || null),
+                "hockey" :(req.body.hockey || null),
+                "pool" :(req.body.pool || null),
+                "running" :(req.body.running || null),
+                "snooker":(req.body.snooker || null),
+                "squash" :(req.body.squash || null),
+                "swimming" :(req.body.swimming || null),
+                "tennis" :(req.body.tennis || null),
+                "tt" :(req.body.tt || null),
+                "ultimatefrisbee" : (req.body.ultimatefrisbee || null),
+            },
             hasSelectedSports: true
             //sportsList: Object.keys(req.body)
         })

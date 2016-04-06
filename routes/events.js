@@ -138,18 +138,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             .offset(offset)
             .sort('location', 'distance:asc')
             .query(theFinalQuery)
-            // .then(function (results) {
-            //     var distanceInjectedResults = MatchModel.insertDistance(results, req.query.lat, req.query.long)
-            //     responseObj["total_count"] = results.body.total_count
-            //     responseObj["data"] = dbUtils.injectId(distanceInjectedResults)
-            //     res.status(200)
-            //     res.json(responseObj)
-            // })
-            // .fail(function (err) {
-            //     responseObj["errors"] = [err.body.message]
-            //     res.status(503)
-            //     res.json(responseObj)
-            // })
         promises.push(distanceQuery)
     } else {
         var distanceLessQuery = db.newSearchBuilder()
@@ -158,17 +146,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             .offset(offset)
             //.sort('location', 'distance:asc')
             .query(theFinalQuery)
-            // .then(function (results) {
-            //     responseObj["total_count"] = results.body.total_count
-            //     responseObj["data"] = dbUtils.injectId(results)
-            //     res.status(200)
-            //     res.json(responseObj)
-            // })
-            // .fail(function (err) {
-            //     responseObj["errors"] = [err.body.message]
-            //     res.status(503)
-            //     res.json(responseObj)
-            // })
         promises.push(distanceLessQuery)
     }
 
