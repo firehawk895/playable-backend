@@ -192,28 +192,20 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         })
 }])
 
+router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    console.log("delete facility")
+    var id = req.query.id
 
-//async.each(req.files.image, function (image, callback), function (err) {
-//    console.log("kuch hua kya")
-//    console.log(err)
-//var payload = {
-//    name: req.body.name,
-//    location_name: req.body.location_name,
-//    location: {
-//        lat: req.body.lat,
-//        long: req.body.long
-//    },
-//    description: req.body.description,
-//    images: images
-//}
-//
-//db.post('facilities', payload)
-//    .then(function (result) {
-//        payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
-//        responseObj["data"] = payload
-//        res.status(201);
-//        res.json(responseObj);
-//    })
-
+    db.remove('facilities', id, true)
+        .then(function(result) {
+            res.status(200);
+            res.json({data:{}, msg : "Delete successful"});
+        })
+        .fail(function(err) {
+            console.log("Error")
+            console.log(err)
+            customUtils.sendErrors([err.body.message], 503, res)
+        })
+}])
 
 module.exports = router;
