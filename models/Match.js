@@ -11,6 +11,7 @@ var UserModel = require('../models/User');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
+var kew = require('kew');
 var EventSystem = require('../events/events');
 var ChatModel = require('../Chat/Chat');
 var date = new Date()
@@ -336,8 +337,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
              * The numerous graph relations are so that we
              * can access the related data from any entry point
              */
-
-                //The user hosts the match
+            //The user hosts the match
             promises.push(dbUtils.createGraphRelationPromise('users', hostData.id, 'matches', payload["id"], constants.graphRelations.users.hostsMatch))
             //The user plays in the match
             promises.push(dbUtils.createGraphRelationPromise('users', hostData.id, 'matches', payload["id"], constants.graphRelations.users.playsMatches))
@@ -443,7 +443,17 @@ function joinMatch(matchId, joineeId) {
  * @param userId
  * @returns {number|*|!Promise|Object}
  */
-function injectIsJoined(results, userId) {
+function injectIsJoined(results, userId, type) {
+    /**
+     * food for thought:
+     * this bombs real bad if a match and an event share the same id
+     * will there be a clash of ids?
+     * but orchestrate ids are not as hardcore as UUIDs
+     * this will then incorrectly show a match/event to be joined when its not :O
+     * ya. quite unlikely but hey, why dont you do the math or handle the condition?
+     * TODO : stay tuned
+     * @type {!Promise}
+     */
     var injectedResults = kew.defer()
     getMatchHistoryPromise(userId)
         .then(function (matches) {
@@ -451,7 +461,7 @@ function injectIsJoined(results, userId) {
             var matchIds = theMatches.map(function (match) {
                 return match.id
             })
-
+            
             results.body.results = results.body.results.map(function (result) {
                 if (matchIds.indexOf(result.path.key) > -1)
                     result.value.isJoined = true
@@ -466,7 +476,6 @@ function injectIsJoined(results, userId) {
         })
     return injectedResults
 }
-
 
 module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,

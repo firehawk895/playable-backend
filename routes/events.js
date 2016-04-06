@@ -20,6 +20,7 @@ var UserModel = require('../models/User');
 var MatchModel = require('../models/Match');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
+var kew = require('kew');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../notifications/dispatchers');
 
@@ -92,6 +93,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var limit = 100 || req.query.limit
     var page = 1 || req.query.page
     var offset = limit * (page - 1)
+
+    var userId = req.user.results[0].value.id
+
+    var promises = []
+    var isEventQuery = false
     
     //var user = {}
     //user.location = {
@@ -106,6 +112,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var isDistanceQuery = false;
 
     if (req.query.eventId) {
+        isEventQuery = true
         console.log("we have a specific eventId query")
         queries.push(dbUtils.createSearchByIdQuery(req.query.eventId))
     }
@@ -125,43 +132,78 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
      * location
      */
     if (isDistanceQuery) {
-        db.newSearchBuilder()
+        var distanceQuery = db.newSearchBuilder()
             .collection("events")
             .limit(limit)
             .offset(offset)
             .sort('location', 'distance:asc')
             .query(theFinalQuery)
-            .then(function (results) {
-                var distanceInjectedResults = MatchModel.insertDistance(results, req.query.lat, req.query.long)
-                responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = dbUtils.injectId(distanceInjectedResults)
-                res.status(200)
-                res.json(responseObj)
-            })
-            .fail(function (err) {
-                responseObj["errors"] = [err.body.message]
-                res.status(503)
-                res.json(responseObj)
-            })
+            // .then(function (results) {
+            //     var distanceInjectedResults = MatchModel.insertDistance(results, req.query.lat, req.query.long)
+            //     responseObj["total_count"] = results.body.total_count
+            //     responseObj["data"] = dbUtils.injectId(distanceInjectedResults)
+            //     res.status(200)
+            //     res.json(responseObj)
+            // })
+            // .fail(function (err) {
+            //     responseObj["errors"] = [err.body.message]
+            //     res.status(503)
+            //     res.json(responseObj)
+            // })
+        promises.push(distanceQuery)
     } else {
-        db.newSearchBuilder()
+        var distanceLessQuery = db.newSearchBuilder()
             .collection("events")
             .limit(limit)
             .offset(offset)
             //.sort('location', 'distance:asc')
             .query(theFinalQuery)
-            .then(function (results) {
-                responseObj["total_count"] = results.body.total_count
-                responseObj["data"] = dbUtils.injectId(results)
-                res.status(200)
-                res.json(responseObj)
-            })
-            .fail(function (err) {
-                responseObj["errors"] = [err.body.message]
-                res.status(503)
-                res.json(responseObj)
-            })
+            // .then(function (results) {
+            //     responseObj["total_count"] = results.body.total_count
+            //     responseObj["data"] = dbUtils.injectId(results)
+            //     res.status(200)
+            //     res.json(responseObj)
+            // })
+            // .fail(function (err) {
+            //     responseObj["errors"] = [err.body.message]
+            //     res.status(503)
+            //     res.json(responseObj)
+            // })
+        promises.push(distanceLessQuery)
     }
+
+    //push event participants
+    if (isEventQuery) {
+        promises.push(EventModel.getEventParticipantsPromise(req.query.eventId))
+    } else {
+        promises.push(kew.resolve([]))
+    }
+
+    var theMasterResults
+    kew.all(promises)
+        .then(function(results) {
+            //results[0] is the main query
+            //results[1] is the event participants query
+            theMasterResults = results
+            //inject isJoined
+            return MatchModel.injectIsJoined(theMasterResults[0], userId)
+        })
+        .then(function (results) {
+            if (distanceQuery) {
+                results = MatchModel.insertDistance(results, req.query.lat, req.query.long)
+            }
+            responseObj["total_count"] = results.body.total_count
+            responseObj["data"] = dbUtils.injectId(results)
+            if (isEventQuery) {
+                var eventParticipants = dbUtils.injectId(theMasterResults[2])
+                responseObj["players"] = eventParticipants
+            }
+            res.status(200)
+            res.json(responseObj)
+        })
+        .fail(function(err) {
+            customUtils.sendErrors([err.body.message], 503, res)
+        })
 }])
 
 router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {

@@ -96,8 +96,13 @@ function joinEvent(userId, eventId) {
     return joinedEventStatus
 }
 
+function getEventParticipantsPromise(eventId) {
+    return dbUtils.getGraphResultsPromise('events', eventId, constants.graphRelations.events.participants)
+}
+
 module.exports = {
     checkEventParticipationPromise: checkEventParticipationPromise,
     getFeaturedEventsPromise: getFeaturedEventsPromise,
-    joinEvent : joinEvent
+    joinEvent : joinEvent,
+    getEventParticipantsPromise : getEventParticipantsPromise
 }

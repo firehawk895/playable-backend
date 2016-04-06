@@ -1,36 +1,24 @@
-//kardo sab import, node only uses it once
 var config = require('./config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require('./utils.js');
 var constants = require('./constants');
 var qbchat = require('./Chat/qbchat');
-var UserModel = require('./models/User');
-var MatchModel = require('./models/Match');
-var EventModel = require('./models/Event');
-var RequestModel = require('./requests/Request');
-var EventSystem = require('./events/events');
 
 /**
  * Orchestrate query wrappers ---------------------------------->
+ * Query helpers to make life a lot, lot easier
  */
+
 /**
- * create an orchestrate Neo4J graph connection
+ * create a graph relation
  * @param from
  * @param fromKey
  * @param to
  * @param toKey
  * @param relationName
+ * @returns {Object}
  */
-function createGraphRelation(from, fromKey, to, toKey, relationName) {
-    db.newGraphBuilder()
-        .create()
-        .from(from, fromKey)
-        .related(relationName)
-        .to(to, toKey);
-}
-
 function createGraphRelationPromise(from, fromKey, to, toKey, relationName) {
     return db.newGraphBuilder()
         .create()
@@ -167,7 +155,6 @@ function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relatio
 module.exports = {
     injectId: injectId,
     createGetOneOnOneGraphRelationQuery: createGetOneOnOneGraphRelationQuery,
-    //createGraphRelation: createGraphRelation,
     createGraphRelationPromise: createGraphRelationPromise,
     createFieldORQuery: createFieldORQuery,
     getGraphResultsPromise: getGraphResultsPromise,
