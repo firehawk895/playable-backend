@@ -172,7 +172,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             responseObj["total_count"] = results.body.total_count
             responseObj["data"] = dbUtils.injectId(results)
             if (isEventQuery) {
-                var eventParticipants = dbUtils.injectId(theMasterResults[2])
+                var eventParticipants = dbUtils.injectId(theMasterResults[1])
                 responseObj["players"] = eventParticipants
             }
             res.status(200)
