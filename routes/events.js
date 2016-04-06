@@ -89,6 +89,10 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 }])
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var limit = 100 || req.query.limit
+    var page = 1 || req.query.page
+    var offset = limit * page
+    
     //var user = {}
     //user.location = {
     //    'lat': req.user.results[0].value.location.lat,
@@ -123,6 +127,8 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     if (isDistanceQuery) {
         db.newSearchBuilder()
             .collection("events")
+            .limit(limit)
+            .offset(offset)
             .sort('location', 'distance:asc')
             .query(theFinalQuery)
             .then(function (results) {
@@ -140,6 +146,8 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     } else {
         db.newSearchBuilder()
             .collection("events")
+            .limit(limit)
+            .offset(offset)
             //.sort('location', 'distance:asc')
             .query(theFinalQuery)
             .then(function (results) {

@@ -158,6 +158,10 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
 }])
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var limit = 100 || req.query.limit
+    var page = 1 || req.query.page
+    var offset = limit * page
+    
     var responseObj = {}
     var queries = []
 
@@ -171,6 +175,8 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     db.newSearchBuilder()
         .collection("facilities")
+        .limit(limit)
+        .offset(offset)
         //.sort('location', 'distance:asc')
         .query(theFinalQuery)
         .then(function (results) {

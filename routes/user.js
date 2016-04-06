@@ -1153,6 +1153,10 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
 }])
 
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var limit = 100 || req.query.limit
+    var page = 1 || req.query.page
+    var offset = limit * page
+    
     var userId = req.user.results[0].value.id;
     var queries = []
     var responseObj = {}
@@ -1183,6 +1187,8 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     if (isDistanceQuery) {
         db.newSearchBuilder()
             .collection("users")
+            .limit(limit)
+            .offset(offset)
             .sort('location', 'distance:asc')
             .query(theFinalQuery)
             .then(function (results) {
@@ -1197,6 +1203,8 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     } else {
         db.newSearchBuilder()
             .collection("users")
+            .limit(limit)
+            .offset(offset)
             //.sort('location', 'distance:asc')
             .query(theFinalQuery)
             .then(function (results) {
