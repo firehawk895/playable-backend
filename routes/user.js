@@ -1155,7 +1155,10 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var limit = 100 || req.query.limit
     var page = 1 || req.query.page
-    var offset = limit * page
+    var offset = limit * (page - 1)
+    
+    console.log(limit)
+    console.log(offset)
     
     var userId = req.user.results[0].value.id;
     var queries = []

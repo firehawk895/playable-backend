@@ -160,7 +160,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var limit = 100 || req.query.limit
     var page = 1 || req.query.page
-    var offset = limit * page
+    var offset = limit * (page - 1)
     
     var responseObj = {}
     var queries = []
