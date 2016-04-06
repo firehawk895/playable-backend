@@ -178,10 +178,10 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value
-    var eventId = req.query.eventId
-    //var invitedUsersIds = req.body.invitedUserIds
+    var eventId = req.query.id
+    var invitedUsersIds = req.body.invitedUserIds
 
-    var validationResponse = matchValidation.validatePatchEvent(req.body);
+    var validationResponse = matchValidation.validatePatchEvent(req);
     req.body = validationResponse.reqBody
     req.files = validationResponse.reqFiles
     var errors = validationResponse.errors
@@ -191,41 +191,67 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
         res.status(422);
         res.json(responseObj);
     } else {
-        var sanitizedPayload = {
-            title: req.body.title,
-            sub_title: req.body.sub_title,
-            description: req.body.description,
-            playing_time: req.body.playing_time,
-            lastRegDate: req.body.lastRegDate,
-            contactUs: req.body.contactUs,
-            slots_filled: 0,
-            location_name: req.body.location_name,
-            paid: req.body.paid,
-            price: req.body.price,
-            priceText: req.body.priceText,
-            location: {
-                lat: req.body.lat,
-                long: req.body.long
-            },
-            google_form: req.body.google_form,
-            note: req.body.note //TODO : limit the length so this field cannot be exploited
-        }
+        customUtils.upload(req.files.image, function (coverPhotoInfo) {
+            var sanitizedPayload = {
+                title: req.body.title,
+                sub_title: req.body.sub_title,
+                description: req.body.description,
+                playing_time: req.body.playing_time,
+                lastRegDate: req.body.lastRegDate,
+                contactUs: req.body.contactUs,
+                slots_filled: 0,
+                location_name: req.body.location_name,
+                paid: req.body.paid,
+                price: req.body.price,
+                priceText: req.body.priceText,
+                location: {
+                    lat: req.body.lat,
+                    long: req.body.long
+                },
+                google_form: req.body.google_form,
+                note: req.body.note //TODO : limit the length so this field cannot be exploited
+            }
 
-        console.log(sanitizedPayload)
+            if(coverPhotoInfo) {
+                sanitizedPayload.coverPhoto = coverPhotoInfo.url
+                sanitizedPayload.coverPhotoThumb = coverPhotoInfo.urlThumb
+            }
 
-        db.merge('events', eventId, sanitizedPayload)
-            .then(function (result) {
-                return db.get('events', eventId)
-            })
-            .then(function (theEvent) {
-                responseObj["data"] = theEvent.body;
-                res.status(201);
-                res.json(responseObj);
-            })
-            .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
-            })
+            console.log(sanitizedPayload)
+
+            db.merge('events', eventId, sanitizedPayload)
+                .then(function (result) {
+                    return db.get('events', eventId)
+                })
+                .then(function (theEvent) {
+                    responseObj["data"] = theEvent.body;
+                    res.status(201);
+                    res.json(responseObj);
+                })
+                .fail(function (err) {
+                    customUtils.sendErrors([err.body.message], 503, res)
+                })
+        })
     }
+}])
+
+router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    console.log("delete event")
+    var id = req.query.id
+    
+    console.log("being deleted -- " + id)
+
+    db.remove('events', id, true)
+        .then(function(result) {
+            console.log(result.headers)
+            res.status(200);
+            res.json({data:{}, msg : "Delete successful"});
+        })
+        .fail(function(err) {
+            console.log("Error")
+            console.log(err)
+            customUtils.sendErrors([err.body.message], 503, res)
+        })
 }])
 
 module.exports = router;
