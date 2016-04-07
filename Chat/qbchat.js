@@ -4,8 +4,8 @@ var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var constants = require('../constants');
 
-var QuickBlox = require('quickblox').QuickBlox
-var QB = new QuickBlox();
+var QB = require('quickblox')
+// var QB = new QuickBlox();
 
 exports.init = function() {
     QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
