@@ -153,9 +153,11 @@ function pushRequestToFirebase(jsonPayload, userId) {
 function parseRequestObject(requestObj) {
     switch (requestObj.type) {
         case constants.requests.type.connect:
+            console.log("connect request detected")
             return parseConnectRequest(requestObj)
             break
         case constants.requests.type.match:
+            console.log("match request detected")
             return parseMatchRequest(requestObj)
             break
         //not required to parse - android will parse invite requests and auto join
@@ -163,6 +165,7 @@ function parseRequestObject(requestObj) {
         //    return parseInviteToMatchRequest(requestObj)
         //    break
         case constants.requests.type.join:
+            console.log("I want to join your match request detected")
             return parseJoinMatchRequest(requestObj)
             break
         default:
@@ -268,10 +271,11 @@ function parseConnectRequest(requestObj) {
     if (requestObj.status == constants.requests.status.accepted) {
         acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
             .then(function(results) {
-
+                console.log("acceptConnectionRequest success")
             })
             .fail(function(err) {
-
+                console.log("acceptConnectionRequest failed")
+                console.log(err)
             })
     } else {
         //no action so far

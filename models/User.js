@@ -81,10 +81,14 @@ function createConnection(user1id, user2id) {
             //})
         })
         .then(function(newChatRoom) {
+            console.log("the new chat room")
+            console.log(newChatRoom)
             return ChatModel.addUsersToRoom(newChatRoom._id, [user1QBid, user2QBid])
         })
         .then(function(joinedRoomStatus) {
-            return connectionCreated.resolve(joinedRoomStatus)
+            console.log("just adding users")
+            console.log(joinedRoomStatus)
+            connectionCreated.resolve(joinedRoomStatus)
         })
         .fail(function(err) {
             connectionCreated.reject(err)

@@ -2,18 +2,10 @@
 var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
-var db = oio(config.db.key);
-var customUtils = require('../utils.js');
 var constants = require('../constants');
-var qbchat = require('../Chat/qbchat');
-var UserModel = require('../models/User');
-var MatchModel = require('../models/Match');
-var EventModel = require('../models/Event');
-var RequestModel = require('../requests/Request');
-var dbUtils = require('../dbUtils');
-var EventSystem = require('../events/events');
 
-var QB = require('quickblox');
+var QuickBlox = require('quickblox').QuickBlox
+var QB = new QuickBlox();
 
 exports.init = function() {
     QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
@@ -80,4 +72,4 @@ exports.getUsers = function(users, cb){
     QB.users.listUsers(params, function(err, result){
         cb(err, result);
     });
-}
+};

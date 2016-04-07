@@ -30,7 +30,7 @@ var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
 
 var Firebase = require("firebase");
-var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
+var requestsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
 
 /**
  *
@@ -55,7 +55,7 @@ var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.fire
  *  a sanity check is required, an additional boolean flag "backendParsed"
  *  will tell you if it needs to be parsed or not
  */
-recommendationsRef.on("child_added", function (snapshot) {
+requestsRef.on("child_added", function (snapshot) {
     var userId = snapshot.key()
     console.log("hello")
     var userRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId, config.firebase.secret)
@@ -68,7 +68,7 @@ recommendationsRef.on("child_added", function (snapshot) {
         console.log(requestObj)
 
         //if (requestObj.status == constants.requests.status.accepted) {
-            console.log("status switched to accepted")
+            console.log("status changed... parsing it up")
             RequestModel.parseRequestObject(requestObj)
         //}
 

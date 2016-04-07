@@ -3,15 +3,14 @@ var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
-var customUtils = require('../utils.js');
 var constants = require('../constants');
-var qbchat = require('../Chat/qbchat');
-var UserModel = require('../models/User');
-var MatchModel = require('../models/Match');
-var EventModel = require('../models/Event');
-var RequestModel = require('../requests/Request');
+// var qbchat = require('../Chat/qbchat');
+var QuickBlox = require('quickblox').QuickBlox;
+var QB = new QuickBlox()
+
+
 var dbUtils = require('../dbUtils');
-var EventSystem = require('../events/events');
+var kew = require('kew')
 /**
  * /**
  * This is what a qbDialog looks like:
@@ -40,19 +39,19 @@ var getUsersDialogs = function (username, callback) {
     }
 
     /**
+     * Old hack now solved (apparently)
      * disable require cache to get a new QB object for consumer
      * so that the sessions dont clash!
-     * TODO: find a better way to do this. perhaps create an instance of QB
      ***/
-    Object.keys(require.cache).forEach(function (key) {
-        //delete require.cache[key]
-        if (key.indexOf("node_modules/quickblox") > -1) {
-            //console.log(key)
-            delete require.cache[key]
-        }
-    })
+    // Object.keys(require.cache).forEach(function (key) {
+    //     //delete require.cache[key]
+    //     if (key.indexOf("node_modules/quickblox") > -1) {
+    //         //console.log(key)
+    //         delete require.cache[key]
+    //     }
+    // })
 
-    var QBconsumer = require('quickblox');
+    var QBconsumer = new QuickBlox();
     QBconsumer.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
     console.log("Im here")
     QBconsumer.createSession(params, function (err, session) {
@@ -73,10 +72,11 @@ var getUsersDialogs = function (username, callback) {
 }
 
 function createGroupChatRoom(roomName) {
+    console.log("creating group room chat")
     var newChatRoom = kew.defer()
     getSession()
         .then(function (result) {
-            qbchat.createRoom(2, roomName, function (err, newRoom) {
+            QB.chat.dialog.create({type: 2, name: roomName}, function (err, newRoom) {
                 if (err) {
                     newChatRoom.reject(err)
                     console.log("error creating the one on one room")
@@ -85,7 +85,17 @@ function createGroupChatRoom(roomName) {
                 else {
                     newChatRoom.resolve(newRoom)
                 }
-            })
+            });
+            // qbchat.createRoom(2, roomName, function (err, newRoom) {
+            //     if (err) {
+            //         newChatRoom.reject(err)
+            //         console.log("error creating the one on one room")
+            //         console.log(err);
+            //     }
+            //     else {
+            //         newChatRoom.resolve(newRoom)
+            //     }
+            // })
         })
         .fail(function (err) {
             newChatRoom.reject(err)
@@ -94,17 +104,20 @@ function createGroupChatRoom(roomName) {
 }
 
 function addUsersToRoom(newRoomQbId, arrayOfQbIds) {
+    console.log("adding users to room")
     var joined = kew.defer()
     getSession()
         .then(function (result) {
-            qbchat.addUserToRoom(newRoomQbId, arrayOfQbIds, function (err, result) {
-                if (err) {
-                    console.log(err);
-                    joined.reject(err)
-                } else {
-                    joined.resolve(result)
+            QB.chat.dialog.update(newRoomQbId, {push_all: arrayOfQbIds},
+                function(err, result) {
+                    if (err) {
+                        console.log(err);
+                        joined.reject(err)
+                    } else {
+                        joined.resolve(result)
+                    }
                 }
-            })
+            );
         })
         .fail(function (err) {
             joined.reject(err)
@@ -113,25 +126,39 @@ function addUsersToRoom(newRoomQbId, arrayOfQbIds) {
 }
 
 function getSession() {
+    // var qbchat = require('../Chat/qbchat');
+    console.log("getting the session")
     var sessionStatus = kew.defer()
-    qbchat.getSession(function (err, session) {
+
+    QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
+
+    QB.createSession(config.qb.params, function (err, session) {
         if (err) {
-            console.log("Recreating session");
-            qbchat.createSession(function (err, result) {
-                if (err) {
-                    console.log(err)
-                    sessionStatus.reject(err)
-                    //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
-                } else {
-                    sessionStatus.resolve(result)
-                }
-                ;
-            })
+            console.log(err)
+            sessionStatus.reject(err)
+            //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
         } else {
             sessionStatus.resolve(session)
         }
-        ;
-    })
+    });
+
+    // qbchat.getSession(function (err, session) {
+    //     if (err) {
+    //         console.log("unfortunately always recreating the  session");
+    //         qbchat.createSession(function (err, result) {
+    //             if (err) {
+    //                 console.log(err)
+    //                 sessionStatus.reject(err)
+    //                 //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+    //             } else {
+    //                 sessionStatus.resolve(result)
+    //             }
+    //         })
+    //     } else {
+    //         console.log("session mil gaya")
+    //         sessionStatus.resolve(session)
+    //     }
+    // })
     return sessionStatus
 }
 
