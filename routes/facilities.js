@@ -90,9 +90,10 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 }])
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
-    var images = new Array()
+    var images = []
     var responseObj = {}
     var facilityId = req.query.facilityId
+    var payload
 
     // 1st para in async.each() is the array of items
     async.each(req.files.image,
@@ -110,22 +111,22 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
             // All tasks are done now
             var sanitziedPayload = {
                 sports : {
-                    "badminton" : req.body.badminton,
-                    "basketball" : req.body.basketball,
-                    "bowling" : req.body.bowling,
-                    "cricket" : req.body.cricket,
-                    "cycling" : req.body.cycling,
-                    "football" : req.body.football,
-                    "golf" : req.body.golf,
-                    "hockey" : req.body.hockey,
-                    "pool" : req.body.pool,
-                    "running" : req.body.running,
-                    "snooker" : req.body.snooker,
-                    "squash" : req.body.squash,
-                    "swimming" : req.body.swimming,
-                    "tennis" : req.body.tennis,
-                    "tt" : req.body.tt,
-                    "ultimatefrisbee" : req.body.ultimatefrisbee
+                    "badminton" : (req.body.badminton || null),
+                    "basketball" : (req.body.basketball || null),
+                    "bowling" : (req.body.bowling || null),
+                    "cricket" : (req.body.cricket || null),
+                    "cycling" : (req.body.cycling || null),
+                    "football" : (req.body.football || null),
+                    "golf" : (req.body.golf || null),
+                    "hockey" : (req.body.hockey || null),
+                    "pool" : (req.body.pool || null),
+                    "running" : (req.body.running || null),
+                    "snooker" : (req.body.snooker || null),
+                    "squash" : (req.body.squash || null),
+                    "swimming" : (req.body.swimming || null),
+                    "tennis" : (req.body.tennis || null),
+                    "tt" : (req.body.tt || null),
+                    "ultimatefrisbee" : (req.body.ultimatefrisbee || null)
                 },
                 timings : req.body.timings,
                 contactEmail : req.body.contactEmail,

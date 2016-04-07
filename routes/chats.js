@@ -90,13 +90,17 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 connections.forEach(function (connection) {
                     connectionsMap[connection["id"]] = connection
                 })
+                console.log("look look connection map")
+                console.log(connectionsMap)
 
                 //-------- make the sweet chat objects --------------
                 //-------- makhan parsed for the front end ----------
 
                 var dialogs = results[2]
+                console.log("all dialogs here")
                 console.log(dialogs)
-
+                console.log("all dialogs end here")
+                
                 var chatObjects = {}
                 chatObjects["oneOnOne"] = []
                 chatObjects["matches"] = []
@@ -107,7 +111,9 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                     }
                     if (dialog.name.indexOf(constants.chats.oneOnOne) > -1) {
                         console.log("oneoneone")
-                        var theUserId = getOpponentUser(userId)
+                        var theUserId = getOpponentUser(userId, dialog.name)
+                        console.log("the userId to inject " + theUserId)
+                        console.log(connectionsMap[theUserId])
                         chatObj["user"] = connectionsMap[theUserId]
                         chatObjects["oneOnOne"].push(chatObj)
                     } else if (dialog.name.indexOf(constants.chats.matchRoom) > -1) {
@@ -146,14 +152,14 @@ function getMatchId(matchRoomName) {
  * @param connectionRoomName
  */
 function getOpponentUser(userId, connectionRoomName) {
-    var components = connectionRoomName.split(":::")
-    var user1id = components[1]
-    var user2id = components[2]
+        var components = connectionRoomName.split(":::")
+        var user1id = components[1]
+        var user2id = components[2]
 
-    if (userId.substring(user1id) > -1)
-        return user2id
-    else
-        return user1id
+        if (userId.substring(user1id) > -1)
+            return user1id
+        else
+            return user2id
 }
 
 

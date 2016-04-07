@@ -105,10 +105,12 @@ function createGroupChatRoom(roomName) {
 
 function addUsersToRoom(newRoomQbId, arrayOfQbIds) {
     console.log("adding users to room")
+    console.log(newRoomQbId)
+    console.log(arrayOfQbIds)
     var joined = kew.defer()
     getSession()
         .then(function (result) {
-            QB.chat.dialog.update(newRoomQbId, {push_all: arrayOfQbIds},
+            QB.chat.dialog.update(newRoomQbId, {push_all: {occupants_ids: arrayOfQbIds}},
                 function(err, result) {
                     if (err) {
                         console.log(err);
@@ -129,7 +131,7 @@ function getSession() {
     // var qbchat = require('../Chat/qbchat');
     console.log("getting the session")
     var sessionStatus = kew.defer()
-
+    
     QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 
     QB.createSession(config.qb.params, function (err, session) {

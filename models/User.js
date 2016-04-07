@@ -64,8 +64,8 @@ function createConnection(user1id, user2id) {
     var user2QBid
     kew.all(promises)
         .then(function (results) {
-            user1QBid = results[0].qbId
-            user2QBid = results[1].qbId
+            user1QBid = results[0].body.qbId
+            user2QBid = results[1].body.qbId
             var chatRoomName = constants.chats.oneOnOne + ":::" + user1id + ":::" + user2id
             return ChatModel.createGroupChatRoom(chatRoomName)
             //qbchat.createRoom(2, , function (err, newRoom) {
