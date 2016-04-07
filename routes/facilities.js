@@ -158,9 +158,13 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
 }])
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var limit = 100 || req.query.limit
-    var page = 1 || req.query.page
+    console.log("get facilities")
+    var limit = req.query.limit || 100
+    var page =  req.query.page || 1
     var offset = limit * (page - 1)
+    
+    console.log(limit)
+    console.log(offset)
     
     var responseObj = {}
     var queries = []

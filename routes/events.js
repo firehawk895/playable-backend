@@ -90,8 +90,8 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 }])
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var limit = 100 || req.query.limit
-    var page = 1 || req.query.page
+    var limit = req.query.limit || 100
+    var page =  req.query.page || 1
     var offset = limit * (page - 1)
 
     var userId = req.user.results[0].value.id

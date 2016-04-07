@@ -1171,8 +1171,8 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
 }])
 
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var limit = 100 || req.query.limit
-    var page = 1 || req.query.page
+    var limit = req.query.limit || 100
+    var page =  req.query.page || 1
     var offset = limit * (page - 1)
     
     console.log(limit)

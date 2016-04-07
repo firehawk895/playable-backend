@@ -248,8 +248,9 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var userId = req.user.results[0].value.id
     var queries = []
     var responseObj = {}
-    var page = req.query.page || 1
     var limit = req.query.limit || 100
+    var page =  req.query.page || 1
+    var offset = limit * (page - 1)
 
     console.log("default time and isDiscoverable query")
     queries.push(MatchModel.createIsDiscoverableQuery())
@@ -257,8 +258,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var isDistanceQuery = false
     var isMatchQuery = false
     var getFeatured = false
-
-    var offset = limit * (page - 1)
 
     if (req.query.matchId) {
         isMatchQuery = true
