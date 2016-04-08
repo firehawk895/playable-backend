@@ -95,6 +95,37 @@ function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, host
         })
 }
 
+function feedback(username, message) {
+    var nofObj = {
+        "created": date.getTime(),
+        "id": date.getTime(),
+        "is_clicked": false,
+        "is_read": false,
+        "link": "Feedback Channel",
+        "title": "Response for your Feedback",
+        "text": "You got a response from Playable Team : " + message,
+        "photo": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-tssc-files/pyoopil-logo.png"
+    };
+
+    db.newSearchBuilder()
+        .collection('users')
+        .query('value.username:`' + username + '`')
+        .then(function (result) {
+            console.log("result.body.total_count > 0 -- " + result.body.total_count)
+            if (result.body.total_count > 0) {
+                user = result.body.results[0].value;
+                NF.sendNotification(nofObj, [user.id], [user.gcmId], type);
+            } else {
+                request.post(config.newSlack.feedbackHook, {
+                    body: JSON.stringify({text: "User nahi mila bhai, chasma pehen lo"})
+                })
+            }
+        })
+        .fail(function (err) {
+            console.log(err.body.message);
+        });
+}
+
 /**
  * recursive dispatch notifications to everyone
  * @param offset
@@ -193,5 +224,6 @@ module.exports = {
     welcome: welcome,
     newEvent: newEvent,
     invitedToMatch: invitedToMatch,
-    joinedEvent: joinedEvent
+    joinedEvent: joinedEvent,
+    feedback : feedback
 }

@@ -19,6 +19,7 @@ var facilities = require('./routes/facilities');
 var sports = require('./routes/sports');
 var events = require('./routes/events');
 var chats = require('./routes/chats');
+var feedback = require('./routes/feedback');
 
 var config = require('./config.js');
 var customUtils = require('./utils.js');
@@ -135,6 +136,7 @@ app.use('/facilities', facilities);
 app.use('/sports', sports);
 app.use('/events', events);
 app.use('/chats', chats);
+app.use('/feedback', feedback);
 
 
 app.all('/ping', function (req, res) {
