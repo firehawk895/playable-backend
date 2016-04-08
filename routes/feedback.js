@@ -100,4 +100,25 @@ router.post('/', multer(), function (req, res) {
     }
 })
 
+//slack url working
+// router.post('/test', multer(), function (req, res) {
+//     console.log("slack hook")
+//     request.post(config.newSlack.feedbackHook, {
+//         body: JSON.stringify({text: "test slack hook"})
+//     })
+// })
+
+//firebase to slack test working
+// router.post('/test', function (req, res) {
+//     console.log("what")
+//     myFirebaseRef = new Firebase(config.firebase.url + "/FeedbackUpdated/7b9e93742e133d97", config.firebase.secret);
+//     var newPostRef = myFirebaseRef.push();
+//     var now = new Date().getTime()
+//     newPostRef.set({
+//         displayName: "Batman",
+//         text: "Announcing COBOL, a New Programming Language",
+//         timestamp: now
+//     });
+// })
+
 module.exports = router;
