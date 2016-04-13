@@ -59,7 +59,8 @@ function queryJoiner(queries) {
         returnQuery += query
         returnQuery += ") AND "
     })
-    returnQuery = returnQuery.substring(0, returnQuery.length - 5)
+    if (returnQuery != "")
+        returnQuery = returnQuery.substring(0, returnQuery.length - 5)
     return returnQuery
 }
 
@@ -152,6 +153,35 @@ function createGetOneOnOneGraphRelationQuery(sourceCollection, sourceId, relatio
     return query
 }
 
+/**
+ * join a set of queries with AND, OR conditions
+ * for lucene/orchestrate
+ * @param queries
+ * @param type
+ */
+function queryJoinerOr(queries) {
+    var returnQuery = ""
+    queries.forEach(function (query) {
+        returnQuery += "("
+        returnQuery += query
+        returnQuery += ") OR "
+    })
+    if (returnQuery != "")
+        returnQuery = returnQuery.substring(0, returnQuery.length - 4)
+    return returnQuery
+}
+
+/**
+ * a little fuzzy with the query,
+ * search-- expecting sanitized value
+ * @param field
+ * @param value
+ * @returns {string}
+ */
+function createFuzzyQuery(field, value) {
+    return "value." + field + ":" + value + "*"
+}
+
 module.exports = {
     injectId: injectId,
     createGetOneOnOneGraphRelationQuery: createGetOneOnOneGraphRelationQuery,
@@ -161,7 +191,9 @@ module.exports = {
     createSearchByIdQuery: createSearchByIdQuery,
     createDistanceQuery: createDistanceQuery,
     deleteGraphRelationPromise: deleteGraphRelationPromise,
-    queryJoiner: queryJoiner
+    queryJoiner: queryJoiner,
+    createFuzzyQuery : createFuzzyQuery,
+    queryJoinerOr : queryJoinerOr
 }
 
 
