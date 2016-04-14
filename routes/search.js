@@ -49,6 +49,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
      */
 
     var spaceEscapedQuery = query.replace(/\s/g, '\\ ')
+    var spaceRemovedQuery = query.replace(/ /g,'')
     console.log("space escaped query")
     console.log(spaceEscapedQuery)
 
@@ -64,6 +65,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var playerQueries = [
         dbUtils.createFuzzyQuery("name", spaceEscapedQuery),
         dbUtils.createFuzzyQuery("sports", spaceEscapedQuery),
+        dbUtils.createExistsQuery("value.sports." + spaceRemovedQuery)
     ]
     var finalPlayerQuery = dbUtils.queryJoinerOr(playerQueries)
 
@@ -115,6 +117,7 @@ router.get('/facilities', [passport.authenticate('bearer', {session: false}), fu
     console.log("sanitized query : " + query)
 
     var spaceEscapedQuery = query.replace(/\s/g, '\\ ')
+    var spaceRemovedQuery = query.replace(/ /g,'')
     console.log("space escaped query")
     console.log(spaceEscapedQuery)
 
@@ -122,6 +125,7 @@ router.get('/facilities', [passport.authenticate('bearer', {session: false}), fu
         dbUtils.createFuzzyQuery("name", spaceEscapedQuery),
         dbUtils.createFuzzyQuery("location_name", spaceEscapedQuery),
         dbUtils.createFuzzyQuery("description", spaceEscapedQuery),
+        dbUtils.createExistsQuery("value.sports." + spaceRemovedQuery)
     ]
     var finalQuery = dbUtils.queryJoinerOr(queries)
 

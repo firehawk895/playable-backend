@@ -28,6 +28,16 @@ function createGraphRelationPromise(from, fromKey, to, toKey, relationName) {
 }
 
 /**
+ * check if key exists.
+ * fully qualified path expected:
+ * _exists_:value.sports.pool
+ * @param fieldPath
+ */
+function createExistsQuery(fieldPath) {
+    return "_exists_:" + fieldPath
+}
+
+/**
  *
  * @param collection
  * @param id
@@ -193,7 +203,8 @@ module.exports = {
     deleteGraphRelationPromise: deleteGraphRelationPromise,
     queryJoiner: queryJoiner,
     createFuzzyQuery : createFuzzyQuery,
-    queryJoinerOr : queryJoinerOr
+    queryJoinerOr : queryJoinerOr,
+    createExistsQuery : createExistsQuery
 }
 
 
