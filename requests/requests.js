@@ -36,7 +36,7 @@ var requestsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNod
  *
  * //TODO: Scaling notes:
  * The number of entries will keep increasing, on("child_added") will be called
- * for each entry, parsing each of them. slash the retrieved records or move them to
+ * for each entry (during the first server start), parsing each of them. slash the retrieved records or move them to
  * another tree in firebase
  *
  * Listener:

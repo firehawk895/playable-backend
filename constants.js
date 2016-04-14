@@ -150,5 +150,13 @@ module.exports = {
     },
     db : {
         limit : 100
+    },
+    notifications : {
+        path: "/notifications",
+        type: {
+            inApp: "app",
+            push: "push",
+            both: "both",
+        }
     }
 }

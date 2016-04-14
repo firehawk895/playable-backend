@@ -1,55 +1,66 @@
 /**
- * Developer rant incoming:
- * Implement event dispatchers as per the pub/sub or observer pattern
- * I have determined that this is not required now,
- * therefore the project now directly dispatches notifications
- *
- * dekh bhai notification systems are best built using the observer pattern
- * https://www.quora.com/How-important-are-design-patterns-in-software-development/answer/Ankan-Adhikari?srid=p3D8&share=ec5a917a
- *
- * but that increases the amount of code at the cost of decoupling.
- * the decoupling will make sense later, maybe
- *
- * I'm thinking of a an evented system that fires events to a database like firebase
- * that can be listened by any client.
- *
- * Anyway, back to work.
+ * Listeners for decoupled events/notifications to be fired
  */
-
-//var express = require('express');
-//var router = express.Router();
+var express = require('express');
+var router = express.Router();
+//
+//var constants = require('constants.js');
 //
 //var passport = require('passport');
-//customUtils = require('../utils.js');
-//var constants = require('../constants.js');
+//customUtils = require('utils.js');
 //
-//var config = require('../config.js');
-////var config = require('../models/Match.js');
-//var matchValidation = require('../validations/Match.js');
+//var config = require('config.js');
 //var oio = require('orchestrate');
 //oio.ApiEndPoint = config.db.region;
 //var db = oio(config.db.key);
 //
-//var qbchat = require('../Chat/qbchat.js');
-//var dispatchers = require('./dispatchers')
+//var qbchat = require('qbchat.js');
 //var kew = require('kew')
-//var Firebase = require("firebase");
-//var firebaseRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.newMatches)
-//var date = new Date()
-//
-//firebaseRef.child(constants.events.matches.created).on("child_added", function (snapshot) {
-//    var newMatch = snapshot.val()
-//    if (customUtils.isRecent(newMatch[constants.events.timestampkey])) {
-//        var invitedUserIdList = newMatch.invitedUserIds.split(",")
-//        dispatchers.invitedToMatch(invitedUserIdList, newMatch.id, newMatch.sport, newMatch.host.id, newMatch.host.name)
-//    }
-//})
-//
-//firebaseRef.child(constants.events.events.created).on("child_added", function (snapshot) {
-//    var newEvent = snapshot.val()
-//    if (customUtils.isRecent(newMatch[constants.events.timestampkey])) {
-//        dispatchers.newEvent(newEvent.id, newEvent.title)
-//    }
-//})
+
+//kardo sab import, node only uses it once
+var config = require('../config.js');
+var oio = require('orchestrate');
+oio.ApiEndPoint = config.db.region;
+var db = oio(config.db.key);
+var customUtils = require('../utils.js');
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('../models/User');
+var MatchModel = require('../models/Match');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
+var notificationFactory = require('../notifications/notificationFactory')
+
+var Firebase = require("firebase");
+var requestsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
+
+/**
+ * Push notifications for every new request added. decoupled listeners (kick ass huh?)
+ */
+requestsRef.on("child_added", function (snapshot) {
+    var userId = snapshot.key()
+    console.log("hello")
+    var userRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId, config.firebase.secret)
+    /**
+     * Register a child_added listener for one user's request
+     * */
+    userRequestRef.child("data").on("child_added", function (childSnapshot, prevChildKey) {
+        var requestObj = childSnapshot.val()
+
+        if (customUtils.isRecent(requestObj.timestamp)) {
+            UserModel.getGcmIdsForUserIds(requestObj.toUserId)
+                .then(function (gcmIds) {
+                    notificationFactory.send(requestObj, constants.notifications.type.push, gcmIds, null)
+                })
+                .fail(function (err) {
+                    console.log("Error dispatching push notification for request")
+                    console.log(err)
+                    console.log(requestObj)
+                })
+        }
+    })
+})
 
 module.exports = router;

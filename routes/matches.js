@@ -351,6 +351,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             }
             responseObj["total_count"] = results.body.total_count
             responseObj["data"] = dbUtils.injectId(results)
+            console.log("isMatchQuery : " + isMatchQuery)
             if (isMatchQuery) {
                 var matchParticipants = dbUtils.injectId(theMasterResults[2])
                 responseObj["players"] = matchParticipants

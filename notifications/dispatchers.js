@@ -22,7 +22,7 @@ var dbUtils = require('../dbUtils');
 var Firebase = require("firebase");
 var notificationsRef = new Firebase(config.firebase.url, config.firebase.secret);
 
-var NF = new NotificationFactory();
+var NF = require('../notifications/notificationFactory');
 var date = new Date()
 
 /**
@@ -42,7 +42,7 @@ function welcome(userId, usersName) {
         "text": "Welcome to Playable! We look forward to providing you a great playing experience :)",
         "photo": ""
     };
-    NF.sendNotification(nofObj, [userId], null, "app");
+    NF.send(nofObj, constants.notification.type.inApp, null, [userId]);
 }
 
 function newEvent(eventId, eventName) {
@@ -57,7 +57,7 @@ function newEvent(eventId, eventName) {
         "text": "New event " + eventName + " hosted! Check it out now!",
         "photo": ""
     };
-    everyoneNotificationDispatcer(0, nofObj, "both")
+    everyoneNotificationDispatcer(0, nofObj, constants.notification.type.both)
 }
 
 function joinedEvent(eventId, eventName, userId) {
@@ -73,7 +73,7 @@ function joinedEvent(eventId, eventName, userId) {
     };
     UserModel.getGcmIdsForUserIds([userId])
         .then(function (gcmIds) {
-            NF.sendNotification(nofObj, [userId], gcmIds, "both");
+            NF.send(nofObj, constants.notification.type.both, gcmIds, [userId]);
         })
 }
 
@@ -91,7 +91,7 @@ function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, host
                 "text": "You have been invited to play a match of " + matchSport + " by " + hostName,
                 "photo": ""
             };
-            NF.sendNotification(nofObj, invitedUserIdList, invitedUserGCMidList, "both");
+            NF.send(nofObj, constants.notification.type.both, invitedUserGCMidList, invitedUserIdList);
         })
 }
 
@@ -114,7 +114,7 @@ function feedback(username, message) {
             console.log("result.body.total_count > 0 -- " + result.body.total_count)
             if (result.body.total_count > 0) {
                 user = result.body.results[0].value;
-                NF.sendNotification(nofObj, [user.id], [user.gcmId], type);
+                NF.send(nofObj, constants.notification.type.both, [user.gcmId], [user.id]);
             } else {
                 request.post(config.newSlack.feedbackHook, {
                     body: JSON.stringify({text: "User nahi mila bhai, chasma pehen lo"})
@@ -152,8 +152,7 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
             console.log("sending")
             console.log(recieverIds)
             console.log(recieverGcmIds)
-            NF.sendNotification(nofObj, recieverIds, recieverGcmIds, type);
-
+            NF.send(nofObj, type, recieverGcmIds, recieverIds)
             if (result.body.next) {
                 everyoneNotificationDispatcer(offset + config.pagination.limit, nofObj, type)
             }
@@ -163,67 +162,10 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
         });
 }
 
-
-function NotificationFactory() {
-    this.sendNotification = function (nofObj, receiverIds, recieverGcmIds, type) {
-        //console.log("----------------nofObj : ----------------------")
-        //console.log("----------------" + type)
-        //console.log(nofObj)
-        //console.log("receivers : ")
-        //console.log(receiverIds)
-        //console.log("receivers GCMs: ")
-        //console.log(recieverGcmIds)
-        /**
-         * obviously you can compress this
-         */
-        switch (type) {
-            case "both":
-            {
-                message.addData(nofObj);
-                sender.send(message, recieverGcmIds, function (err, result) {
-                    if (err) console.error(err);
-                });
-                receiverIds.forEach(function (recieverId) {
-                    pushToFireBase(recieverId, nofObj)
-                })
-                console.log("Both")
-            }
-                break;
-            case "app":
-            {
-                receiverIds.forEach(function (receiverId) {
-                    pushToFireBase(receiverId, nofObj)
-                })
-                console.log("App")
-            }
-                break;
-            case "push":
-            {
-                message.addData(nofObj);
-                sender.send(message, recieverGcmIds, function (err, result) {
-                    if (err) console.error(err);
-                });
-                console.log("Push")
-            }
-                break;
-            default:
-                console.log("Seriously, frontend?")
-        }
-    }
-}
-
-function pushToFireBase(receiverId, nofObj) {
-    notificationsRef.child("/nof/" + receiverId + "/data").push().set(nofObj);
-    notificationsRef.child("/nof/" + receiverId + "/count").transaction(function (current_value) {
-        return (current_value || 0) + 1;
-    });
-}
-
-
 module.exports = {
     welcome: welcome,
     newEvent: newEvent,
     invitedToMatch: invitedToMatch,
     joinedEvent: joinedEvent,
-    feedback : feedback
+    feedback: feedback
 }

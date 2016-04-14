@@ -1241,7 +1241,10 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
 }])
 
 router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    //userId query for the admin panel TODO : Secure this API
     var userId = req.user.results[0].value.id;
+    if(req.query.userId)
+        userId = req.query.userId
     var responseObj = {}
     MatchModel.getMatchHistoryPromise(userId)
         .then(function (results) {
