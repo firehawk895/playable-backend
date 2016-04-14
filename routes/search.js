@@ -70,6 +70,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var eventQueries = [
         dbUtils.createFuzzyQuery("title", spaceEscapedQuery),
         dbUtils.createFuzzyQuery("sub_title", spaceEscapedQuery),
+        dbUtils.createFuzzyQuery("description", spaceEscapedQuery)
     ]
     var finalEventQuery = dbUtils.queryJoinerOr(eventQueries)
 
@@ -106,5 +107,43 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         })
 }])
 
+router.get('/facilities', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var query = req.query.query || ""
+
+    //refer above API for details on sanitization and escape parameters
+    query = query.replace(/[^\w\s]/gi, '')
+    console.log("sanitized query : " + query)
+
+    var spaceEscapedQuery = query.replace(/\s/g, '\\ ')
+    console.log("space escaped query")
+    console.log(spaceEscapedQuery)
+
+    var queries = [
+        dbUtils.createFuzzyQuery("name", spaceEscapedQuery),
+        dbUtils.createFuzzyQuery("location_name", spaceEscapedQuery),
+        dbUtils.createFuzzyQuery("description", spaceEscapedQuery),
+    ]
+    var finalQuery = dbUtils.queryJoinerOr(queries)
+
+    var promises = [
+        db.newSearchBuilder()
+            .collection('facilities')
+            .limit(10)
+            .offset(0)
+            .query(finalQuery)
+    ]
+
+    kew.all(promises)
+        .then(function(results) {
+            var response = {
+                "data" : dbUtils.injectId(results[0]),
+            }
+            res.send(response)
+            res.status(200)
+        })
+        .fail(function(err) {
+            customUtils.sendErrors([err.body.message], 422, res)
+        })
+}])
 
 module.exports = router
