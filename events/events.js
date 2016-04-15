@@ -43,6 +43,7 @@ var date = new Date()
  * @param payload
  */
 function dispatchEvent(type, payload) {
+    console.log("time to dispatch event")
     payload[constants.events.timestampkey] = date.getTime()
     myFirebaseRef.child(type).push().set(payload)
 }

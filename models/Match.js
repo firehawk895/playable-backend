@@ -320,6 +320,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
     payload = updateGenderInPayload(payload, hostData.gender)
     db.post('matches', payload)
         .then(function (result) {
+            console.log("creating a match????")
             payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
             matchCreated.resolve(payload)
 
@@ -351,16 +352,6 @@ function createMatch(payload, hostData, invitedUserIdList) {
              */
             promises.push(createChatRoomForMatch(hostData.qbId, payload["id"]))
 
-            kew.all(promises)
-                .then(function (results) {
-                    console.log("match creation fully complete")
-                    matchCreated.resolve()
-                })
-                .fail(function (err) {
-                    console.log("match creation failed")
-                    matchCreated.reject(err)
-                    console.log(err)
-                })
             //var chatObj = {
             //    "created": date.getTime(),
             //    "type": "newChannel",
@@ -368,8 +359,14 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //    "pathTitle": reqBody.title
             //}
             EventSystem.dispatchEvent(constants.events.matches.created, payload)
+            return kew.all(promises)
+        })
+        .then(function(result) {
+            console.log("match creation fully complete")
+            matchCreated.resolve()
         })
         .fail(function (err) {
+            console.log("match creation failed")
             matchCreated.reject(err)
         })
     return matchCreated

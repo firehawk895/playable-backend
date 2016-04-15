@@ -23,6 +23,7 @@ var RequestModel = require('../requests/Request');
 var kew = require('kew');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../notifications/dispatchers');
+var customUtils = require('../utils')
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
     //TODO : move this to the model class
@@ -59,6 +60,8 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                 long: req.body.long
             },
             google_form: req.body.google_form,
+            isFeatured: customUtils.stringToBoolean(req.body.isFeatured),
+            isDiscoverable: true,
             type: "Event"
         }
 
@@ -235,6 +238,8 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                     lat: req.body.lat,
                     long: req.body.long
                 },
+                isFeatured: req.body.isFeatured,
+                isDiscoverable: req.body.isDiscoverable,
                 google_form: req.body.google_form,
                 note: req.body.note //TODO : limit the length so this field cannot be exploited
             }

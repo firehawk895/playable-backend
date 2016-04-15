@@ -35,7 +35,7 @@ var dbUtils = require('./dbUtils');
 var EventSystem = require('./events/events');
 
 var requests = require('./requests/requests');
-//var recommendations = require('./recommendations/recommendations');
+var recommendations = require('./recommendations/recommendations');
 
 //----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');

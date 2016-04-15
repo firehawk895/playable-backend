@@ -24,6 +24,7 @@ var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
 var MatchModel = require('../models/Match.js')
+var date = new Date()
 
 //var Notifications = require('../notifications');
 //var notify = new Notifications();

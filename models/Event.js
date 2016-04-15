@@ -27,6 +27,8 @@ function checkEventParticipationPromise(eventId, userId) {
  * @returns {SearchBuilder} promise
  */
 function getFeaturedEventsPromise() {
+    var date = new Date()
+    var currentUnixTime = Math.round(date.getTime() / 1000)
     /**
      * TODO: Red alert! can't put this outside! how!
      * no idea why in the world if this is outside the method this doesnt work
@@ -34,8 +36,11 @@ function getFeaturedEventsPromise() {
     var MatchModel = require('../models/Match');
     var queries = []
     queries.push("value.isFeatured:true")
-    queries.push(MatchModel.createIsDiscoverableQuery())
+    queries.push("value.playing_time: " + currentUnixTime + "~*"  )
     var finalQuery = dbUtils.queryJoiner(queries)
+    
+    console.log("final featured events query")
+    console.log(finalQuery)
     var featuredMatches = db.newSearchBuilder()
         .collection("events")
         .query(finalQuery)
