@@ -11,10 +11,9 @@ var MatchModel = require('../models/Match');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
-var EventSystem = require('../events/events');
 
 var Firebase = require('firebase')
-var myFirebaseRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
+var myFirebaseRef = new Firebase(config.firebase.url)
 
 var kew = require('kew')
 var date = new Date()
@@ -43,12 +42,18 @@ var date = new Date()
  * @param payload
  */
 function dispatchEvent(type, payload) {
-    console.log("time to dispatch event")
-    payload[constants.events.timestampkey] = date.getTime()
+    /**
+     * Like what a bummer. firebase library should remove undefined by itself
+     * why should we do it.
+     * orchestrate does it by itself
+     * chalo fatafat sey raise a github issue and do some good to this world.
+     */
+    payload = customUtils.undefinedRemover(payload)
+    payload[constants.events.timestampkey] = customUtils.getCurrentUnixTime()
     myFirebaseRef.child(type).push().set(payload)
 }
 
 
-exports = {
+module.exports = {
     dispatchEvent : dispatchEvent
 }

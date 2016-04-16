@@ -71,7 +71,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         function (err, results) {
             if (err) {
                 console.log(err)
-                customUtils.sendErrors(["Retreiving chats failed"], 503, res)
+                customUtils.sendErrors(err, res)
             } else {
                 //results[0] match history
                 //results[1] get users connection

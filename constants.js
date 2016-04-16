@@ -52,7 +52,7 @@ module.exports = {
     "firebaseNodes": {
         "recommendations": "recommendations",
         "requests": "requests",
-        "events" :{
+        "events" : {
             "newMatches": "events/matches"
         },
         notifications : "notifications"

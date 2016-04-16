@@ -209,7 +209,7 @@ router.delete('/', [passport.authenticate('bearer', {session: false}), function 
         .fail(function(err) {
             console.log("Error")
             console.log(err)
-            customUtils.sendErrors([err.body.message], 503, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 

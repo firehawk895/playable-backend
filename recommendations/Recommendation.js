@@ -1,5 +1,34 @@
+var express = require('express');
+var router = express.Router();
+//
+//var constants = require('constants.js');
+//
+//var passport = require('passport');
+//customUtils = require('utils.js');
+//
+//var config = require('config.js');
+//var oio = require('orchestrate');
+//oio.ApiEndPoint = config.db.region;
+//var db = oio(config.db.key);
+//
+//var qbchat = require('qbchat.js');
+//var kew = require('kew')
 
-
+//kardo sab import, node only uses it once
+var config = require('../config.js');
+var oio = require('orchestrate');
+oio.ApiEndPoint = config.db.region;
+var db = oio(config.db.key);
+var customUtils = require('../utils.js');
+var constants = require('../constants');
+var qbchat = require('../Chat/qbchat');
+var UserModel = require('../models/User');
+var MatchModel = require('../models/Match');
+var EventModel = require('../models/Event');
+var RequestModel = require('../requests/Request');
+var dbUtils = require('../dbUtils');
+var EventSystem = require('../events/events');
+var kew = require('kew')
 
 /**
  * creates cron jobs that will create recommendations
@@ -11,13 +40,19 @@ function createRecommendationCron(matchId, playing_time) {
     //create new cron for the playing_time + constants.recommendation.dispatchTime
     //get all match participants
     //create recommendation objects for each user in firebase
-    var matchPromise = getMatchPromise(matchId)
-    var participantsPromise = getMatchParticipantsPromise(matchId)
-
+    console.log("welcome to the jungle")
+    console.log(matchId)
+    console.log(playing_time)
+    var matchPromise = MatchModel.getMatchPromise(matchId)
+    var participantsPromise = MatchModel.getMatchParticipantsPromise(matchId)
+    //
     kew.all([matchPromise, participantsPromise])
         .then(function (results) {
-            var match = results[0]
+            console.log("the match details fetchhhhhhhhhh")
+            var match = results[0].body
             var participants = results[1]
+            console.log(participants)
+            // console.log(participants)
             if (match.body.slots_filled == 2) {
                 //1 on 1 match
                 var participant1 = participants.results.body[0];
@@ -31,7 +66,7 @@ function createRecommendationCron(matchId, playing_time) {
                 })
             }
             if (match.isFacility) {
-                getFacilityOfMatchPromise
+                MatchModel.getFacilityOfMatchPromise
                     .then(function (result) {
                         var facilityId = result.body.results[0].path.key
                         var facility = result.body.results[0].path.value
@@ -40,6 +75,10 @@ function createRecommendationCron(matchId, playing_time) {
                         })
                     })
             }
+        })
+        .fail(function (err) {
+            console.log("err")
+            console.log(err)
         })
 }
 
@@ -184,6 +223,6 @@ function pushRecoToFirebase(jsonPayload, userId) {
     });
 }
 
-exports = {
-
+module.exports = {
+    createRecommendationCron: createRecommendationCron
 }

@@ -320,13 +320,19 @@ function createMatch(payload, hostData, invitedUserIdList) {
     payload = updateGenderInPayload(payload, hostData.gender)
     db.post('matches', payload)
         .then(function (result) {
-            console.log("creating a match????")
             payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
             matchCreated.resolve(payload)
 
             var promises = []
 
-            invitedUserIdList.forEach(function (invitedUserId) {
+            var invitedUserList = []
+            try {
+                invitedUserList = invitedUserIdList.split(',')
+            } catch (e) {
+                //TODO : put this in the validation, this try catch should not exist
+                console.log("malformed invited users")
+            }
+            invitedUserList.forEach(function (invitedUserId) {
                 RequestModel.createInviteToMatchRequest(hostData.id, hostData.name, payload, invitedUserId)
             })
 
@@ -358,15 +364,17 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //    "matchId": payload["id"],
             //    "pathTitle": reqBody.title
             //}
-            EventSystem.dispatchEvent(constants.events.matches.created, payload)
+            EventSystem.dispatchEvent(constants.firebaseNodes.events.newMatches, payload)
             return kew.all(promises)
         })
-        .then(function(result) {
+        .then(function (result) {
             console.log("match creation fully complete")
-            matchCreated.resolve()
+            // matchCreated.resolve()
         })
         .fail(function (err) {
             console.log("match creation failed")
+            console.log("------------------")
+            console.log(err)
             matchCreated.reject(err)
         })
     return matchCreated
@@ -375,6 +383,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
 function joinMatch(matchId, joineeId) {
     var joineeGender
     var joineeQBid
+    var UserModel = require('../models/User');
 
     function incrementFilledSlots(slots, slotsFilled) {
         slots
@@ -399,36 +408,82 @@ function joinMatch(matchId, joineeId) {
      */
     var matchDetails
 
+    // kew.all([getMatchPromise(matchId), UserModel.getUserPromise(joineeId)])
+    //     .then(function (results) {
+    //         console.log("match details please????")
+    //         matchDetails = results[0].body
+    //         joineeGender = results[1].gender
+    //         joineeQBid = results[1].qbId
+    //         console.log(matchDetails)
+    //         console.log("matchDetails.slots == matchDetails.slots_filled)")
+    //         console.log(matchDetails.slots == matchDetails.slots_filled)
+    //         console.log(matchDetails.slots)
+    //         console.log(matchDetails.slots_filled)
+    //         if (matchDetails.slots == matchDetails.slots_filled)
+    //             joinStatus.reject(new Error("The Match is already full. Please contact the host"))
+    //         else
+    //             return checkMatchParticipationPromise(matchId, joineeId)
+    //     })
+    //     .then(function (results) {
+    //         console.log("checkMatchParticipationPromise section")
+    //         console.log(results)
+    //         var count = results.body.count
+    //         if (count == 0) {
+    //             return kew.all([
+    //                 dbUtils.createGraphRelationPromise('matches', matchId, 'users', joineeId, constants.graphRelations.matches.participants),
+    //                 dbUtils.createGraphRelationPromise('users', joineeId, 'matches', matchId, constants.graphRelations.users.playsMatches)
+    //             ])
+    //         } else {
+    //             return kew.reject(new Error("You are already part of this match"))
+    //         }
+    //     })
+    //     .then(function (results) {
+    //         incrementFilledSlots()
+    //         return ChatModel.addUsersToRoom(matchDetails.qbId, [joineeQBid])
+    //     })
+    //     .then(function (joinedMatchChat) {
+    //         return joinStatus.resolve()
+    //     })
+    //     .fail(function (err) {
+    //         joinStatus.reject(err)
+    //     })
+
     kew.all([getMatchPromise(matchId), UserModel.getUserPromise(joineeId)])
         .then(function (results) {
-            matchDetails = results[0]
-            joineeGender = results[1].gender
-            joineeQBid = results[1].qbId
+            matchDetails = results[0].body
+            joineeGender = results[1].body.gender
+            joineeQBid = results[1].body.qbId
+            
             if (matchDetails.slots == matchDetails.slots_filled)
-                return kew.reject(new Error("The Match is already full. Please contact the host"))
-            else
-                return checkMatchParticipationPromise(matchId, joineeId)
-        })
-        .then(function (results) {
-            var count = results.body.count
-            if (count == 0) {
-                return kew.all([
-                    dbUtils.createGraphRelationPromise('matches', matchId, 'users', joineeId, constants.graphRelations.matches.participants),
-                    dbUtils.createGraphRelationPromise('users', joineeId, 'matches', matchId, constants.graphRelations.users.playsMatches)
-                ])
-            } else {
-                return kew.reject(new Error("You are already part of this match"))
+                joinStatus.reject(new Error("The Match is already full. Please contact the host"))
+            else {
+                checkMatchParticipationPromise(matchId, joineeId)
+                    .then(function (results) {
+                        var count = results.body.count
+                        
+                        if (count == 0) {
+                            ChatModel.addUsersToRoom(matchDetails.qbId, [joineeQBid])
+                                .then(function (result) {
+                                    return kew.all([
+                                        dbUtils.createGraphRelationPromise('matches', matchId, 'users', joineeId, constants.graphRelations.matches.participants),
+                                        dbUtils.createGraphRelationPromise('users', joineeId, 'matches', matchId, constants.graphRelations.users.playsMatches)
+                                    ])
+                                })
+                                .then(function (result) {
+                                    incrementFilledSlots(matchDetails.slots, matchDetails.slots_filled)
+                                    joinStatus.resolve()
+                                })
+                                .fail(function (err) {
+                                    joinStatus.reject(err)
+                                })
+                        } else {
+                            joinStatus.reject(new Error("You are already part of this match"))
+                        }
+                    })
+                    .fail(function (err) {
+                        joinStatus.reject(err)
+                    })
             }
-        })
-        .then(function (results) {
-            incrementFilledSlots()
-            return ChatModel.addUsersToRoom(matchDetails.qbId, [joineeQBid])
-        })
-        .then(function (joinedMatchChat) {
-            return joinStatus.resolve()
-        })
-        .fail(function (err) {
-            joinStatus.reject(err)
         })
     return joinStatus
 }
@@ -458,7 +513,7 @@ function injectIsJoined(results, userId, type) {
             var matchIds = theMatches.map(function (match) {
                 return match.id
             })
-            
+
             results.body.results = results.body.results.map(function (result) {
                 if (matchIds.indexOf(result.path.key) > -1)
                     result.value.isJoined = true
@@ -492,5 +547,6 @@ module.exports = {
     createMatch: createMatch,
     joinMatch: joinMatch,
     getMatchPromise: getMatchPromise,
-    injectIsJoined : injectIsJoined
+    injectIsJoined: injectIsJoined,
+    getFacilityOfMatchPromise: getFacilityOfMatchPromise
 }

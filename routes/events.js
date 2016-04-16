@@ -65,20 +65,16 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
             type: "Event"
         }
 
-        console.log("yaha")
         customUtils.upload(req.files.image, function (coverPhotoInfo) {
             console.log(coverPhotoInfo)
             payload["coverPhoto"] = coverPhotoInfo.url
             payload["coverPhotoThumb"] = coverPhotoInfo.urlThumb
             db.post('events', payload)
                 .then(function (result) {
-                    console.log("kaha")
                     payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
                     //EventModel.dispatchEvent(constants.event.events.created, payload)
                     //someday, I think this should be decoupled
-                    console.log("ssup")
                     EventSystem.newEvent(payload["id"], payload["title"])
-                    console.log("made it past nofs")
                     responseObj["data"] = payload;
                     res.status(201);
                     res.json(responseObj);
@@ -182,12 +178,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             res.json(responseObj)
         })
         .fail(function(err) {
-            customUtils.sendErrors([err.body.message], 503, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 
 router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    console.log("definitely here")
     var eventId = req.body.eventId;
     var userId = req.user.results[0].value.id;
     var responseObj = {}
@@ -261,7 +256,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                     res.json(responseObj);
                 })
                 .fail(function (err) {
-                    customUtils.sendErrors([err.body.message], 503, res)
+                    customUtils.sendErrors(err, res)
                 })
         })
     }
@@ -275,14 +270,11 @@ router.delete('/', [passport.authenticate('bearer', {session: false}), function 
 
     db.remove('events', id, true)
         .then(function(result) {
-            console.log(result.headers)
             res.status(200);
             res.json({data:{}, msg : "Delete successful"});
         })
         .fail(function(err) {
-            console.log("Error")
-            console.log(err)
-            customUtils.sendErrors([err.body.message], 503, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 

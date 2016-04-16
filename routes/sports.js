@@ -36,9 +36,7 @@ router.get('/', function (req, res) {
             res.json(responseObj)
         })
         .fail(function (err) {
-            responseObj["errors"] = [err.body.message];
-            res.status(503);
-            res.json(responseObj);
+            customUtils.sendErrors(err, res)
         })
 })
 

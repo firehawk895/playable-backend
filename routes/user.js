@@ -71,32 +71,34 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
     var errors = validationResponse.errors
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422, res)
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
     } else {
         //TODO: the following is a sin, sports adding/modification becomes a pain!
         console.log("updating sports")
         db.merge("users", userId, {
-            sports: {
-                "badminton" : (req.body.badminton || null),
-                "basketball" : (req.body.basketball || null),
-                "bowling" : (req.body.bowling || null),
-                "cricket" :(req.body.cricket || null),
-                "cycling" :(req.body.cycling || null),
-                "football" :(req.body.football || null),
-                "golf" :(req.body.golf || null),
-                "hockey" :(req.body.hockey || null),
-                "pool" :(req.body.pool || null),
-                "running" :(req.body.running || null),
-                "snooker":(req.body.snooker || null),
-                "squash" :(req.body.squash || null),
-                "swimming" :(req.body.swimming || null),
-                "tennis" :(req.body.tennis || null),
-                "tt" :(req.body.tt || null),
-                "ultimatefrisbee" : (req.body.ultimatefrisbee || null),
-            },
-            hasSelectedSports: true
-            //sportsList: Object.keys(req.body)
-        })
+                sports: {
+                    "badminton": (req.body.badminton || null),
+                    "basketball": (req.body.basketball || null),
+                    "bowling": (req.body.bowling || null),
+                    "cricket": (req.body.cricket || null),
+                    "cycling": (req.body.cycling || null),
+                    "football": (req.body.football || null),
+                    "golf": (req.body.golf || null),
+                    "hockey": (req.body.hockey || null),
+                    "pool": (req.body.pool || null),
+                    "running": (req.body.running || null),
+                    "snooker": (req.body.snooker || null),
+                    "squash": (req.body.squash || null),
+                    "swimming": (req.body.swimming || null),
+                    "tennis": (req.body.tennis || null),
+                    "tt": (req.body.tt || null),
+                    "ultimatefrisbee": (req.body.ultimatefrisbee || null),
+                },
+                hasSelectedSports: true
+                //sportsList: Object.keys(req.body)
+            })
             .then(function (result) {
                 responseObj["data"] = [];
                 responseObj["msg"] = "Sports Updated";
@@ -104,7 +106,7 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
                 res.json(responseObj);
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 422, res)
+                customUtils.sendErrors(err, res)
             })
     }
 }])
@@ -118,7 +120,7 @@ router.post('/auth/google', function (req, res, next) {
             console.log("Recreating session");
             qbchat.createSession(function (err, result) {
                 if (err) {
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                    customUtils.sendErrors(err, res)
                 } else next();
             })
         } else next();
@@ -162,7 +164,9 @@ router.post('/auth/google', function (req, res, next) {
     }
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422, res)
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
     } else {
         console.log("entering search?");
         db.newSearchBuilder()
@@ -207,8 +211,8 @@ router.post('/auth/google', function (req, res, next) {
 
                                         var accessToken = customUtils.generateToken();
                                         db.put('tokens', accessToken, {
-                                            "user": responseObj['data']['id']
-                                        })
+                                                "user": responseObj['data']['id']
+                                            })
                                             .then(function (result) {
                                                 db.newGraphBuilder()
                                                     .create()
@@ -228,7 +232,7 @@ router.post('/auth/google', function (req, res, next) {
                 }
             })
             .fail(function (err) {
-                customUtils.sendErrors(['Service failure. Contact Playable immediately'], 503, res)
+                customUtils.sendErrors(err, res)
             })
     }
 });
@@ -239,7 +243,7 @@ router.post('/auth/facebook', function (req, res, next) {
                 console.log("Recreating session");
                 qbchat.createSession(function (err, result) {
                     if (err) {
-                        customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                        customUtils.sendErrors(err, res)
                     } else next();
                 })
             } else next();
@@ -253,7 +257,9 @@ router.post('/auth/facebook', function (req, res, next) {
         if (validator.isNull(accessToken)) errors.push("Access Token not provided");
 
         if (errors.length > 0) {
-            customUtils.sendErrors(errors, 422, res)
+            responseObj["errors"] = errors;
+            res.status(422);
+            res.json(responseObj);
         } else {
             //--------------URLs-----------------------------------------------------------------------
             accessTokenUrl = "https://graph.facebook.com/v2.3/me?fields=id,name,email,cover,gender&access_token=" + accessToken;
@@ -330,8 +336,8 @@ router.post('/auth/facebook', function (req, res, next) {
 
                                                 var accessToken = customUtils.generateToken();
                                                 db.put('tokens', accessToken, {
-                                                    "user": responseObj['data']['id']
-                                                })
+                                                        "user": responseObj['data']['id']
+                                                    })
                                                     .then(function (result) {
                                                         db.newGraphBuilder()
                                                             .create()
@@ -352,7 +358,7 @@ router.post('/auth/facebook', function (req, res, next) {
                         }
                     })
                     .fail(function (err) {
-                        customUtils.sendErrors(['Service failure. Contact Playable immediately'], 422, res)
+                        customUtils.sendErrors(err, res)
                     })
                 //--------------------------------end of signup scenarios----------------------------------------------------
 
@@ -423,8 +429,8 @@ var extractFacebookFriends = function (userId, accessToken) {
                     if (payload.paging.previous) {
                         //this is the last page, all friendsData is finally here
                         db.merge('users', userId, {
-                            "facebookFriends": friendsData
-                        })
+                                "facebookFriends": friendsData
+                            })
                             .then(function (result) {
                             })
                             .fail(function (err) {
@@ -447,7 +453,7 @@ router.post('/signup', function (req, res, next) {
             console.log("Recreating session");
             qbchat.createSession(function (err, result) {
                 if (err) {
-                    customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                    customUtils.sendErrors(err, res)
                 } else next();
             })
         } else next();
@@ -477,7 +483,9 @@ router.post('/signup', function (req, res, next) {
         if (!validator.isLength(req.body.tagline, 0, 40)) errors.push("Tagline must be less than 40 characters");
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422, res)
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
     } else {
         db.newSearchBuilder()
             .collection('users')
@@ -519,7 +527,7 @@ router.post('/signup', function (req, res, next) {
                         custom_data: user.avatar
                     }, function (err, newUser) {
                         if (err) {
-                            customUtils.sendErrors(["Chat server failure. Contact us ASAP."], 503, res)
+                            customUtils.sendErrors(err, res)
                             return;
                         } else {
                             user["qbId"] = newUser.id
@@ -555,8 +563,8 @@ router.post('/signup', function (req, res, next) {
                                     var accessToken = customUtils.generateToken();
                                     var userId = id;
                                     db.put('tokens', accessToken, {
-                                        "user": userId
-                                    })
+                                            "user": userId
+                                        })
                                         .then(function (result) {
                                             db.newGraphBuilder()
                                                 .create()
@@ -572,17 +580,19 @@ router.post('/signup', function (req, res, next) {
                                         })
                                 })
                                 .fail(function (err) {
-                                    customUtils.sendErrors([err.body.message], 503, res)
+                                    customUtils.sendErrors(err, res)
                                 });
                         }
                     })
 
                 } else {
-                    customUtils.sendErrors(["Email ID or username already in use"], 409, res)
+                    responseObj["errors"] = ["Email ID or username already in use"];
+                    res.status(409);
+                    res.json(responseObj);
                 }
             }).fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
-            })
+            customUtils.sendErrors(err, res)
+        })
     }
 });
 
@@ -597,7 +607,9 @@ router.post('/login', function (req, res) {
     if (!validator.isEmail(email)) errors.push("Invalid Email");
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422, res);
+        responseObj["errors"] = errors;
+        res.status(422);
+        res.json(responseObj);
     } else {
         db.newSearchBuilder()
             .collection('users')
@@ -615,8 +627,8 @@ router.post('/login', function (req, res) {
                             var accessToken = customUtils.generateToken();
                             var userId = user.body.results[0].value.id;
                             db.put('tokens', accessToken, {
-                                "user": userId
-                            })
+                                    "user": userId
+                                })
                                 .then(function (result) {
                                     db.newGraphBuilder()
                                         .create()
@@ -649,16 +661,20 @@ router.post('/login', function (req, res) {
                             //});
                         }
                     } else {
-                        customUtils.sendErrors(["Entered password is incorrect"], 401, res)
+                        responseObj["errors"] = ["Entered password is incorrect"];
+                        res.status(401);
+                        res.json(responseObj);
                         //deferred.resolve(false);
                     }
                 } else {
-                    customUtils.sendErrors(["No Account with the entered email exists"], 422, res)
+                    responseObj["errors"] = ["No Account with the entered email exists"];
+                    res.status(422);
+                    res.json(responseObj);
                     return;
                 }
             }).fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
-            });
+            customUtils.sendErrors(err, res)
+        });
     }
     //res.send('hello authed world');
 });
@@ -674,7 +690,7 @@ router.post('/logout', [passport.authenticate('bearer', {session: false}), funct
             res.json(responseObj);
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503, res)
+            customUtils.sendErrors(err, res)
         })
 
 }]);
@@ -688,7 +704,9 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
         errors.push("Your Phone number is invalid");
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422, res)
+        responseObj["data"] = errors;
+        res.status(422);
+        res.json(responseObj);
     } else {
         var userId = req.user.results[0].value.id;
         var otp = customUtils.getRandomArbitrary(1000, 9999)
@@ -710,7 +728,9 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors(["Saving/Sending the OTP failed. Please try again later."], 503, res)
+                responseObj["data"] = ["Saving/Sending the OTP failed. Please try again later."];
+                res.status(503);
+                res.json(responseObj);
             })
 
         //async.parallel([
@@ -767,10 +787,12 @@ router.post('/otp/verify', [passport.authenticate('bearer', {session: false}), f
                 res.json(responseObj);
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
+                customUtils.sendErrors(err, res)
             })
     } else {
-        customUtils.sendErrors(["The OTP entered does not match."], 422, res)
+        responseObj["data"] = ["The OTP entered does not match."]
+        res.status(422)
+        res.json(responseObj)
     }
 }]);
 
@@ -788,7 +810,9 @@ router.get('/', function (req, res, next) {
     var allowUpdate;
 
     if (validator.isNull(query_user)) {
-        customUtils.sendErrors(["Please specify the User ID"], 422, res)
+        responseObj["data"] = ["Please specify the User ID"],
+            res.status(422)
+        res.json(responseObj)
         return
     } else {
         if (query_user == req.user.results[0].value.id)
@@ -812,7 +836,7 @@ router.get('/', function (req, res, next) {
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
+                customUtils.sendErrors(err, res)
             })
     }
 }]);
@@ -843,7 +867,7 @@ router.get('/', function (req, res) {
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
+                customUtils.sendErrors(err, res)
             })
         //db.get('users', userId)
         //    .then(function (user) {
@@ -859,7 +883,9 @@ router.get('/', function (req, res) {
     }
 
     if (validator.isNull(query_user)) {
-        customUtils.sendErrors(["Please specify the User ID"], 422, res)
+        responseObj["data"] = ["Please specify the User ID"]
+        res.status(422)
+        res.json(responseObj)
         return
     } else {
         allowUpdate = false;
@@ -940,7 +966,9 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 errors.push(errMsg);
             }
             if (errors.length > 0) {
-                customUtils.sendErrors(errors, 422, res)
+                responseObj["data"] = errors
+                res.status(422)
+                res.json(responseObj)
             } else {
                 customUtils.upload(req.files.avatar, function (avatarInfo) {
                     if (req.files.avatar) {
@@ -997,7 +1025,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                             res.json(responseObj);
                         })
                         .fail(function (err) {
-                            customUtils.sendErrors([err.body.message], 503, res)
+                            customUtils.sendErrors(err, res)
                         });
                 });
             }
@@ -1018,8 +1046,8 @@ router.post('/forgotPassword', function (req, res) {
                 var newPass = customUtils.generateToken(4);
                 var hashedPassword = bcrypt.hashSync(newPass, 8);
                 db.merge('users', userObj.id, {
-                    "password": hashedPassword
-                })
+                        "password": hashedPassword
+                    })
                     .then(function (result) {
                         res.json({
                             "data": {
@@ -1088,7 +1116,7 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
                 });
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
+                customUtils.sendErrors(err, res)
             });
     }
 
@@ -1114,7 +1142,7 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
             res.json(responseObj)
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 
@@ -1134,7 +1162,7 @@ router.post('/connect', [passport.authenticate('bearer', {session: false}), func
             res.json(responseObj)
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 422, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 
@@ -1155,7 +1183,10 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
     var inviteeId = req.body.invitedUserIds
 
     if (errors.length > 0) {
-        customUtils.sendErrors(errors, 422, res)
+        responseObj["data"] = errors
+        res.status(422)
+        res.json(responseObj)
+
     } else {
         RequestModel.createMatchRequest(userId, inviteeId, req.body, usersName)
             .then(function (result) {
@@ -1165,19 +1196,19 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 422, res)
+                customUtils.sendErrors(err, res)
             })
     }
 }])
 
 router.get('/discover', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var limit = req.query.limit || 100
-    var page =  req.query.page || 1
+    var page = req.query.page || 1
     var offset = limit * (page - 1)
-    
+
     console.log(limit)
     console.log(offset)
-    
+
     var userId = req.user.results[0].value.id;
     var queries = []
     var responseObj = {}
@@ -1219,7 +1250,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
+                customUtils.sendErrors(err, res)
             })
     } else {
         db.newSearchBuilder()
@@ -1235,7 +1266,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
                 res.json(responseObj)
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
+                customUtils.sendErrors(err, res)
             })
     }
 }])
@@ -1243,7 +1274,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
 router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), function (req, res) {
     //userId query for the admin panel TODO : Secure this API
     var userId = req.user.results[0].value.id;
-    if(req.query.userId)
+    if (req.query.userId)
         userId = req.query.userId
     var responseObj = {}
     MatchModel.getMatchHistoryPromise(userId)
@@ -1333,8 +1364,8 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                     var accessToken = customUtils.generateToken();
                     var userId = user.id;
                     db.put('tokens', accessToken, {
-                        "user": userId
-                    })
+                            "user": userId
+                        })
                         .then(function (result) {
                             db.newGraphBuilder()
                                 .create()
@@ -1447,8 +1478,8 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                     var accessToken = customUtils.generateToken();
                     var userId = user.id;
                     db.put('tokens', accessToken, {
-                        "user": userId
-                    })
+                            "user": userId
+                        })
                         .then(function (result) {
                             db.newGraphBuilder()
                                 .create()
@@ -1482,8 +1513,8 @@ var generateTokenAndLogin = function (user, res) {
     var userId = user.body.results[0].value.id;
 
     db.put('tokens', accessToken, {
-        "user": userId
-    })
+            "user": userId
+        })
         .then(function (result) {
             db.newGraphBuilder()
                 .create()

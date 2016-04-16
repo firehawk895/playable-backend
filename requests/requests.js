@@ -55,8 +55,8 @@ var requestsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNod
  *  a sanity check is required, an additional boolean flag "backendParsed"
  *  will tell you if it needs to be parsed or not
  */
-requestsRef.on("child_added", function (snapshot) {
-    var userId = snapshot.key()
+requestsRef.on("child_added", function (childSnapshot, prevChildKey) {
+    var userId = childSnapshot.key()
     console.log("hello")
     var userRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId, config.firebase.secret)
     /**

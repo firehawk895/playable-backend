@@ -143,7 +143,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
                 res.json(responseObj);
             })
             .fail(function (err) {
-                customUtils.sendErrors([err.body.message], 503, res)
+                customUtils.sendErrors(err, res)
             })
     }
 }])
@@ -164,9 +164,8 @@ router.post('/remove', [passport.authenticate('bearer', {session: false}), funct
             res.json(responseObj);
         })
         .fail(function (error) {
-            customUtils.sendErrors(["An Unexpected error has occurred. Check again"], 422, res)
+            customUtils.sendErrors(error, res)
         })
-
 }])
 
 router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {
@@ -183,9 +182,12 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
             res.json(responseObj)
         })
         .fail(function (err) {
-            responseObj["errors"] = [err]
-            res.status(422)
-            res.json(responseObj)
+            customUtils.sendErrors(err, res)
+            // console.log("what")
+            // console.log(err.message)
+            // responseObj["errors"] = err
+            // res.status(422)
+            // res.json(responseObj)
         })
 
 }])
@@ -365,7 +367,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             res.json(responseObj)
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 

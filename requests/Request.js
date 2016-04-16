@@ -67,6 +67,7 @@ function createMatchRequest(user1id, user2id, matchPayload, user1name) {
  * @param hostName
  */
 function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
+    console.log("asdasdad")
     /**
      * Expectations :
      * wait is there a better way to design this?
@@ -100,6 +101,7 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
  * @param matchId
  */
 function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterName) {
+    console.log("asdasdasdasd")
     //matchPayload expected to have : id, sport, playing_time
     var payload = {
         fromUserId: requesterId,
@@ -111,6 +113,7 @@ function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterNa
         match: matchPayload,
         timestamp: date.getTime()
     }
+    console.log("sssup")
     pushRequestToFirebase(payload, requesterId)
 }
 

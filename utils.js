@@ -140,26 +140,72 @@ function deg2rad(deg) {
     return deg * (Math.PI / 180)
 }
 
-function sendErrors(errorArray, statusCode, res) {
-    /**
-     * include validations if required
-     * TODO: convert this to a mapped array of key : error
-     * That seems to be a more standard way of doing it these days
-     */
+/**
+ * Error response handler,
+ * handles:
+ *      new Error()
+ *      orchestrate error
+ *      quickblox error
+ * @param err
+ * @param res
+ */
+function sendErrors(err, res) {
     var responseObj = {}
-    responseObj["errors"] = errorArray;
-    res.status(statusCode);
-    res.json(responseObj);
+    var statusCode = 422
+    var errorsArray = ["An unexpected error occured"]
+
+    try {
+        //some well thought out javascript here
+        //err.body.message means undefined.message which throws an exception
+        //but checking it in this manner (and knowing that "and" evaluations will ignore the rest 
+        //if the first condition is false
+        //this is as close to programming unagi you can get.
+
+        //if already given an array
+        console.log("this is the error ----------")
+        console.log(err)
+        console.log("this is the error ----------")
+        if (err.constructor === Array) {
+            errorsArray = err
+        } else if (err.body && err.body.message) {
+            console.log("orchestrate error")
+            //orchestrate new Error
+            errorsArray = [err.body.message]
+            statusCode = err.statusCode
+        } else if (err.detail) {
+            //quickblox error
+            /**
+             * "obj": {
+                "code": 403,
+                "status": "403 Forbidden",
+                "message": {
+                  "errors": [
+                    "You don't have appropriate permissions to perform this operation"
+                  ]
+                },
+                "detail": [
+                  "You don't have appropriate permissions to perform this operation"
+                ]
+                }
+             */
+            console.log("quickblox error")
+            statusCode = err.code
+            errorsArray = err.detail
+        } else if (err.message) {
+            console.log("javascript error")
+            //javascript new Error
+            errorsArray = [err.message]
+        }
+    } catch (e) {
+        console.log("koi nae, non standard error hai")
+    } finally {
+        responseObj["errors"] = errorsArray
+        responseObj["obj"] = err
+        res.status(statusCode)
+        res.json(responseObj)
+    }
 }
 
-
-function createRecoForFacility(facilityId) {
-    var payload = {}
-}
-
-function createRecoForGroupMatch(matchId) {
-
-}
 
 /**
  * if the time is within the last 1 minute
@@ -169,10 +215,19 @@ function createRecoForGroupMatch(matchId) {
  * @returns {boolean}
  */
 function isRecent(timestamp) {
+    console.log(timestamp + " > " + ((date.getTime() / 1000) - 60))
     if (timestamp > ((date.getTime() / 1000) - 60))
         return true
     else
         return false
+}
+
+/**
+ * Proper unix time, in seconds!
+ * @returns {number}
+ */
+function getCurrentUnixTime() {
+    return (date.getTime() / 1000)
 }
 
 function sendSms(message, phoneNumber) {
@@ -206,6 +261,21 @@ function removeSubArray(mainArray, subArray) {
 }
 
 /**
+ * Remove any value which is undefined in a js object
+ * @param test
+ */
+function undefinedRemover(test) {
+    for (var i in test) {
+        if (test[i] === null || test[i] === undefined) {
+            // test[i] === undefined is probably not very useful here
+            delete test[i];
+        }
+    }
+    return test
+}
+
+
+/**
  * Time capsule:
  * ----------------------------------------------
  * 11:37 Pm, 27th Jan 2016, Malviya Nagar.
@@ -227,65 +297,7 @@ exports.removeSubArray = removeSubArray;
 exports.getDistanceFromLatLonInKm = getDistanceFromLatLonInKm;
 exports.sendErrors = sendErrors;
 exports.isRecent = isRecent
-
-//exports.queryJoiner = queryJoiner;
-//exports.createDistanceQuery = createDistanceQuery;
-//exports.createSportsQuery = createSportsQuery;
-//exports.createSkillRatingQuery = createSkillRatingQuery;
-//exports.injectId = injectId;
-//exports.insertDistance = insertDistance;
-//exports.createSearchByIdQuery = createSearchByIdQuery;
-//exports.createIsDiscoverableQuery = createIsDiscoverableQuery;
-//exports.createOnlyFutureTypeQuery = createOnlyFutureTypeQuery;
-
-//matches/events
-//exports.updateMatchConnections = updateMatchConnections;
-//exports.updateGenderInPayload = updateGenderInPayload;
-//exports.createGenderQuery = createGenderQuery;
-//exports.createConnection = createConnection;
-//exports.getFeaturedEventsPromise = getFeaturedEventsPromise;
-//exports.incrementMatchesPlayed = incrementMatchesPlayed;
-//exports.getTotalConnections = getTotalConnections;
-//exports.removeFromMatch = removeFromMatch;
-//exports.connectFacilityToMatch = connectFacilityToMatch;
-//exports.createMatchRequest = createMatchRequest;
-//exports.createChatRoomForMatch = createChatRoomForMatch;
-//exports.checkEventParticipationPromise = checkEventParticipationPromise;
-
-//players
-//exports.createPlayerDiscoverableQuery = createPlayerDiscoverableQuery;
-//exports.getUsersConnectionsPromise = getUsersConnectionsPromise;
-//exports.getConnectionStatusPromise = getConnectionStatusPromise;
-
-//db
-//exports.createGraphRelation = createGraphRelation;
-//exports.deleteGraphRelation = deleteGraphRelation;
-//exports.createGraphRelationPromise = createGraphRelationPromise;
-
-//exports.parseRecObject = parseRecObject;
-//exports.createRecommendationCron = createRecommendationCron;
-//exports.getMatchParticipantsPromise = getMatchParticipantsPromise;
-//exports.checkMatchParticipationPromise = checkMatchParticipationPromise;
-//exports.getMatchHistoryPromise = getMatchHistoryPromise;
-
-//chat
-//exports.getUsersDialogs = getUsersDialogs
-
-//requests
-//exports.createConnectionRequest = createConnectionRequest;
-//exports.acceptConnectionRequest = acceptConnectionRequest;
-//exports.checkIfRequestedToConnect = checkIfRequestedToConnect;
-//exports.checkIfWaitingToAccept = checkIfWaitingToAccept;
-//exports.checkIfConnected = checkIfConnected;
-//exports.parseRequestObject = parseRequestObject;
-//exports.createInviteToMatchRequest = createInviteToMatchRequest;
-//exports.parseConnectRequest = parseConnectRequest;
-
-//firebase
-//exports.dispatchEvent = dispatchEvent
-
-//gcm Id
-//exports.getGcmIdsForUserIds = getGcmIdsForUserIds
-
+exports.undefinedRemover = undefinedRemover,
+    exports.getCurrentUnixTime = getCurrentUnixTime
 //sms
 exports.sendSms = sendSms

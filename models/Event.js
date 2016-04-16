@@ -13,7 +13,6 @@ var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../notifications/dispatchers');
 var kew = require('kew');
-console.log("yay")
 
 function checkEventParticipationPromise(eventId, userId) {
     var checkEventParticipationPromise =

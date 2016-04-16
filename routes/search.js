@@ -105,7 +105,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             res.status(200)
         })
         .fail(function(err) {
-            customUtils.sendErrors([err.body.message], 422, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 
@@ -146,7 +146,7 @@ router.get('/facilities', [passport.authenticate('bearer', {session: false}), fu
             res.status(200)
         })
         .fail(function(err) {
-            customUtils.sendErrors([err.body.message], 422, res)
+            customUtils.sendErrors(err, res)
         })
 }])
 
