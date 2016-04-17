@@ -188,6 +188,26 @@ function sendErrors(err, res) {
                 ]
                 }
              */
+            //TODO : stupid quickblox error that breaks this by have detail = null
+            /**
+             * {
+              "errors": [
+                {
+                  "code": null,
+                  "message": "Resource not found"
+                }
+              ],
+              "obj": {
+                "code": 404,
+                "status": "404 Not Found",
+                "message": {
+                  "code": null,
+                  "message": "Resource not found"
+                },
+                "detail": null
+              }
+            }
+             */
             console.log("quickblox error")
             statusCode = err.code
             errorsArray = err.detail

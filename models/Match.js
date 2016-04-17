@@ -41,7 +41,7 @@ function createSkillRatingQuery(minRating, maxRating) {
 function connectFacilityToMatch(matchId, facilityId) {
     return kew.all([
         dbUtils.createGraphRelationPromise('matches', matchId, 'facilities', facilityId, constants.graphRelations.matches.hostedFacility),
-        dbUtils.createGraphRelationPromise('facilities', facilityId, 'matches', matchId, constants.graphRelations.matches.hasMatches)
+        dbUtils.createGraphRelationPromise('facilities', facilityId, 'matches', matchId, constants.graphRelations.facilities.hasMatches)
     ])
 }
 
@@ -311,6 +311,12 @@ function removeFromMatch(userId, matchId) {
  *      id, name, qbId,
  * }
  *
+ *
+ * NOTES: Match creation has been attempted to be nade fast
+ * by sending a response before the chat channel is created,
+ * now this can cause integrity problems if the chat creation fails.
+ * make a choice whether to change this
+ *
  * creates a match, creates its cha
  * @param payload
  * @param hostData
@@ -337,6 +343,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
             })
 
             if (payload.isFacility) {
+                console.log("facility match detected")
                 promises.push(connectFacilityToMatch(payload["id"], payload["facilityId"]))
             }
 
