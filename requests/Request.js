@@ -223,6 +223,7 @@ function parseJoinMatchRequest(requestObj) {
  * @param user2id
  */
 function acceptMatchRequest(user1id, user2id, matchPayload) {
+    var UserModel = require('../models/User')
     return kew.all([
         dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
         dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept),
