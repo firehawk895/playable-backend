@@ -198,7 +198,7 @@ router.post('/join/request', [passport.authenticate('bearer', {session: false}),
     var usersFullName = req.user.results[0].value.name;
     var responseObj = {}
 
-    MatchModel.getMatchPromise
+    MatchModel.getMatchPromise(matchId)
         .then(function (theMatch) {
             RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName)
             responseObj["errors"] = [err.body.message]
