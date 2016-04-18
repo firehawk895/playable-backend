@@ -75,18 +75,30 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         dbUtils.createFuzzyQuery("description", spaceEscapedQuery)
     ]
 
-    var isDistanceQuery = false
-    if (req.query.lat && req.query.long && req.query.radius) {
-        console.log("we have a distance query")
-        matchQueries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-        playerQueries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-        eventQueries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-        isDistanceQuery = true;
-    }
-
     var finalMatchQuery = dbUtils.queryJoinerOr(matchQueries)
     var finalPlayerQuery = dbUtils.queryJoinerOr(playerQueries)
     var finalEventQuery = dbUtils.queryJoinerOr(eventQueries)
+
+    var isDistanceQuery = false
+    if (req.query.lat && req.query.long && req.query.radius) {
+        finalMatchQuery =
+            dbUtils.queryJoiner([
+                finalMatchQuery,
+                dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius)
+            ])
+        finalPlayerQuery =
+            dbUtils.queryJoiner([
+                finalPlayerQuery,
+                dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius)
+            ])
+        finalEventQuery =
+            dbUtils.queryJoiner([
+                finalEventQuery,
+                dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius)
+            ])
+        console.log("we have a distance query")
+        isDistanceQuery = true;
+    }
 
     var promises = []
     if (isDistanceQuery) {
