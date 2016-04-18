@@ -6,6 +6,7 @@ var request = require('request');
 
 var multer = require('multer');
 var customUtils = require('../utils')
+var MatchModel = require('../models/Match')
 
 // var Notifications = require('../notifications');
 // var notify = new Notifications();
@@ -28,6 +29,7 @@ var dbUtils = require('../dbUtils')
 var kew = require('kew')
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var limit = req.query.limit || 100
     var query = req.query.query || ""
 
     //http://stackoverflow.com/questions/4374822/javascript-regexp-remove-all-special-characters#
@@ -49,7 +51,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
      */
 
     var spaceEscapedQuery = query.replace(/\s/g, '\\ ')
-    var spaceRemovedQuery = query.replace(/ /g,'')
+    var spaceRemovedQuery = query.replace(/ /g, '')
     console.log("space escaped query")
     console.log(spaceEscapedQuery)
 
@@ -76,35 +78,77 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     ]
     var finalEventQuery = dbUtils.queryJoinerOr(eventQueries)
 
-    var promises = [
-        db.newSearchBuilder()
-            .collection('matches')
-            .limit(10)
-            .offset(0)
-            .query(finalMatchQuery),
-        db.newSearchBuilder()
-            .collection('players')
-            .limit(10)
-            .offset(0)
-            .query(finalPlayerQuery),
-        db.newSearchBuilder()
-            .collection('events')
-            .limit(10)
-            .offset(0)
-            .query(finalEventQuery),
-    ]
+    var isDistanceQuery = false
+    if (req.query.lat && req.query.long && req.query.radius) {
+        console.log("we have a distance query")
+        matchQueries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        playerQueries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        finalEventQuery.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        isDistanceQuery = true;
+    }
+
+    var promises = []
+    if (isDistanceQuery) {
+        promises = [
+            db.newSearchBuilder()
+                .collection('matches')
+                .limit(limit)
+                .offset(0)
+                .sort('location', 'distance:asc')
+                .query(finalMatchQuery),
+            db.newSearchBuilder()
+                .collection('players')
+                .limit(limit)
+                .offset(0)
+                .sort('location', 'distance:asc')
+                .query(finalPlayerQuery),
+            db.newSearchBuilder()
+                .collection('events')
+                .limit(limit)
+                .offset(0)
+                .sort('location', 'distance:asc')
+                .query(finalEventQuery),
+        ]
+    } else {
+        /**
+         * remove sort by location if query does not have
+         * location. the orchestrate query won't work otherwise
+         */
+        promises = [
+            db.newSearchBuilder()
+                .collection('matches')
+                .limit(limit)
+                .offset(0)
+                .query(finalMatchQuery),
+            db.newSearchBuilder()
+                .collection('players')
+                .limit(limit)
+                .offset(0)
+                .query(finalPlayerQuery),
+            db.newSearchBuilder()
+                .collection('events')
+                .limit(limit)
+                .offset(0)
+                .query(finalEventQuery),
+        ]
+    }
 
     kew.all(promises)
-        .then(function(results) {
+        .then(function (results) {
+            if (isDistanceQuery) {
+                results = results.forEach(function(resultSet) {
+                    MatchModel.insertDistance(resultSet, req.query.lat, req.query.long)
+                })
+            }
             var response = {
-                "matches" : dbUtils.injectId(results[0]),
-                "players" : dbUtils.injectId(results[1]),
-                "events" : dbUtils.injectId(results[2])
+                "matches": dbUtils.injectId(results[0]),
+                "players": dbUtils.injectId(results[1]),
+                "events": dbUtils.injectId(results[2])
             }
             res.send(response)
             res.status(200)
         })
-        .fail(function(err) {
+        .fail(function (err) {
             customUtils.sendErrors(err, res)
         })
 }])
@@ -117,7 +161,7 @@ router.get('/facilities', [passport.authenticate('bearer', {session: false}), fu
     console.log("sanitized query : " + query)
 
     var spaceEscapedQuery = query.replace(/\s/g, '\\ ')
-    var spaceRemovedQuery = query.replace(/ /g,'')
+    var spaceRemovedQuery = query.replace(/ /g, '')
     console.log("space escaped query")
     console.log(spaceEscapedQuery)
 
@@ -138,14 +182,14 @@ router.get('/facilities', [passport.authenticate('bearer', {session: false}), fu
     ]
 
     kew.all(promises)
-        .then(function(results) {
+        .then(function (results) {
             var response = {
-                "data" : dbUtils.injectId(results[0]),
+                "data": dbUtils.injectId(results[0]),
             }
             res.send(response)
             res.status(200)
         })
-        .fail(function(err) {
+        .fail(function (err) {
             customUtils.sendErrors(err, res)
         })
 }])
