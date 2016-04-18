@@ -101,13 +101,16 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
  */
 function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterName) {
     //matchPayload expected to have : id, sport, playing_time
+    var t = new Date(matchPayload.playing_time);
+    var formatted = t.format("dd.mm.yyyy hh:MM:ss");
+    
     var payload = {
         fromUserId: requesterId,
         toUserId: hostId,
         type: constants.requests.type.join,
         status: constants.requests.status.pending,
         photo: "",
-        msg: requesterName + " wants to join your game of " + matchPayload.sport + " on " + matchPayload.playing_time,
+        msg: requesterName + " wants to join your game of " + matchPayload.sport + " on " + formatted,
         match: matchPayload,
         timestamp: date.getTime()
     }
