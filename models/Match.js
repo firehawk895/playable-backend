@@ -339,7 +339,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
                 console.log("malformed invited users")
             }
             invitedUserList.forEach(function (invitedUserId) {
-                RequestModel.createInviteToMatchRequest(hostData.id, hostData.name, payload, invitedUserId)
+                RequestModel.createInviteToMatchRequest(hostData.id, invitedUserId, payload, hostData.name)
             })
 
             if (payload.isFacility) {
@@ -516,5 +516,6 @@ module.exports = {
     getMatchPromise: getMatchPromise,
     injectIsJoined: injectIsJoined,
     getFacilityOfMatchPromise: getFacilityOfMatchPromise,
-    getFacilityPromise : getFacilityPromise
+    getFacilityPromise : getFacilityPromise,
+    incrementMatchesPlayed : incrementMatchesPlayed
 }

@@ -96,7 +96,7 @@ function createRateYourOpponentReco(fromUserId, toUserId, toUserName) {
 
 function parseOneOnOneReco(recoObj) {
     rateUser(recoObj.rating, recoObj.toUserId)
-    incrementMatchesPlayed(recoObj.fromUserId)
+    MatchModel.incrementMatchesPlayed(recoObj.fromUserId)
 }
 
 function createRateFacilityReco(fromUserId, toFacilityId, facilityName) {

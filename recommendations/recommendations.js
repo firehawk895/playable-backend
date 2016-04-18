@@ -32,7 +32,7 @@ newMatchesRef.on("child_added", function (childSnapshot, prevChildKey) {
         console.log(newMatchObj.eventTimeStamp)
 
         // if(customUtils.isRecent(newMatchObj.eventTimeStamp)) {
-        RecommendationModel.createRecommendationCron(newMatchObj.id, newMatchObj.playing_time)
+        // RecommendationModel.createRecommendationCron(newMatchObj.id, newMatchObj.playing_time)
         // }
         // customUtils.createRecommendationCron(newMatchObj.matchId, newMatchObj.playing_time)
     } catch (e) {

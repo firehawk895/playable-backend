@@ -137,8 +137,9 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     kew.all(promises)
         .then(function (results) {
             if (isDistanceQuery) {
-                results = results.forEach(function(resultSet) {
-                    MatchModel.insertDistance(resultSet, req.query.lat, req.query.long)
+                results = results.map(function(resultSet) {
+                    resultSet = MatchModel.insertDistance(resultSet, req.query.lat, req.query.long)
+                    return resultSet
                 })
             }
             var response = {

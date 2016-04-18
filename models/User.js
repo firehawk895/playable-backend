@@ -178,10 +178,10 @@ function getTotalConnections(userId) {
     var totalConnectionsDefer = kew.defer()
     dbUtils.getGraphResultsPromise("users", userId, constants.graphRelations.users.connections)
         .then(function (result) {
-            kew.resolve(result.body.count)
+            totalConnectionsDefer.resolve(result.body.count)
         })
         .fail(function (err) {
-            kew.reject(err)
+            totalConnectionsDefer.reject(err)
         })
     return totalConnectionsDefer
 }

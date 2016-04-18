@@ -855,14 +855,16 @@ router.get('/', function (req, res) {
     var getUserInfo = function (userId, allowUpdate) {
 
         var getUserDataPromise = db.get('users', userId)
-        var getTotalCountPromise = UserModel.getTotalConnections
+        var getTotalCountPromise = UserModel.getTotalConnections(userId)
 
         kew.all([getUserDataPromise, getTotalCountPromise])
             .then(function (results) {
+                console.log("total connections")
+                console.log(results[1])
                 results[0].body.password = undefined
                 responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
-                responseObj["totalConnections"] = results[1]
+                responseObj["data"]["totalConnections"] = results[1]
                 res.status(200)
                 res.json(responseObj)
             })
