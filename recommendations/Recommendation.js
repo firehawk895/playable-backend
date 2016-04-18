@@ -50,28 +50,28 @@ function createRecommendationCron(matchId, playing_time) {
         .then(function (results) {
             console.log("the match details fetchhhhhhhhhh")
             var match = results[0].body
-            var participants = results[1]
+            var participants = dbUtils.injectId(results[1])
             console.log(participants)
-            // console.log(participants)
-            if (match.body.slots_filled == 2) {
+            if (match.slots_filled == 2) {
                 //1 on 1 match
-                var participant1 = participants.results.body[0];
-                var participant2 = participants.results.body[1];
-                createRateYourOpponentReco(participant1.key, participant2.key, participant2.value.name)
-                createRateYourOpponentReco(participant2.key, participant1.key, participant1.value.name)
+                createRateYourOpponentReco(participants[0].id, participants[1].id, participants[1].name)
+                createRateYourOpponentReco(participants[1].id, participants[0].id, participants[0].name)
             } else {
                 //team match (more than 2 players)
-                participants.results.body.forEach(function (participant) {
-                    createRateTeamReco(participant.key, matchId, match.title)
+                participants.forEach(function (participant) {
+                    createRateTeamReco(participant.id, matchId, match.title)
                 })
             }
             if (match.isFacility) {
-                MatchModel.getFacilityOfMatchPromise
+                MatchModel.getFacilityOfMatchPromise(matchId)
                     .then(function (result) {
-                        var facilityId = result.body.results[0].path.key
-                        var facility = result.body.results[0].path.value
-                        participants.results.body.forEach(function (participant) {
-                            createRateFacilityReco(participant.key, facilityId, facility)
+                        var results = dbUtils.injectId(result)
+                        var facility = results[0]
+                        console.log("the facility is")
+                        console.log(facility)
+                        
+                        participants.forEach(function (participant) {
+                            createRateFacilityReco(participant.id, facility.id, facility.name)
                         })
                     })
             }
@@ -128,7 +128,7 @@ function createRateTeamReco(fromUserId, toMatchId, toMatchName) {
 }
 
 function parseTeamReco(recoObj) {
-    getMatchParticipantsPromise(recoObj.toMatchId)
+    MatchModel.getMatchParticipantsPromise(recoObj.toMatchId)
         .then(function (results) {
             var participantIds = results.body.results.map(function (aResult) {
                 return aResult.path.key
@@ -190,7 +190,7 @@ function rateUser(rating, userId) {
 
 function rateFacility(rating, facilityId) {
     var payload = {}
-    getFacilityPromise(facilityId)
+    MatchModel.getFacilityPromise(facilityId)
         .then(function (result) {
             var totalRatings = result.body.totalRatings
             var thumbsUps = result.body.thumbsUps

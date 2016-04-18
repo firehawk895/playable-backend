@@ -23,24 +23,24 @@ console.log("recommendations loaded")
  * listener:
  * new matches created
  */
-// newMatchesRef.on("child_added", function (childSnapshot, prevChildKey) {
-//     try {
-//         /**
-//          * dispatch recommendations rating requests for each user
-//          */
-//         var newMatchObj = childSnapshot.val()
-//         console.log(newMatchObj.eventTimeStamp)
-//
-//         if(customUtils.isRecent(newMatchObj.eventTimeStamp)) {
-//             // RecommendationModel.createRecommendationCron(newMatchObj.id, newMatchObj.playing_time)
-//         }
-//         // customUtils.createRecommendationCron(newMatchObj.matchId, newMatchObj.playing_time)
-//     } catch (e) {
-//         console.log("swallowing e haha")
-//         console.log("swallowing e haha")
-//         console.log(e)
-//     }
-// })
+newMatchesRef.on("child_added", function (childSnapshot, prevChildKey) {
+    try {
+        /**
+         * dispatch recommendations rating requests for each user
+         */
+        var newMatchObj = childSnapshot.val()
+        console.log(newMatchObj.eventTimeStamp)
+
+        // if(customUtils.isRecent(newMatchObj.eventTimeStamp)) {
+        RecommendationModel.createRecommendationCron(newMatchObj.id, newMatchObj.playing_time)
+        // }
+        // customUtils.createRecommendationCron(newMatchObj.matchId, newMatchObj.playing_time)
+    } catch (e) {
+        console.log("swallowing e haha")
+        console.log("swallowing e haha")
+        console.log(e)
+    }
+})
 
 /**
  * Listener:
