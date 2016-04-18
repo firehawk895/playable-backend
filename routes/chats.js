@@ -86,6 +86,8 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
                 //-------- Connections Map --------------------------
                 var connections = dbUtils.injectId(results[1])
+                console.log("here are the connections baby")
+                console.log(connections)
                 var connectionsMap = {}
                 connections.forEach(function (connection) {
                     connectionsMap[connection["id"]] = connection
@@ -100,7 +102,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 console.log("all dialogs here")
                 console.log(dialogs)
                 console.log("all dialogs end here")
-                
+
                 var chatObjects = {}
                 chatObjects["oneOnOne"] = []
                 chatObjects["matches"] = []
@@ -152,14 +154,17 @@ function getMatchId(matchRoomName) {
  * @param connectionRoomName
  */
 function getOpponentUser(userId, connectionRoomName) {
-        var components = connectionRoomName.split(":::")
-        var user1id = components[1]
-        var user2id = components[2]
+    var components = connectionRoomName.split(":::")
+    var user1id = components[1]
+    var user2id = components[2]
 
-        if (userId.substring(user1id) > -1)
-            return user1id
-        else
-            return user2id
+    if (userId === user2id) {
+        return user1id
+    }
+    else {
+        return user2id
+    }
+        
 }
 
 
