@@ -198,17 +198,20 @@ router.post('/join/request', [passport.authenticate('bearer', {session: false}),
     var usersFullName = req.user.results[0].value.name;
     var responseObj = {}
 
+    console.log("whats going on")
+
     MatchModel.getMatchPromise(matchId)
-        .then(function (theMatch) {
+        .then(function (results) {
+            var theMatch = results.body
+            console.log("got the match")
+            console.log(theMatch.body)
             RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName)
-            responseObj["errors"] = [err.body.message]
-            res.status(503)
+            responseObj["data"] = {}
+            res.status(200)
             res.json(responseObj)
         })
         .fail(function (err) {
-            responseObj["errors"] = [err.body.message]
-            res.status(503)
-            res.json(responseObj)
+            customUtils.sendErrors(err, res)
         })
 }])
 
