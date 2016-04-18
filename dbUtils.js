@@ -74,6 +74,12 @@ function queryJoiner(queries) {
     return returnQuery
 }
 
+function incrementFieldValue(collection, key, fieldPath) {
+    return db.newPatchBuilder(collection, key)
+        .inc(fieldPath, 1)
+        .apply()
+}
+
 /**
  * generates a lucene OR query for a set of values (theArray)
  * for a specific key (searchKey) to search for
@@ -204,7 +210,8 @@ module.exports = {
     queryJoiner: queryJoiner,
     createFuzzyQuery : createFuzzyQuery,
     queryJoinerOr : queryJoinerOr,
-    createExistsQuery : createExistsQuery
+    createExistsQuery : createExistsQuery,
+    incrementFieldValue : incrementFieldValue
 }
 
 
