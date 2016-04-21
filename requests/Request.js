@@ -7,6 +7,7 @@ var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
+var customUtils = require('../utils');
 var Firebase = require("firebase");
 var date = new Date()
 var kew = require('kew')
@@ -101,8 +102,8 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
  */
 function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterName) {
     //matchPayload expected to have : id, sport, playing_time
-    var t = new Date(matchPayload.playing_time);
-    var formatted = t.format("dd.mm.yyyy hh:MM:ss");
+    var formatted = customUtils.getFormattedDate(matchPayload.playing_time)
+    // var formatted = t.format("dd.mm.yyyy hh:MM:ss");
     
     var payload = {
         fromUserId: requesterId,
