@@ -453,7 +453,8 @@ router.post('/signup', function (req, res, next) {
             console.log("Recreating session");
             qbchat.createSession(function (err, result) {
                 if (err) {
-                    customUtils.sendErrors(err, res)
+                    console.log(err)
+                    // customUtils.sendErrors(err, res)
                 } else next();
             })
         } else next();
@@ -526,40 +527,42 @@ router.post('/signup', function (req, res, next) {
                         full_name: user.name,
                         custom_data: user.avatar
                     }, function (err, newUser) {
+                        console.log("half more")
                         if (err) {
                             customUtils.sendErrors(err, res)
+                            // customUtils.sendErrors(err, res)
                             return;
                         } else {
                             user["qbId"] = newUser.id
                             db.put('users', id, user)
                                 .then(function (result) {
-                                    var date = new Date();
-                                    var chatObj = {
-                                        "type": "newUser",
-                                        "username": user['username'],
-                                        "qbId": user['qbId'],
-                                        "dbId": user['id'],
-                                        "created": date.getTime(),
-                                        "id": date.getTime()
-                                    }
-                                    if (typeof user['gcmId'] !== 'undefined')
-                                        chatObj['gcmId'] = user['gcmId']
-                                    else
-                                        chatObj['gcmId'] = 'undefined'
+                                    // var date = new Date();
+                                    // var chatObj = {
+                                    //     "type": "newUser",
+                                    //     "username": user['username'],
+                                    //     "qbId": user['qbId'],
+                                    //     "dbId": user['id'],
+                                    //     "created": date.getTime(),
+                                    //     "id": date.getTime()
+                                    // }
+                                    // if (typeof user['gcmId'] !== 'undefined')
+                                    //     chatObj['gcmId'] = user['gcmId']
+                                    // else
+                                    //     chatObj['gcmId'] = 'undefined'
 
                                     //notify.emit("wordForChat", chatObj)
                                     //EventSystem.we
                                     user['password'] = undefined;
 
-                                    var notifObj = {
-                                        user: id,
-                                        name: user.name
-                                    };
+                                    // var notifObj = {
+                                    //     user: id,
+                                    //     name: user.name
+                                    // };
                                     //notify.emit('welcome', notifObj)
-                                    EventSystem.welcome(notifObj.id, notifObj.name)
+                                    // EventSystem.welcome(notifObj.id, notifObj.name)
                                 })
                                 .then(function () {
-
+                                    console.log("-- half more again")
                                     var accessToken = customUtils.generateToken();
                                     var userId = id;
                                     db.put('tokens', accessToken, {
@@ -580,7 +583,8 @@ router.post('/signup', function (req, res, next) {
                                         })
                                 })
                                 .fail(function (err) {
-                                    customUtils.sendErrors(err, res)
+                                    console.log(err)
+                                    // customUtils.sendErrors(err, res)
                                 });
                         }
                     })
@@ -591,7 +595,8 @@ router.post('/signup', function (req, res, next) {
                     res.json(responseObj);
                 }
             }).fail(function (err) {
-            customUtils.sendErrors(err, res)
+            console.log(err)
+            // customUtils.sendErrors(err, res)
         })
     }
 });
