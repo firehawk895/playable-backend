@@ -52,10 +52,10 @@ module.exports = {
     "firebaseNodes": {
         "recommendations": "recommendations",
         "requests": "requests",
-        "events" : {
+        "events": {
             "newMatches": "events/matches"
         },
-        notifications : "notifications"
+        notifications: "notifications"
     },
     requests: {
         type: {
@@ -87,7 +87,7 @@ module.exports = {
             hostedFacility: 'hostedFacility',
             participants: 'participants',
             isHostedByUser: 'isHosted',
-            invitedUsers : 'invitees'
+            invitedUsers: 'invitees'
         },
         facilities: {
             hasMatches: 'hasMatches'
@@ -98,10 +98,10 @@ module.exports = {
             hostsMatch: 'hosts',
             requestedToConnect: "requestedToConnect",
             waitingToAccept: "waitingToAccept",
-            invitedToMatch : "invited"
+            invitedToMatch: "invited"
         },
         events: {
-            participants : "participants"
+            participants: "participants"
         }
     },
     connections: {
@@ -113,32 +113,32 @@ module.exports = {
         }
     },
     events: {
-        matches : {
-            created : "events/matches/created"
+        matches: {
+            created: "events/matches/created"
         },
-        users : {
-            created : "events/users/created"
+        users: {
+            created: "events/users/created"
         },
-        events : {
-            created : "events/events/created",
-            userBooked : "events/events/userBooked"
+        events: {
+            created: "events/events/created",
+            userBooked: "events/events/userBooked"
         },
-        requests : {
-            sent : {
-                connect : "events/requests/sent/connect",
-                fixAmatch : "events/requests/sent/fixAmatch",
-                inviteToMatch : "events/requests/sent/inviteToMatch"
+        requests: {
+            sent: {
+                connect: "events/requests/sent/connect",
+                fixAmatch: "events/requests/sent/fixAmatch",
+                inviteToMatch: "events/requests/sent/inviteToMatch"
             },
-            accepted : {
-                connect : "events/requests/sent/connect",
-                fixAmatch : "events/requests/sent/fixAmatch",
-                inviteToMatch : "events/requests/sent/inviteToMatch"
+            accepted: {
+                connect: "events/requests/sent/connect",
+                fixAmatch: "events/requests/sent/fixAmatch",
+                inviteToMatch: "events/requests/sent/inviteToMatch"
             }
         },
-        chats : {
-            message : "events/chats/message"
+        chats: {
+            message: "events/chats/message"
         },
-        timestampkey : "eventTimeStamp"
+        timestampkey: "eventTimeStamp"
     },
     /**
      * These constants are injected into the
@@ -148,15 +148,81 @@ module.exports = {
         oneOnOne: '<oneOnOneRoom>',
         matchRoom: '<matchRoom>'
     },
-    db : {
-        limit : 100
+    db: {
+        limit: 100
     },
-    notifications : {
+    notifications: {
         path: "/notifications",
         type: {
             inApp: "app",
             push: "push",
             both: "both",
+        }
+    },
+    sportsCoverPics: {
+        pool: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/pool_004f12.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-pool_004f12.png'
+        },
+        snooker: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/snooker_d1883d.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-snooker_d1883d.png'
+        },
+        ultimatefrisbee: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/ultimate_frisbee_d88036.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-ultimate_frisbee_d88036.png'
+        },
+        tt: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/table_tennis_64b262.jpeg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-table_tennis_64b262.png'
+        },
+        badminton: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/badminton_b5f5d4.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-badminton_b5f5d4.png'
+        },
+        squash: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/squash_add7e3.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-squash_add7e3.png'
+        },
+        tennis: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/tennis_d31ecf.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-tennis_d31ecf.png'
+        },
+        cycling: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/cycling_782eb2.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-cycling_782eb2.png'
+        },
+        swimming: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/swimming_3220c7.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-swimming_3220c7.png'
+        },
+        cricket: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/cricket_0bc345.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-cricket_0bc345.png'
+        },
+        bowling: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/bowling_68f975.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-bowling_68f975.png'
+        },
+        hockey: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/hockey_380b45.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-hockey_380b45.png'
+        },
+        running: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/running_eb253c.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-running_eb253c.png'
+        },
+        golf: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/golf_7e3de7.png',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-golf_7e3de7.png'
+        },
+        football: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/football_558676.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-football_558676.png'
+        },
+        basketball: {
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/basketball_e04843.png',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-basketball_e04843.png'
         }
     }
 }

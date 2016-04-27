@@ -327,6 +327,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
     db.post('matches', payload)
         .then(function (result) {
             payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+            payload["image"] = constants.sportsCoverPics[payload["sport"]]
             matchCreated.resolve(payload)
 
             var promises = []
