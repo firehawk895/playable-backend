@@ -324,10 +324,12 @@ function removeFromMatch(userId, matchId) {
 function createMatch(payload, hostData, invitedUserIdList) {
     var matchCreated = kew.defer()
     payload = updateGenderInPayload(payload, hostData.gender)
+    console.log("the sport is " + payload["sport"])
+    console.log("the sport is " + constants.sportsCoverPics[payload["sport"]])
+    payload["image"] = constants.sportsCoverPics[payload["sport"]]
     db.post('matches', payload)
         .then(function (result) {
             payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
-            payload["image"] = constants.sportsCoverPics[payload["sport"]]
             matchCreated.resolve(payload)
 
             var promises = []
