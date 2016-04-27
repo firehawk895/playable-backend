@@ -42,22 +42,6 @@ newMatchesRef.on("child_added", function (childSnapshot, prevChildKey) {
     }
 })
 
-/**
- * Listener:
- * listen to recommendations marked by every user
- */
-recommendationsRef.on("child_added", function (snapshot) {
-    var userId = snapshot.key()
-    var userRecoRef = new Firebase(config.firebase.url + "/" + constants.firebase.recommendations + "/" + userId, config.firebase.secret)
-    /**
-     * Register a child_changed listener for one user's recommendation
-     * */
-    userRecoRef.on("child_changed", function (childSnapshot, prevChildKey) {
-        var recoObj = childSnapshot.val()
-        if (customUtils.isRecent(recoObj.timestamp)) customUtils.parseRecObject(recoObj)
-    })
-})
-
 module.exports = router;
 
 
