@@ -121,6 +121,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
         isDistanceQuery = true;
     }
+    
+    if(req.query.featured) {
+        console.log("featured query")
+        queries.push(dbUtils.createFieldQuery("isFeatured", "true"))
+    }
 
     var theFinalQuery = dbUtils.queryJoiner(queries)
     console.log("The final query")

@@ -97,6 +97,10 @@ function createFieldORQuery(theArray, searchKey) {
     return theQuery
 }
 
+function createFieldQuery(field, value) {
+    return "value." + field + ":`" + value + "`"
+}
+
 /**
  * create a distance query for orchestrate
  * assuming the field name is "location"
@@ -211,7 +215,8 @@ module.exports = {
     createFuzzyQuery : createFuzzyQuery,
     queryJoinerOr : queryJoinerOr,
     createExistsQuery : createExistsQuery,
-    incrementFieldValue : incrementFieldValue
+    incrementFieldValue : incrementFieldValue,
+    createFieldQuery:createFieldQuery
 }
 
 
