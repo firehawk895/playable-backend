@@ -115,7 +115,7 @@ function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterNa
         match: matchPayload,
         timestamp: date.getTime()
     }
-    pushRequestToFirebase(payload, requesterId)
+    pushRequestToFirebase(payload, hostId)
 }
 
 /**
