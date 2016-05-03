@@ -196,6 +196,7 @@ router.post('/join/request', [passport.authenticate('bearer', {session: false}),
     var matchId = req.body.matchId;
     var userId = req.user.results[0].value.id;
     var usersFullName = req.user.results[0].value.name;
+    var usersPhoto = req.user.results[0].value.avatarThumb
     var responseObj = {}
 
     console.log("whats going on")
@@ -205,7 +206,7 @@ router.post('/join/request', [passport.authenticate('bearer', {session: false}),
             var theMatch = results.body
             console.log("got the match")
             console.log(theMatch.body)
-            RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName)
+            RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName, usersPhoto)
             responseObj["data"] = {}
             res.status(200)
             res.json(responseObj)

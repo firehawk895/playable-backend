@@ -100,7 +100,7 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
  * @param requesterId
  * @param matchId
  */
-function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterName) {
+function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterName, requesterPhoto) {
     //matchPayload expected to have : id, sport, playing_time
     var formatted = customUtils.getFormattedDate(matchPayload.playing_time)
     // var formatted = t.format("dd.mm.yyyy hh:MM:ss");
@@ -110,7 +110,7 @@ function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterNa
         toUserId: hostId,
         type: constants.requests.type.join,
         status: constants.requests.status.pending,
-        photo: "",
+        photo: requesterPhoto,
         msg: requesterName + " wants to join your game of " + matchPayload.sport + " on " + formatted,
         match: matchPayload,
         timestamp: date.getTime()
@@ -194,13 +194,18 @@ function parseInviteToMatchRequest(requestObj) {
 
 function parseJoinMatchRequest(requestObj) {
     var MatchModel = require('../models/Match')
+    console.log("parseJoinMatchRequest")
     if (requestObj.status == constants.requests.status.accepted) {
+        console.log("accepting join match request")
         acceptJoinMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
     } else {
+        console.log("rejecting join match request")
         rejectJoinMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
     }
 
     function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
+        console.log("about to join match " + matchPayload["id"])
+        console.log("and this user is being joined" + fromUserId)
         MatchModel.joinMatch(matchPayload["id"], fromUserId)
             .then(function(result) {
                 //what to do?
