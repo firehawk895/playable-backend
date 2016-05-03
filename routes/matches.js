@@ -205,6 +205,7 @@ router.post('/join/request', [passport.authenticate('bearer', {session: false}),
         .then(function (results) {
             var theMatch = results.body
             console.log("got the match")
+            theMatch["id"] = matchId
             console.log(theMatch)
             RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName, usersPhoto)
             responseObj["data"] = {}
