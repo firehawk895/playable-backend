@@ -195,6 +195,7 @@ function parseInviteToMatchRequest(requestObj) {
 function parseJoinMatchRequest(requestObj) {
     var MatchModel = require('../models/Match')
     console.log("parseJoinMatchRequest")
+    console.log(requestObj)
     if (requestObj.status == constants.requests.status.accepted) {
         console.log("accepting join match request")
         acceptJoinMatchRequest(requestObj.fromUserId, requestObj.toUserId, requestObj.match)
