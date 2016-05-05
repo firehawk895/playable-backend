@@ -110,7 +110,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 .sort('location', 'distance:asc')
                 .query(finalMatchQuery),
             db.newSearchBuilder()
-                .collection('players')
+                .collection('users')
                 .limit(limit)
                 .offset(0)
                 .sort('location', 'distance:asc')
@@ -134,7 +134,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 .offset(0)
                 .query(finalMatchQuery),
             db.newSearchBuilder()
-                .collection('players')
+                .collection('users')
                 .limit(limit)
                 .offset(0)
                 .query(finalPlayerQuery),
@@ -148,6 +148,9 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     kew.all(promises)
         .then(function (results) {
+            console.log("search results")
+            console.log(results[1].body)
+            // console.log(results[2].body.total_count)
             if (isDistanceQuery) {
                 results = results.map(function(resultSet) {
                     resultSet = MatchModel.insertDistance(resultSet, req.query.lat, req.query.long)
