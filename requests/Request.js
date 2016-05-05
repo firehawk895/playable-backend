@@ -242,7 +242,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         .then(function(result) {
             console.log("accepting OneOnOneFixAmatch fully done")
         })
-        .err(function(err) {
+        .fail(function(err) {
             console.log("accepting OneOnOneFixAmatch, attempt to reparse")
         })
 
