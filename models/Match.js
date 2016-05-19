@@ -330,7 +330,6 @@ function createMatch(payload, hostData, invitedUserIdList) {
     db.post('matches', payload)
         .then(function (result) {
             payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
-            matchCreated.resolve(payload)
 
             var promises = []
 
@@ -379,6 +378,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
         })
         .then(function (result) {
             console.log("match creation fully complete")
+            matchCreated.resolve(payload)
             // matchCreated.resolve()
         })
         .fail(function (err) {

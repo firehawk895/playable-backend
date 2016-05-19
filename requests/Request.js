@@ -268,7 +268,6 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 //The match has participants (user)
                 promises.push(dbUtils.createGraphRelationPromise('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants))
                 promises.push(MatchModel.createChatRoomForMatch(user1id, matchPayload["id"]))
-                promises.push(UserModel.createConnection(user1id, user2id))
 
                 return kew.all(promises)
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
