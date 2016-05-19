@@ -131,15 +131,19 @@ function getSession() {
     // var qbchat = require('../Chat/qbchat');
     console.log("getting the session")
     var sessionStatus = kew.defer()
+    console.log('about to QB init')
     
     QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 
+    console.log("QB.createSession")
     QB.createSession(config.qb.params, function (err, session) {
         if (err) {
             console.log(err)
+            console.log("eh whats going on?")
             sessionStatus.reject(err)
             //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
         } else {
+            console.log("resolvng")
             sessionStatus.resolve(session)
         }
     });

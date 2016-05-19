@@ -214,6 +214,7 @@ function parseJoinMatchRequest(requestObj) {
         MatchModel.joinMatch(matchPayload["id"], fromUserId)
             .then(function (result) {
                 //what to do?
+                console.log("")
             })
             .fail(function (err) {
                 //what to do?
