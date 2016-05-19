@@ -517,7 +517,8 @@ router.post('/signup', function (req, res, next) {
                         "hasSelectedSports": false,
                         "matchesPlayed": 0,
                         totalRatings: 0,
-                        thumbsUps: 0
+                        thumbsUps: 0,
+                        connections: 0
                     };
 
                     qbchat.createUser({
@@ -1324,7 +1325,8 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
         "hasSelectedSports": false,
         "matchesPlayed": 0,
         totalRatings: 0,
-        thumbsUps: 0
+        thumbsUps: 0,
+        connections: 0
     };
 
     qbchat.createUser({
@@ -1431,7 +1433,8 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "hasSelectedSports": false,
         "matchesPlayed": 0,
         totalRatings: 0,
-        thumbsUps: 0
+        thumbsUps: 0,
+        connections: 0
     };
 
     qbchat.createUser({

@@ -89,6 +89,8 @@ function createConnection(user1id, user2id) {
             console.log("just adding users")
             console.log(joinedRoomStatus)
             connectionCreated.resolve(joinedRoomStatus)
+            incrementConnections(user1id)
+            incrementConnections(user2id)
         })
         .fail(function(err) {
             connectionCreated.reject(err)
@@ -219,6 +221,18 @@ function getGcmIdsForUserIds(userIdList) {
 
 function getUserPromise(userId) {
     return db.get('users', userId)
+}
+
+function incrementConnections(userId) {
+    db.newPatchBuilder("users", userId)
+        .inc("value.connections", 1)
+        .apply()
+        .then(function(result) {
+            console.log("user " + userId + "'s connection incremented")
+        })
+        .fail(function(err) {
+            console.log("UNABLE to - user " + userId + "'s connection incremented")
+        })
 }
 
 module.exports = {

@@ -50,7 +50,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
             lastRegDate: req.body.lastRegDate,
             contactUs: req.body.contactUs,
             slots_filled: 0,
-            //slots: req.body.slots,
+            slots: req.body.slots,
             location_name: req.body.location_name,
             paid: req.body.paid,
             price: req.body.price,
