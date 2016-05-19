@@ -88,7 +88,7 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
         photo: "",
         msg: hostName + " has invited you to play a game of " + matchPayload.sport + " with you",
         match: {
-            id : matchPayload.id
+            id: matchPayload.id
         },
         timestamp: date.getTime()
     }
@@ -104,7 +104,7 @@ function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterNa
     //matchPayload expected to have : id, sport, playing_time
     var formatted = customUtils.getFormattedDate(matchPayload.playing_time)
     // var formatted = t.format("dd.mm.yyyy hh:MM:ss");
-    
+
     var payload = {
         fromUserId: requesterId,
         toUserId: hostId,
@@ -208,10 +208,10 @@ function parseJoinMatchRequest(requestObj) {
         console.log("about to join match " + matchPayload["id"])
         console.log("and this user is being joined" + fromUserId)
         MatchModel.joinMatch(matchPayload["id"], fromUserId)
-            .then(function(result) {
+            .then(function (result) {
                 //what to do?
             })
-            .fail(function(err) {
+            .fail(function (err) {
                 //what to do?
             })
     }
@@ -233,16 +233,15 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
     var UserModel = require('../models/User')
     return kew.all([
         dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
-        dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept),
-        UserModel.createConnection(user1id, user2id)
+        dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
     ])
-        .then(function(result) {
+        .then(function (result) {
             return createOneOnOneFixAmatch(user1id, matchPayload)
         })
-        .then(function(result) {
+        .then(function (result) {
             console.log("accepting OneOnOneFixAmatch fully done")
         })
-        .fail(function(err) {
+        .fail(function (err) {
             console.log(err)
             console.log("accepting OneOnOneFixAmatch, attempt to reparse")
         })
@@ -259,7 +258,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                  * can access the related data from any entry point
                  */
                 var promises = []
-                    //The user hosts the match
+                //The user hosts the match
                 promises.push(dbUtils.createGraphRelationPromise('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.hostsMatch))
                 //The user plays in the match
                 promises.push(dbUtils.createGraphRelationPromise('users', user1id, 'matches', matchPayload["id"], constants.graphRelations.users.playsMatches))
@@ -272,9 +271,13 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 return kew.all(promises)
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
             })
-            .then(function(results) {
+            .then(function (results) {
                 EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
-
+                return UserModel.getConnectionStatusPromise(user1id, user2id)
+            })
+            .then(function (result) {
+                if (result != constants.connections.status.connected)
+                    UserModel.createConnection(user1id, user2id)
             })
     }
     createOneOnOneFixAmatch(user1id, matchPayload)
@@ -283,10 +286,10 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
 function parseConnectRequest(requestObj) {
     if (requestObj.status == constants.requests.status.accepted) {
         acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
-            .then(function(results) {
+            .then(function (results) {
                 console.log("acceptConnectionRequest success")
             })
-            .fail(function(err) {
+            .fail(function (err) {
                 console.log("acceptConnectionRequest failed")
                 console.log(err)
             })
