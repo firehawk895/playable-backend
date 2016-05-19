@@ -75,7 +75,7 @@ function createIsDiscoverableQuery() {
  * @returns {string}
  */
 function createSportsQuery(sportsArray) {
-    return dbUtils.createFieldORQuery(sportsArray, "value.sports")
+    return dbUtils.createFieldORQuery(sportsArray, "value.sport")
 }
 
 /**
@@ -84,7 +84,23 @@ function createSportsQuery(sportsArray) {
  * @returns {*}
  */
 function createGenderQuery(genderArray) {
-    return dbUtils.createFieldORQuery(genderArray, "value.gender")
+    var queries = []
+    genderArray.forEach(function(gender) {
+        switch(gender) {
+            case "male":
+                queries.push("value.hasMale:true")
+                break
+            case "female":
+                queries.push("value.hasFemale:true")
+                break
+            case "other":
+                queries.push("value.hasCustomGender:true")
+                break
+        }
+    })
+    console.log("final Query promse")
+    console.log(queries)
+    return dbUtils.queryJoinerOr(queries)
 }
 
 /**
