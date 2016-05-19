@@ -235,7 +235,13 @@ function parseJoinMatchRequest(requestObj) {
  */
 function acceptMatchRequest(user1id, user2id, matchPayload) {
     var UserModel = require('../models/User')
-    
+    var MatchModel = require('../models/Match')
+    var dbUtils = require('../dbUtils');
+    var EventSystem = require('../dbUtils');
+    var oio = require('orchestrate');
+    oio.ApiEndPoint = config.db.region;
+    var db = oio(config.db.key);
+
     return kew.all([
         dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
         dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
