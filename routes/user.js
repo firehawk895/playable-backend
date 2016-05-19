@@ -849,13 +849,13 @@ router.get('/', function (req, res, next) {
 
 
 router.get('/', function (req, res) {
-
     if (!req.query.limit || req.query.limit < 0) req.query.limit = 10;
     if (!req.query.page || req.query.page < 1) req.query.page = 1;
     var limit = req.query.limit;
     var offset = (limit * (req.query.page - 1));
     var responseObj = {};
     var query_user = req.query.userId;
+    var currentUser = req.query.currentUser //the requesting user to compare connection status with
     var allowUpdate;
 
     var getUserInfo = function (userId, allowUpdate) {
@@ -863,7 +863,7 @@ router.get('/', function (req, res) {
         var getUserDataPromise = db.get('users', userId)
         var getTotalCountPromise = UserModel.getTotalConnections(userId)
 
-        kew.all([getUserDataPromise, getTotalCountPromise])
+        kew.all([getUserDataPromise, getTotalCountPromise, UserModel.getConnectionStatusPromise(currentUser, query_user)])
             .then(function (results) {
                 console.log("total connections")
                 console.log(results[1])
@@ -871,6 +871,7 @@ router.get('/', function (req, res) {
                 responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
                 responseObj["data"]["totalConnections"] = results[1]
+                responseObj["data"]["connectionStatus"] = results[2]
                 res.status(200)
                 res.json(responseObj)
             })
@@ -899,7 +900,6 @@ router.get('/', function (req, res) {
         allowUpdate = false;
         getUserInfo(query_user, allowUpdate)
     }
-
 });
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
