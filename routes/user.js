@@ -478,7 +478,7 @@ router.post('/signup', function (req, res, next) {
         email = email.toLowerCase();
 
     if (!validator.isNull(req.body.userDesc))
-        if (!validator.isLength(req.body.userDesc, 20)) errors.push("Description must be greater than 20 characters");
+        if (!validator.isLength(req.body.userDesc, 20, 300)) errors.push("Description must 20-300 characters");
 
     if (!validator.isNull(req.body.tagline))
         if (!validator.isLength(req.body.tagline, 0, 40)) errors.push("Tagline must be less than 40 characters");
@@ -939,7 +939,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
         if (!reqBody.name.match(/\w*/g)) errors.push("Name contains illegal characters");
 
     if (!validator.isNull(reqBody.userDesc))
-        if (!validator.isLength(req.body.userDesc, 20)) errors.push("Description must be greater than 20 characters");
+        if (!validator.isLength(req.body.userDesc, 20, 300)) errors.push("Description must be 20-300 characters");
 
     if (!validator.isNull(req.files.avatar))
         if (!validator.isImage(req.files.avatar.mimetype)) errors.push("Avatar should be an image type");

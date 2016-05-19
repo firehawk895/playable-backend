@@ -12,6 +12,10 @@ var Firebase = require("firebase");
 var date = new Date()
 var kew = require('kew')
 
+var oio = require('orchestrate');
+oio.ApiEndPoint = config.db.region;
+var db = oio(config.db.key);
+
 /**
  * create a connection request from user1 to user2
  * @param user1id
@@ -231,6 +235,7 @@ function parseJoinMatchRequest(requestObj) {
  */
 function acceptMatchRequest(user1id, user2id, matchPayload) {
     var UserModel = require('../models/User')
+    
     return kew.all([
         dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
         dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.waitingToAccept)
