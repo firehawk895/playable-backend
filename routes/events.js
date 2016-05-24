@@ -207,9 +207,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
             res.json(responseObj)
         })
         .fail(function (err) {
-            responseObj["errors"] = [JSON.stringify(err)]
-            res.status(503)
-            res.json(responseObj)
+            customUtils.sendErrors(err, res)
         })
 }])
 

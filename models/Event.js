@@ -54,8 +54,10 @@ function getEventPromise(eventid) {
 function joinEvent(userId, eventId) {
     var joinedEventStatus = kew.defer()
     var theEventDetails
+    var message
     getEventPromise(eventId)
         .then(function (theEvent) {
+            console.log("Y")
             theEventDetails = theEvent
             console.log(theEvent.body)
             console.log("what")
@@ -63,27 +65,29 @@ function joinEvent(userId, eventId) {
             return checkEventParticipationPromise(eventId, userId)
         })
         .then(function (results) {
+            console.log("Z")
             console.log(results.body)
             console.log("just checked event participation")
             var count = results.body.count
-            if (count == 0) {
-                console.log("user determined to be not participating in event")
+            // if (count == 0) {
                 return kew.all([
                     dbUtils.createGraphRelationPromise('events', eventId, 'users', userId, constants.graphRelations.events.participants),
                     dbUtils.createGraphRelationPromise('users', userId, 'events', eventId, constants.graphRelations.users.playsMatches)
                 ])
-            } else {
-                return joinedEventStatus.reject(new Error("You are already part of this event. Roll back any payments if made."))
-            }
+            // } else {
+            //     return joinedEventStatus.reject(new Error("You are already part of this event. Roll back any payments if made."))
+            // }
         })
         .then(function (result) {
+            console.log("A")
             /**
              * You are hoping that orchestrate handles concurrency
              * this sort of modification needs to be safe from race conditions,
              * but if you are solving this problem
              * Playable would have IPO'd
              */
-                console.log(theEventDetails.slots_filled)
+            console.log("wtf is up with event details")
+                console.log(theEventDetails)
                 var slotsFilled = theEventDetails.slots_filled + 1
                 var payload = {
                     'slots_filled': slotsFilled
@@ -93,10 +97,22 @@ function joinEvent(userId, eventId) {
                 joinedEventStatus.resolve()
                 EventSystem.joinedEvent()
         })
+        .then(function(nothing) {
+            console.log("C")
+            return db.get("users", userId)
+        })
+        .then(function(theUser) {
+            var theUser = theUser.body
+            console.log("user determined to be not participating in event")
+            message = "You have been registered for the event - " + theEventDetails.title + "."
+            if(theEventDetails.google_form)
+                message = message + " Please fill out this google form so we can serve you better - " + theEventDetails.google_form
+            customUtils.sendSms(message, theUser)
+        })
         .fail(function(err) {
+            console.log("B")
             joinedEventStatus.reject(err)
         })
-
     return joinedEventStatus
 }
 

@@ -231,12 +231,6 @@ validatePostEvent = function (req) {
         errors.push(constants.validations.invalid_long_message)
 
     if (validator.isBoolean(reqBody.isPaid)) {
-
-    } else {
-
-    }
-
-    if (validator.isBoolean(reqBody.isPaid)) {
         reqBody.isPaid = customUtils.stringToBoolean(reqBody.isPaid)
         if (reqBody.isPaid && !validator.isInt(reqBody.price, {min: 1})) {
             reqBody.price = undefined
@@ -253,6 +247,11 @@ validatePostEvent = function (req) {
 
     if (!validator.isURL(reqBody.google_form))
         errors.push(constants.validations.event.invalid_url)
+
+    if (validator.isInt(reqBody.slots, {min: 2}))
+        reqBody.slots = parseInt(reqBody.slots)
+    else
+        errors.push("An event must have more than 1 slot")
 
     //if (validator.isBoolean(reqBody.isFacility))
     //    reqBody.isFacility = customUtils.stringToBoolean(reqBody.isFacility)
