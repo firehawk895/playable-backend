@@ -29,6 +29,7 @@ var dbUtils = require('../dbUtils')
 var kew = require('kew')
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var userId = req.user.results[0].value.id
     var limit = req.query.limit || 100
     var query = req.query.query || ""
 
@@ -148,9 +149,13 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     kew.all(promises)
         .then(function (results) {
-            console.log("search results")
-            console.log(results[1].body)
-            // console.log(results[2].body.total_count)
+            return kew.all([
+                MatchModel.injectIsJoined(results[0], userId),
+                kew.resolve(results[1]),
+                MatchModel.injectIsJoined(results[2], userId)
+            ])
+        })
+        .then(function (results) {
             if (isDistanceQuery) {
                 results = results.map(function(resultSet) {
                     resultSet = MatchModel.insertDistance(resultSet, req.query.lat, req.query.long)
