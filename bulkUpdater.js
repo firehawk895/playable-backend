@@ -2,6 +2,9 @@ var config = require('./config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
+var dbUtils = require('./dbUtils');
+var constants = require('./constants');
+
 //var customUtils = require('./utils');
 //var request = require('request')
 
@@ -168,6 +171,21 @@ var sportsArray = [
     }
 ]
 
-sportsArray.forEach(function(sport) {
-    db.post("sports", sport)
-})
+db.newGraphReader()
+    .get()
+    .limit(100)
+    .offset(0)
+    .from('users', userId)
+    .related(constants.graphRelations.users.playsMatches)
+    .then(function (results) {
+        var matchHistory = dbUtils.injectId(results)
+        console.log(results.body)
+        console.log(matchHistory)
+        // responseObj["data"] = matchHistory
+        // res.status(200)
+        // res.json(responseObj)
+    })
+
+// sportsArray.forEach(function(sport) {
+//     db.post("sports", sport)
+// })

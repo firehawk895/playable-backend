@@ -66,23 +66,23 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
         }
 
         customUtils.upload(req.files.image, function (coverPhotoInfo) {
-            console.log(coverPhotoInfo)
             payload["coverPhoto"] = coverPhotoInfo.url
             payload["coverPhotoThumb"] = coverPhotoInfo.urlThumb
             db.post('events', payload)
                 .then(function (result) {
+                    console.log("hey")
                     payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
                     //EventModel.dispatchEvent(constants.event.events.created, payload)
                     //someday, I think this should be decoupled
+                    console.log(payload["id"])
+                    console.log(payload["title"])
                     EventSystem.newEvent(payload["id"], payload["title"])
                     responseObj["data"] = payload;
                     res.status(201);
                     res.json(responseObj);
                 })
                 .fail(function (err) {
-                    responseObj["errors"] = [err.body.message];
-                    res.status(422);
-                    res.json(responseObj);
+                    customUtils.sendErrors(err, res)
                 })
         })
     }
@@ -105,6 +105,13 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     //}
     var queries = []
     var responseObj = {}
+
+
+    console.log("default time and isDiscoverable query")
+    if (req.query.showAll)
+        queries.push("@path.kind:item")
+    else
+        queries.push(MatchModel.createIsDiscoverableQuery())
 
     console.log("the future query : " + MatchModel.createOnlyFutureTypeQuery())
     queries.push(MatchModel.createOnlyFutureTypeQuery())
@@ -148,6 +155,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             .collection("events")
             .limit(limit)
             .offset(offset)
+            .sortBy("@path.reftime:desc")
             //.sort('location', 'distance:asc')
             .query(theFinalQuery)
         promises.push(distanceLessQuery)

@@ -57,7 +57,7 @@ function newEvent(eventId, eventName) {
         "text": "New event " + eventName + " hosted! Check it out now!",
         "photo": ""
     };
-    everyoneNotificationDispatcer(0, nofObj, constants.notification.type.both)
+    everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.both)
 }
 
 function joinedEvent(eventId, eventName, userId) {

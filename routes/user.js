@@ -1284,8 +1284,19 @@ router.get('/matchHistory', [passport.authenticate('bearer', {session: false}), 
     var userId = req.user.results[0].value.id;
     if (req.query.userId)
         userId = req.query.userId
+
+    var limit = req.query.limit || 100
+    var page = req.query.page || 1
+    var offset = page * limit
+
     var responseObj = {}
-    MatchModel.getMatchHistoryPromise(userId)
+
+    db.newGraphReader()
+        .get()
+        .limit(100)
+        .offset(0)
+        .from('users', userId)
+        .related(constants.graphRelations.users.playsMatches)
         .then(function (results) {
             var matchHistory = dbUtils.injectId(results)
             responseObj["data"] = matchHistory

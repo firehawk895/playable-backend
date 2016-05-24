@@ -136,7 +136,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
             .then(function (result) {
                 return db.get('matches', req.query.matchId)
             })
-            .then(function(theMatch) {
+            .then(function (theMatch) {
                 //payload["id"] = matchId;
                 responseObj["data"] = theMatch.body;
                 res.status(201);
@@ -257,11 +257,14 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var queries = []
     var responseObj = {}
     var limit = req.query.limit || 100
-    var page =  req.query.page || 1
+    var page = req.query.page || 1
     var offset = limit * (page - 1)
 
     console.log("default time and isDiscoverable query")
-    queries.push(MatchModel.createIsDiscoverableQuery())
+    if (req.query.showAll)
+        queries.push("@path.kind:item")
+    else
+        queries.push(MatchModel.createIsDiscoverableQuery())
 
     var isDistanceQuery = false
     var isMatchQuery = false
@@ -273,7 +276,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         queries.push(dbUtils.createSearchByIdQuery(req.query.matchId))
     }
 
-    if(req.query.isFacility) {
+    if (req.query.isFacility) {
         console.log("only facility matches")
         queries.push("value.isFacility:true")
     }
@@ -323,6 +326,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             .limit(limit)
             .offset(offset)
             //.sort('location', 'distance:asc')
+            .sortBy('@path.reftime:desc')
             .query(theFinalQuery)
         promises.push(distanceLessQuery)
     }
@@ -345,13 +349,13 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     var theMasterResults
     kew.all(promises)
-        .then(function(results) {
-           //result[0] is the main query
-           //result[1] is the featured events query
-           //result[2] is the match participants
-           theMasterResults = results
-           //inject isJoined
-           return MatchModel.injectIsJoined(theMasterResults[0], userId)
+        .then(function (results) {
+            //result[0] is the main query
+            //result[1] is the featured events query
+            //result[2] is the match participants
+            theMasterResults = results
+            //inject isJoined
+            return MatchModel.injectIsJoined(theMasterResults[0], userId)
         })
         .then(function (results) {
             if (distanceQuery) {
