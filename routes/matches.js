@@ -347,12 +347,15 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         promises.push(kew.resolve([]))
     }
 
+    if(req.query.showAll) promises.push(MatchModel.getAdminMarkedCount())
+
     var theMasterResults
     kew.all(promises)
         .then(function (results) {
             //result[0] is the main query
             //result[1] is the featured events query
             //result[2] is the match participants
+            //result[3] is the adminMarked/total_matches count
             theMasterResults = results
             //inject isJoined
             return MatchModel.injectIsJoined(theMasterResults[0], userId)
@@ -372,6 +375,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 var featuredEvents = dbUtils.injectId(theMasterResults[1])
                 responseObj["featuredEvents"] = featuredEvents
             }
+            if (req.query.showAll) {
+                console.log(theMasterResults[3])
+                responseObj["adminMarked"] = theMasterResults[3].body.total_count
+            }
+
             res.status(200)
             res.json(responseObj)
         })

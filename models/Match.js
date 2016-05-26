@@ -85,8 +85,8 @@ function createSportsQuery(sportsArray) {
  */
 function createGenderQuery(genderArray) {
     var queries = []
-    genderArray.forEach(function(gender) {
-        switch(gender) {
+    genderArray.forEach(function (gender) {
+        switch (gender) {
             case "male":
                 queries.push("value.hasMale:true")
                 break
@@ -515,6 +515,14 @@ function injectIsJoined(results, userId, type) {
     return injectedResults
 }
 
+function getAdminMarkedCount() {
+    return db.newSearchBuilder()
+        .collection("matches")
+        .limit(1)
+        .offset(0)
+        .query("value.isAdminMarked:true")
+}
+
 module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,
     createSportsQuery: createSportsQuery,
@@ -535,6 +543,7 @@ module.exports = {
     getMatchPromise: getMatchPromise,
     injectIsJoined: injectIsJoined,
     getFacilityOfMatchPromise: getFacilityOfMatchPromise,
-    getFacilityPromise : getFacilityPromise,
-    incrementMatchesPlayed : incrementMatchesPlayed
+    getFacilityPromise: getFacilityPromise,
+    incrementMatchesPlayed: incrementMatchesPlayed,
+    getAdminMarkedCount: getAdminMarkedCount
 }
