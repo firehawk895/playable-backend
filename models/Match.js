@@ -351,7 +351,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
 
             var invitedUserList = []
             console.log("Invited userIds : ")
-            console.log(invitedUserList)
+            console.log(invitedUserIdList)
             try {
                 invitedUserList = invitedUserIdList.split(',')
             } catch (e) {
