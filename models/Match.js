@@ -276,7 +276,14 @@ function getMatchParticipantsPromise(matchId) {
 }
 
 function getMatchHistoryPromise(userId) {
-    return dbUtils.getGraphResultsPromise('users', userId, constants.graphRelations.users.playsMatches)
+    // return dbUtils.getGraphResultsPromise('users', userId, constants.graphRelations.users.playsMatches)
+    return db.newGraphReader()
+        .get()
+        .offset(0)
+        .limit(100)
+        .from('users', userId)
+        .related(constants.graphRelations.users.playsMatches)
+        
 }
 
 function removeFromMatch(userId, matchId) {
