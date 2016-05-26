@@ -350,6 +350,8 @@ function createMatch(payload, hostData, invitedUserIdList) {
             var promises = []
 
             var invitedUserList = []
+            console.log("Invited userIds : ")
+            console.log(invitedUserList)
             try {
                 invitedUserList = invitedUserIdList.split(',')
             } catch (e) {
