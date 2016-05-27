@@ -914,7 +914,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
     var userId = req.user.results[0].value.id;
     var filetype;
     var reqBody = req.body;
-    var errors = new Array();
+    var errors = [];
 
     // Dummy Promise that always resolves :D
     var promise = kew.resolve({
@@ -1039,7 +1039,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
             }
         })
         .fail(function (err) {
-            customUtils.sendErrors([err.body.message], 503, res)
+            customUtils.sendErrors(err, 503)
         })
 }]);
 
