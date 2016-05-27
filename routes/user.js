@@ -974,9 +974,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 errors.push(errMsg);
             }
             if (errors.length > 0) {
-                responseObj["data"] = errors
-                res.status(422)
-                res.json(responseObj)
+                customUtils.sendErrors(errors, res)
             } else {
                 customUtils.upload(req.files.avatar, function (avatarInfo) {
                     if (req.files.avatar) {
