@@ -870,7 +870,7 @@ router.get('/', function (req, res) {
                 results[0].body.password = undefined
                 responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
-                responseObj["data"]["totalConnections"] = results[1]
+                responseObj["data"]["totalConnections"] = 11 //results[1]
                 responseObj["data"]["connectionStatus"] = results[2]
                 res.status(200)
                 res.json(responseObj)
