@@ -14,7 +14,7 @@ module.exports = {
         "squash",
         "swimming",
         "tennis",
-        "tt",
+        "tabletennis",
         "ultimatefrisbee"
     ],
     //following the facebook format

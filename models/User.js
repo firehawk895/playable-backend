@@ -180,9 +180,11 @@ function getTotalConnections(userId) {
     var totalConnectionsDefer = kew.defer()
     dbUtils.getGraphResultsPromise("users", userId, constants.graphRelations.users.connections)
         .then(function (result) {
+            console.log("getGraphResultsPromise yes")
             totalConnectionsDefer.resolve(result.body.count)
         })
         .fail(function (err) {
+            console.log("getGraphResultsPromise NO")
             totalConnectionsDefer.reject(err)
         })
     return totalConnectionsDefer
@@ -195,27 +197,27 @@ function getTotalConnections(userId) {
  */
 function getGcmIdsForUserIds(userIdList) {
     var gcmUserIds = kew.defer();
-    var queries = []
-    userIdList.forEach(function (userId) {
-        queries.push(dbUtils.createSearchByIdQuery(userId))
-    })
-
-    var theFinalQuery = dbUtils.queryJoiner(queries)
-
-    db.newSearchBuilder()
-        .collection("users")
-        //.sort('location', 'distance:asc')
-        .query(theFinalQuery)
-        .then(function (result) {
-            var gcmUserIds = result.body.results.map(function (user) {
-                return user.value.gcmId
-            });
-            kew.resolve(gcmUserIds)
-        })
-        .fail(function (err) {
-            kew.reject(err)
-        })
-
+    // var queries = []
+    // userIdList.forEach(function (userId) {
+    //     queries.push(dbUtils.createSearchByIdQuery(userId))
+    // })
+    //
+    // var theFinalQuery = dbUtils.queryJoiner(queries)
+    
+    // db.newSearchBuilder()
+    //     .collection("users")
+    //     //.sort('location', 'distance:asc')
+    //     .query(theFinalQuery)
+    //     .then(function (result) {
+    //         var gcmUserIds = result.body.results.map(function (user) {
+    //             return user.value.gcmId
+    //         });
+    //         gcmUserIds.resolve(gcmUserIds)
+    //     })
+    //     .fail(function (err) {
+    //         gcmUserIds.reject(err)
+    //     })
+    gcmUserIds.resolve()
     return gcmUserIds
 }
 

@@ -35,9 +35,9 @@ function getFeaturedEventsPromise() {
     var MatchModel = require('../models/Match');
     var queries = []
     queries.push("value.isFeatured:true")
-    queries.push("value.playing_time: " + currentUnixTime + "~*"  )
+    queries.push("value.playing_time: " + currentUnixTime + "~*")
     var finalQuery = dbUtils.queryJoiner(queries)
-    
+
     console.log("final featured events query")
     console.log(finalQuery)
     var featuredMatches = db.newSearchBuilder()
@@ -57,60 +57,35 @@ function joinEvent(userId, eventId) {
     var message
     getEventPromise(eventId)
         .then(function (theEvent) {
-            console.log("Y")
-            theEventDetails = theEvent
-            console.log(theEvent.body)
-            console.log("what")
+            theEventDetails = theEvent.body
             //Check if he has already joined the match
             return checkEventParticipationPromise(eventId, userId)
         })
         .then(function (results) {
-            console.log("Z")
-            console.log(results.body)
             console.log("just checked event participation")
             var count = results.body.count
             // if (count == 0) {
-                return kew.all([
-                    dbUtils.createGraphRelationPromise('events', eventId, 'users', userId, constants.graphRelations.events.participants),
-                    dbUtils.createGraphRelationPromise('users', userId, 'events', eventId, constants.graphRelations.users.playsMatches)
-                ])
+            return kew.all([
+                dbUtils.createGraphRelationPromise('events', eventId, 'users', userId, constants.graphRelations.events.participants),
+                dbUtils.createGraphRelationPromise('users', userId, 'events', eventId, constants.graphRelations.users.playsMatches)
+            ])
             // } else {
             //     return joinedEventStatus.reject(new Error("You are already part of this event. Roll back any payments if made."))
             // }
         })
         .then(function (result) {
-            console.log("A")
+            joinedEventStatus.resolve()
             /**
              * You are hoping that orchestrate handles concurrency
              * this sort of modification needs to be safe from race conditions,
              * but if you are solving this problem
              * Playable would have IPO'd
              */
-            console.log("wtf is up with event details")
-                console.log(theEventDetails)
-                var slotsFilled = theEventDetails.slots_filled + 1
-                var payload = {
-                    'slots_filled': slotsFilled
-                }
-
-                db.merge('events', eventId, payload)
-                joinedEventStatus.resolve()
-                EventSystem.joinedEvent()
+            incrementSlotsFilled(eventId)
+            EventSystem.joinedEvent(eventId, theEventDetails.title, userId, theEventDetails.google_form)
         })
-        .then(function(nothing) {
-            console.log("C")
-            return db.get("users", userId)
-        })
-        .then(function(theUser) {
-            var theUser = theUser.body
-            console.log("user determined to be not participating in event")
-            message = "You have been registered for the event - " + theEventDetails.title + "."
-            if(theEventDetails.google_form)
-                message = message + " Please fill out this google form so we can serve you better - " + theEventDetails.google_form
-            customUtils.sendSms(message, theUser)
-        })
-        .fail(function(err) {
-            console.log("B")
+        .fail(function (err) {
+            console.log("entered error block")
             joinedEventStatus.reject(err)
         })
     return joinedEventStatus
@@ -120,9 +95,16 @@ function getEventParticipantsPromise(eventId) {
     return dbUtils.getGraphResultsPromise('events', eventId, constants.graphRelations.events.participants)
 }
 
+function incrementSlotsFilled(eventid) {
+    console.log("incrementSlotsFilled event")
+    db.newPatchBuilder("events", eventid)
+        .inc("slots_filled", 1)
+        .apply()
+}
+
 module.exports = {
     checkEventParticipationPromise: checkEventParticipationPromise,
     getFeaturedEventsPromise: getFeaturedEventsPromise,
-    joinEvent : joinEvent,
-    getEventParticipantsPromise : getEventParticipantsPromise
+    joinEvent: joinEvent,
+    getEventParticipantsPromise: getEventParticipantsPromise
 }

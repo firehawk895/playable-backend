@@ -60,21 +60,39 @@ function newEvent(eventId, eventName) {
     everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.both)
 }
 
-function joinedEvent(eventId, eventName, userId) {
-    var nofObj = {
-        "eventId": eventId,
-        "created": date.getTime(),
-        "is_clicked": false,
-        "is_read": false,
-        "link": 'events',
-        "title": "You successfully joined the event " + eventName,
-        "text": "New event " + eventName + " hosted! Check it out now!",
-        "photo": ""
-    };
+function joinedEvent(eventId, eventName, userId, google_form) {
+    // var nofObj = {
+    //     "eventId": eventId,
+    //     "created": date.getTime(),
+    //     "is_clicked": false,
+    //     "is_read": false,
+    //     "link": 'events',
+    //     "title": "You successfully joined the event " + eventName,
+    //     "text": "New event " + eventName + " hosted! Check it out now!",
+    //     "photo": ""
+    // };
     UserModel.getGcmIdsForUserIds([userId])
         .then(function (gcmIds) {
-            NF.send(nofObj, constants.notification.type.both, gcmIds, [userId]);
+            console.log("this worked")
+            // NF.send(nofObj, constants.notifications.type.both, gcmIds, [userId]);
         })
+        .fail(function(err) {
+            console.log(err)
+            console.log("dispatching notification failed")
+        })
+
+    // console.log("time to get user")
+    // db.get("users", userId)
+    //     .then(function(theUser) {
+    //         console.log("user received")
+    //         console.log(theUser)
+    //         var theUser = theUser.body
+    //         console.log("user determined to be not participating in event")
+    //         message = "You have been registered for the event - " + eventName + "."
+    //         if(google_form)
+    //             message = message + " Please fill out this google form so we can serve you better - " + google_form
+    //         customUtils.sendSms(message, theUser)
+    //     })
 }
 
 function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, hostName) {

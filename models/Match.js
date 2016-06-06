@@ -128,24 +128,44 @@ function checkMatchParticipationPromise(matchId, userId) {
 }
 
 function incrementMatchesPlayed(userId) {
-    return db.get("users", userId)
+    console.log("incrementMatchesPlayed - " + userId)
+
+    db.newPatchBuilder("users", userId)
+        .inc("matchesPlayed", 1)
+        .apply()
         .then(function (result) {
-            var matchesPlayed = result.body.matchesPlayed;
-            db.merge("users", userId, {
-                matchesPlayed: matchesPlayed + 1
-            })
+            console.log("db.newPatchBuilder - increment matches played" + userId)
         })
+        .fail(function (err) {
+            console.log("ERROR db.newPatchBuilder - increment matches played" + userId)
+            console.log(err)
+        })
+    // return db.get("users", userId)
+    //     .then(function (result) {
+    //         var matchesPlayed = result.body.matchesPlayed;
+    //         var payload = {
+    //             matchesPlayed: matchesPlayed + 1
+    //         }
+    //         db.merge("users", userId, payload)
+    //             .then(function(result) {
+    //                 console.log("matchesPlayed increased to " + payload.matchesPlayed)
+    //             })
+    //             .fail(function(err) {
+    //                 console.log("matchesPlayed incremeent failed")
+    //                 console.log(err)
+    //             })
+    //     })
 }
 
-function decrementMatchesPlayed(userId) {
-    return db.get("users", userId)
-        .then(function (result) {
-            var matchesPlayed = result.body.matchesPlayed;
-            return db.merge("users", userId, {
-                matchesPlayed: matchesPlayed - 1
-            })
-        })
-}
+// function decrementMatchesPlayed(userId) {
+// return db.get("users", userId)
+//     .then(function (result) {
+//         var matchesPlayed = result.body.matchesPlayed;
+//         return db.merge("users", userId, {
+//             matchesPlayed: matchesPlayed - 1
+//         })
+//     })
+// }
 
 /**
  * inject the distance between the match and the user in km
@@ -283,7 +303,7 @@ function getMatchHistoryPromise(userId) {
         .limit(100)
         .from('users', userId)
         .related(constants.graphRelations.users.playsMatches)
-        
+
 }
 
 function removeFromMatch(userId, matchId) {
@@ -398,7 +418,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //    "matchId": payload["id"],
             //    "pathTitle": reqBody.title
             //}
-            EventSystem.dispatchEvent(constants.firebaseNodes.events.newMatches, payload)
+            // EventSystem.dispatchEvent(constants.firebaseNodes.events.newMatches, payload)
             return kew.all(promises)
         })
         .then(function (result) {

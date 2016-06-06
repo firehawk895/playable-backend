@@ -56,7 +56,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                     "squash" : req.body.squash,
                     "swimming" : req.body.swimming,
                     "tennis" : req.body.tennis,
-                    "tt" : req.body.tt,
+                    "tabletennis" : req.body.tabletennis,
                     "ultimatefrisbee" : req.body.ultimatefrisbee
                 },
                 timings : req.body.timings,
@@ -125,7 +125,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                     "squash" : (req.body.squash || null),
                     "swimming" : (req.body.swimming || null),
                     "tennis" : (req.body.tennis || null),
-                    "tt" : (req.body.tt || null),
+                    "tabletennis" : (req.body.tabletennis || null),
                     "ultimatefrisbee" : (req.body.ultimatefrisbee || null)
                 },
                 timings : req.body.timings,

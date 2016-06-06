@@ -379,7 +379,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 console.log(theMasterResults[3])
                 responseObj["adminMarked"] = theMasterResults[3].body.total_count
             }
-
             res.status(200)
             res.json(responseObj)
         })
