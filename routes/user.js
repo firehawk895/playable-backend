@@ -78,27 +78,27 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
         //TODO: the following is a sin, sports adding/modification becomes a pain!
         console.log("updating sports")
         db.merge("users", userId, {
-                sports: {
-                    "badminton": (req.body.badminton || null),
-                    "basketball": (req.body.basketball || null),
-                    "bowling": (req.body.bowling || null),
-                    "cricket": (req.body.cricket || null),
-                    "cycling": (req.body.cycling || null),
-                    "football": (req.body.football || null),
-                    "golf": (req.body.golf || null),
-                    "hockey": (req.body.hockey || null),
-                    "pool": (req.body.pool || null),
-                    "running": (req.body.running || null),
-                    "snooker": (req.body.snooker || null),
-                    "squash": (req.body.squash || null),
-                    "swimming": (req.body.swimming || null),
-                    "tennis": (req.body.tennis || null),
-                    "tt": (req.body.tt || null),
-                    "ultimatefrisbee": (req.body.ultimatefrisbee || null),
-                },
-                hasSelectedSports: true
-                //sportsList: Object.keys(req.body)
-            })
+            sports: {
+                "badminton": (req.body.badminton || null),
+                "basketball": (req.body.basketball || null),
+                "bowling": (req.body.bowling || null),
+                "cricket": (req.body.cricket || null),
+                "cycling": (req.body.cycling || null),
+                "football": (req.body.football || null),
+                "golf": (req.body.golf || null),
+                "hockey": (req.body.hockey || null),
+                "pool": (req.body.pool || null),
+                "running": (req.body.running || null),
+                "snooker": (req.body.snooker || null),
+                "squash": (req.body.squash || null),
+                "swimming": (req.body.swimming || null),
+                "tennis": (req.body.tennis || null),
+                "tt": (req.body.tt || null),
+                "ultimatefrisbee": (req.body.ultimatefrisbee || null),
+            },
+            hasSelectedSports: true
+            //sportsList: Object.keys(req.body)
+        })
             .then(function (result) {
                 responseObj["data"] = [];
                 responseObj["msg"] = "Sports Updated";
@@ -211,8 +211,8 @@ router.post('/auth/google', function (req, res, next) {
 
                                         var accessToken = customUtils.generateToken();
                                         db.put('tokens', accessToken, {
-                                                "user": responseObj['data']['id']
-                                            })
+                                            "user": responseObj['data']['id']
+                                        })
                                             .then(function (result) {
                                                 db.newGraphBuilder()
                                                     .create()
@@ -336,8 +336,8 @@ router.post('/auth/facebook', function (req, res, next) {
 
                                                 var accessToken = customUtils.generateToken();
                                                 db.put('tokens', accessToken, {
-                                                        "user": responseObj['data']['id']
-                                                    })
+                                                    "user": responseObj['data']['id']
+                                                })
                                                     .then(function (result) {
                                                         db.newGraphBuilder()
                                                             .create()
@@ -429,8 +429,8 @@ var extractFacebookFriends = function (userId, accessToken) {
                     if (payload.paging.previous) {
                         //this is the last page, all friendsData is finally here
                         db.merge('users', userId, {
-                                "facebookFriends": friendsData
-                            })
+                            "facebookFriends": friendsData
+                        })
                             .then(function (result) {
                             })
                             .fail(function (err) {
@@ -567,8 +567,8 @@ router.post('/signup', function (req, res, next) {
                                     var accessToken = customUtils.generateToken();
                                     var userId = id;
                                     db.put('tokens', accessToken, {
-                                            "user": userId
-                                        })
+                                        "user": userId
+                                    })
                                         .then(function (result) {
                                             db.newGraphBuilder()
                                                 .create()
@@ -633,8 +633,8 @@ router.post('/login', function (req, res) {
                             var accessToken = customUtils.generateToken();
                             var userId = user.body.results[0].value.id;
                             db.put('tokens', accessToken, {
-                                    "user": userId
-                                })
+                                "user": userId
+                            })
                                 .then(function (result) {
                                     db.newGraphBuilder()
                                         .create()
@@ -806,56 +806,15 @@ router.post('/otp/verify', [passport.authenticate('bearer', {session: false}), f
  * Returns User Profile for the specified email
  * Otherwise returns Profile of Logged In User
  */
-router.get('/', function (req, res, next) {
-    if (req.query.access_token) next();
-    else next('route');
-}, [passport.authenticate('bearer', {session: false}), function (req, res) {
-    var userId = req.user.results[0].value.id;
-    var responseObj = {};
-    var query_user = req.query.userId;
-    var allowUpdate;
-
-    if (validator.isNull(query_user)) {
-        responseObj["data"] = ["Please specify the User ID"],
-            res.status(422)
-        res.json(responseObj)
-        return
-    } else {
-        if (query_user == req.user.results[0].value.id)
-            allowUpdate = true;
-        else
-            allowUpdate = false;
-
-        var getUserStuff = db.get('users', userId)
-
-        /**
-         * The other way to do this is store a property under 1 relation
-         * thats cooler I guess?
-         */
-        kew.all([getUserStuff, UserModel.getConnectionStatusPromise])
-            .then(function (results) {
-                results[0].body.password = undefined
-                responseObj["data"] = results[0].body
-                responseObj["allowUpdate"] = allowUpdate
-                responseObj["connectionStatus"] = results[1]
-                res.status(200)
-                res.json(responseObj)
-            })
-            .fail(function (err) {
-                customUtils.sendErrors(err, res)
-            })
-    }
-}]);
-
-
-router.get('/', function (req, res) {
+router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    console.log("we are here right?")
     if (!req.query.limit || req.query.limit < 0) req.query.limit = 10;
     if (!req.query.page || req.query.page < 1) req.query.page = 1;
     var limit = req.query.limit;
     var offset = (limit * (req.query.page - 1));
     var responseObj = {};
-    var query_user = req.query.userId;
-    var currentUser = req.query.currentUser //the requesting user to compare connection status with
+    var currentUser = req.user.results[0].value.id; //the requesting user to compare connection status with
+    var query_user = req.query.userId || currentUser;
     var allowUpdate;
 
     var getUserInfo = function (userId, allowUpdate) {
@@ -870,7 +829,7 @@ router.get('/', function (req, res) {
                 results[0].body.password = undefined
                 responseObj["data"] = results[0].body
                 responseObj["allowUpdate"] = allowUpdate
-                responseObj["data"]["totalConnections"] = 11 //results[1]
+                responseObj["data"]["totalConnections"] = results[1]
                 responseObj["data"]["connectionStatus"] = results[2]
                 res.status(200)
                 res.json(responseObj)
@@ -878,19 +837,42 @@ router.get('/', function (req, res) {
             .fail(function (err) {
                 customUtils.sendErrors(err, res)
             })
-        //db.get('users', userId)
-        //    .then(function (user) {
-        //        user.body.password = undefined
-        //        responseObj["data"] = user.body
-        //        responseObj["allowUpdate"] = allowUpdate
-        //        res.status(200)
-        //        res.json(responseObj)
-        //    })
-        //    .fail(function (err) {
-        //        customUtils.sendErrors([err.body.message], 503, res)
-        //    });
     }
+    /*console.log("or here")
+     var userId = req.user.results[0].value.id;
+     var responseObj = {};
+     var query_user = req.query.userId;
+     var allowUpdate;
 
+     if (validator.isNull(query_user)) {
+     responseObj["data"] = ["Please specify the User ID"],
+     res.status(422)
+     res.json(responseObj)
+     return
+     } else {
+     if (query_user == req.user.results[0].value.id)
+     allowUpdate = true;
+     else
+     allowUpdate = false;
+
+     var getUserStuff = db.get('users', userId)
+
+     /!**
+     * The other way to do this is store a property under 1 relation
+     * thats cooler I guess?
+     *!/
+     kew.all([getUserStuff, UserModel.getConnectionStatusPromise])
+     .then(function (results) {
+     results[0].body.password = undefined
+     responseObj["data"] = results[0].body
+     responseObj["allowUpdate"] = allowUpdate
+     responseObj["connectionStatus"] = results[1]
+     res.status(200)
+     res.json(responseObj)
+     })
+     .fail(function (err) {
+     customUtils.sendErrors(err, res)
+     })*/
     if (validator.isNull(query_user)) {
         responseObj["data"] = ["Please specify the User ID"]
         res.status(422)
@@ -900,7 +882,64 @@ router.get('/', function (req, res) {
         allowUpdate = false;
         getUserInfo(query_user, allowUpdate)
     }
-});
+}
+]);
+
+
+// router.get('/', function (req, res) {
+//     console.log("we are here right?")
+//     if (!req.query.limit || req.query.limit < 0) req.query.limit = 10;
+//     if (!req.query.page || req.query.page < 1) req.query.page = 1;
+//     var limit = req.query.limit;
+//     var offset = (limit * (req.query.page - 1));
+//     var responseObj = {};
+//     var query_user = req.query.userId;
+//     var currentUser = req.query.currentUser //the requesting user to compare connection status with
+//     var allowUpdate;
+//
+//     var getUserInfo = function (userId, allowUpdate) {
+//
+//         var getUserDataPromise = db.get('users', userId)
+//         var getTotalCountPromise = UserModel.getTotalConnections(userId)
+//
+//         kew.all([getUserDataPromise, getTotalCountPromise, UserModel.getConnectionStatusPromise(currentUser, query_user)])
+//             .then(function (results) {
+//                 console.log("total connections")
+//                 console.log(results[1])
+//                 results[0].body.password = undefined
+//                 responseObj["data"] = results[0].body
+//                 responseObj["allowUpdate"] = allowUpdate
+//                 responseObj["data"]["totalConnections"] = results[1]
+//                 responseObj["data"]["connectionStatus"] = results[2]
+//                 res.status(200)
+//                 res.json(responseObj)
+//             })
+//             .fail(function (err) {
+//                 customUtils.sendErrors(err, res)
+//             })
+//         //db.get('users', userId)
+//         //    .then(function (user) {
+//         //        user.body.password = undefined
+//         //        responseObj["data"] = user.body
+//         //        responseObj["allowUpdate"] = allowUpdate
+//         //        res.status(200)
+//         //        res.json(responseObj)
+//         //    })
+//         //    .fail(function (err) {
+//         //        customUtils.sendErrors([err.body.message], 503, res)
+//         //    });
+//     }
+//
+//     if (validator.isNull(query_user)) {
+//         responseObj["data"] = ["Please specify the User ID"]
+//         res.status(422)
+//         res.json(responseObj)
+//         return
+//     } else {
+//         allowUpdate = false;
+//         getUserInfo(query_user, allowUpdate)
+//     }
+// });
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
 
@@ -1052,8 +1091,8 @@ router.post('/forgotPassword', function (req, res) {
                 var newPass = customUtils.generateToken(4);
                 var hashedPassword = bcrypt.hashSync(newPass, 8);
                 db.merge('users', userObj.id, {
-                        "password": hashedPassword
-                    })
+                    "password": hashedPassword
+                })
                     .then(function (result) {
                         res.json({
                             "data": {
@@ -1382,8 +1421,8 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                     var accessToken = customUtils.generateToken();
                     var userId = user.id;
                     db.put('tokens', accessToken, {
-                            "user": userId
-                        })
+                        "user": userId
+                    })
                         .then(function (result) {
                             db.newGraphBuilder()
                                 .create()
@@ -1497,8 +1536,8 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                     var accessToken = customUtils.generateToken();
                     var userId = user.id;
                     db.put('tokens', accessToken, {
-                            "user": userId
-                        })
+                        "user": userId
+                    })
                         .then(function (result) {
                             db.newGraphBuilder()
                                 .create()
@@ -1532,8 +1571,8 @@ var generateTokenAndLogin = function (user, res) {
     var userId = user.body.results[0].value.id;
 
     db.put('tokens', accessToken, {
-            "user": userId
-        })
+        "user": userId
+    })
         .then(function (result) {
             db.newGraphBuilder()
                 .create()
