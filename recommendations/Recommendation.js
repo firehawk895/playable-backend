@@ -174,34 +174,38 @@ function parseRecObject(recoObj) {
 }
 
 function rateUser(rating, userId) {
-    var patcherPromise
+    var patcherPromise = false
 
     if (rating == constants.recommendations.rating.thumbsUp) {
+        console.log("parsing thumbsUp")
         patcherPromise =
             db.newPatchBuilder("users", userId)
                 .inc("totalRatings", 1)
                 .inc("thumbsUps", 1)
                 .apply()
     } else if (rating == constants.recommendations.rating.thumbsDown) {
+        console.log("parsing thumbsDown")
         patcherPromise =
             db.newPatchBuilder("users", userId)
                 .inc("totalRatings", 1)
                 .apply()
     }
 
-    patcherPromise
-        .then(function (result) {
-            console.log("user rating updated -  " + userId)
-        })
-        .fail(function (err) {
-            console.log("user rating update failed - " + userId)
-            console.log(err)
-        })
+    if (patcherPromise) {
+        patcherPromise
+            .then(function (result) {
+                console.log("user rating updated -  " + userId)
+            })
+            .fail(function (err) {
+                console.log("user rating update failed - " + userId)
+                console.log(err)
+            })
+    }
 }
 
 function rateFacility(rating, facilityId) {
     var payload = {}
-    var patcherPromise
+    var patcherPromise = false
     if (rating == constants.recommendations.rating.thumbsUp) {
         patcherPromise =
             db.newPatchBuilder("facilities", facilityId)
@@ -215,14 +219,16 @@ function rateFacility(rating, facilityId) {
                 .apply()
     }
 
-    patcherPromise
-        .then(function (result) {
-            console.log("facility rating updated -  " + facilityId)
-        })
-        .fail(function (err) {
-            console.log("facility rating update failed - " + facilityId)
-            console.log(err)
-        })
+    if(patcherPromise) {
+        patcherPromise
+            .then(function (result) {
+                console.log("facility rating updated -  " + facilityId)
+            })
+            .fail(function (err) {
+                console.log("facility rating update failed - " + facilityId)
+                console.log(err)
+            })
+    }
 }
 
 /**

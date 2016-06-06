@@ -20,6 +20,7 @@ var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.fire
 
 console.log("recommendations loaded")
 // RecommendationModel.createRecommendationCron("11a8b7494b60a63b", "1464640883000")
+// RecommendationModel.createRecommendationCron("11dc75b38e60e590", "1464640883000")
 
 /**
  * listener:
