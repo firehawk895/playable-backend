@@ -80,19 +80,19 @@ function createConnection(user1id, user2id) {
             //    }
             //})
         })
-        .then(function(newChatRoom) {
+        .then(function (newChatRoom) {
             console.log("the new chat room")
             console.log(newChatRoom)
             return ChatModel.addUsersToRoom(newChatRoom._id, [user1QBid, user2QBid])
         })
-        .then(function(joinedRoomStatus) {
+        .then(function (joinedRoomStatus) {
             console.log("just adding users")
             console.log(joinedRoomStatus)
             connectionCreated.resolve(joinedRoomStatus)
             incrementConnections(user1id)
             incrementConnections(user2id)
         })
-        .fail(function(err) {
+        .fail(function (err) {
             connectionCreated.reject(err)
         })
     return connectionCreated
@@ -197,27 +197,27 @@ function getTotalConnections(userId) {
  */
 function getGcmIdsForUserIds(userIdList) {
     var gcmUserIds = kew.defer();
-    // var queries = []
-    // userIdList.forEach(function (userId) {
-    //     queries.push(dbUtils.createSearchByIdQuery(userId))
-    // })
-    //
-    // var theFinalQuery = dbUtils.queryJoiner(queries)
-    
-    // db.newSearchBuilder()
-    //     .collection("users")
-    //     //.sort('location', 'distance:asc')
-    //     .query(theFinalQuery)
-    //     .then(function (result) {
-    //         var gcmUserIds = result.body.results.map(function (user) {
-    //             return user.value.gcmId
-    //         });
-    //         gcmUserIds.resolve(gcmUserIds)
-    //     })
-    //     .fail(function (err) {
-    //         gcmUserIds.reject(err)
-    //     })
-    gcmUserIds.resolve()
+    var queries = []
+    userIdList.forEach(function (userId) {
+        queries.push(dbUtils.createSearchByIdQuery(userId))
+    })
+
+    var theFinalQuery = dbUtils.queryJoinerOr(queries)
+
+    console.log(theFinalQuery)
+
+    db.newSearchBuilder()
+        .collection("users")
+        .query(theFinalQuery)
+        .then(function (result) {
+            var gcmUserList = result.body.results.map(function (user) {
+                return user.value.gcmId
+            });
+            gcmUserIds.resolve(gcmUserList)
+        })
+        .fail(function (err) {
+            gcmUserIds.reject(err)
+        })
     return gcmUserIds
 }
 
@@ -229,20 +229,20 @@ function incrementConnections(userId) {
     db.newPatchBuilder("users", userId)
         .inc("value.connections", 1)
         .apply()
-        .then(function(result) {
+        .then(function (result) {
             console.log("user " + userId + "'s connection incremented")
         })
-        .fail(function(err) {
+        .fail(function (err) {
             console.log("UNABLE to - user " + userId + "'s connection incremented")
         })
 }
 
 module.exports = {
-    getConnectionStatusPromise : getConnectionStatusPromise,
-    getTotalConnections : getTotalConnections,
-    getUsersConnectionsPromise : getUsersConnectionsPromise,
-    createPlayerDiscoverableQuery : createPlayerDiscoverableQuery,
-    createConnection : createConnection,
-    getUserPromise : getUserPromise,
-    getGcmIdsForUserIds : getGcmIdsForUserIds
+    getConnectionStatusPromise: getConnectionStatusPromise,
+    getTotalConnections: getTotalConnections,
+    getUsersConnectionsPromise: getUsersConnectionsPromise,
+    createPlayerDiscoverableQuery: createPlayerDiscoverableQuery,
+    createConnection: createConnection,
+    getUserPromise: getUserPromise,
+    getGcmIdsForUserIds: getGcmIdsForUserIds
 }

@@ -52,7 +52,8 @@ function connectFacilityToMatch(matchId, facilityId) {
  */
 function createIsDiscoverableQuery() {
     var currentUnixTime = Math.round(date.getTime() / 1000)
-    var query = "value.playing_time: " + currentUnixTime + "~*"  //this means greater than equalto
+    console.log("the current unix timestamp -- " + currentUnixTime)
+    var query = "value.playing_time:[" + currentUnixTime + " TO *]"  //this means greater than equalto
     //https://orchestrate.io/docs/apiref#search
     //matches that are not discoverable for any reason are set to isDiscoverable: false
     query = query + " AND value.isDiscoverable:true"
@@ -140,32 +141,7 @@ function incrementMatchesPlayed(userId) {
             console.log("ERROR db.newPatchBuilder - increment matches played" + userId)
             console.log(err)
         })
-    // return db.get("users", userId)
-    //     .then(function (result) {
-    //         var matchesPlayed = result.body.matchesPlayed;
-    //         var payload = {
-    //             matchesPlayed: matchesPlayed + 1
-    //         }
-    //         db.merge("users", userId, payload)
-    //             .then(function(result) {
-    //                 console.log("matchesPlayed increased to " + payload.matchesPlayed)
-    //             })
-    //             .fail(function(err) {
-    //                 console.log("matchesPlayed incremeent failed")
-    //                 console.log(err)
-    //             })
-    //     })
 }
-
-// function decrementMatchesPlayed(userId) {
-// return db.get("users", userId)
-//     .then(function (result) {
-//         var matchesPlayed = result.body.matchesPlayed;
-//         return db.merge("users", userId, {
-//             matchesPlayed: matchesPlayed - 1
-//         })
-//     })
-// }
 
 /**
  * inject the distance between the match and the user in km
@@ -312,7 +288,6 @@ function removeFromMatch(userId, matchId) {
     return kew.all([
         dbUtils.deleteGraphRelationPromise('matches', matchId, 'users', userId, constants.graphRelations.matches.participants),
         dbUtils.deleteGraphRelationPromise('users', userId, 'matches', matchId, constants.graphRelations.users.playsMatches),
-        decrementMatchesPlayed(userId)
     ])
 }
 
@@ -552,6 +527,14 @@ function getAdminMarkedCount() {
         .query("value.isAdminMarked:true")
 }
 
+function getMatchesForReco() {
+    var query = createIsDiscoverableQuery()
+    return kew.all([
+        dbUtils.getAllItemsWithFields("matches", query, ["value.title", "value.playing_time", "value.isDiscoverable:true"]),
+        dbUtils.getAllItemsWithFields("matches", "@path.kind:item", "value.title")
+    ])
+}
+
 module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,
     createSportsQuery: createSportsQuery,
@@ -574,5 +557,6 @@ module.exports = {
     getFacilityOfMatchPromise: getFacilityOfMatchPromise,
     getFacilityPromise: getFacilityPromise,
     incrementMatchesPlayed: incrementMatchesPlayed,
-    getAdminMarkedCount: getAdminMarkedCount
+    getAdminMarkedCount: getAdminMarkedCount,
+    getMatchesForReco : getMatchesForReco
 }

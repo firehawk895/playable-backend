@@ -29,7 +29,7 @@
     "multer": "^0.1.8",
     "node-gcm": "^0.14.0",
     "node-youtubeapi-simplifier": "1.4.2",
-    "orchestrate": "0.7.x",
+    "orchestrate": "0.8.x",
     "passport": "^0.2.1",
     "passport-http-bearer": "^1.0.1",
     "quickblox": "^2.x.x",
