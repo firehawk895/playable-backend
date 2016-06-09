@@ -36,6 +36,7 @@ var EventSystem = require('./events/events');
 
 var requests = require('./requests/requests');
 var recommendations = require('./recommendations/recommendations');
+var dispatchers = require('./notifications/dispatchers');
 
 //----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');

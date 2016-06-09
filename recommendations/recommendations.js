@@ -18,13 +18,14 @@ var Firebase = require("firebase");
 var newMatchesRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.events.newMatches)
 var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.recommendations)
 
-console.log("recommendations loaded")
+//this is for manually testing recommendations
 // RecommendationModel.createRecommendationCron("11a8b7494b60a63b", "1464640883000")
 // RecommendationModel.createRecommendationCron("11dc75b38e60e590", "1464640883000")
 
 /**
  * listener:
  * new matches created
+ * this method has been abandoned
  */
 // newMatchesRef.on("child_added", function (childSnapshot, prevChildKey) {
 //     try {
@@ -49,7 +50,6 @@ console.log("recommendations loaded")
  */
 recommendationsRef.on("child_added", function (childSnapshot, prevChildKey) {
     var userId = childSnapshot.key()
-    console.log("hello")
     var userRecoPath = config.firebase.url + "/" + constants.firebaseNodes.recommendations + "/" + userId + "/data"
     var userRecoRef = new Firebase(userRecoPath, config.firebase.secret)
     /**

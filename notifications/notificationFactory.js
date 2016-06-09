@@ -14,6 +14,13 @@ var myFirebaseRef = new Firebase(config.firebase.url + constants.notifications.p
 
 
 var send = function (obj, type, gcmIds, inappIds) {
+    console.log("dispatching notification -----------------")
+    console.log(obj)
+    console.log("type : " + type)
+    console.log("gcmIds : " + gcmIds)
+    console.log("inappIds : " + inappIds)
+    console.log("END dispatching notification -------------")
+    
     switch (type) {
         case constants.notifications.type.both:
             sendPush(obj, gcmIds)

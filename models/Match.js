@@ -535,6 +535,23 @@ function getMatchesForReco() {
     ])
 }
 
+function getDiscoverableMatchesCount() {
+    var count = kew.defer()
+    var query = createIsDiscoverableQuery()
+    db.newSearchBuilder()
+        .collection("matches")
+        .limit(1)
+        .offset(0)
+        .query(query)
+        .then(function (results) {
+            count.resolve(results.body.total_count)
+        })
+        .fail(function (err) {
+            count.reject(err)
+        })
+    return count
+}
+
 module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,
     createSportsQuery: createSportsQuery,
@@ -558,5 +575,6 @@ module.exports = {
     getFacilityPromise: getFacilityPromise,
     incrementMatchesPlayed: incrementMatchesPlayed,
     getAdminMarkedCount: getAdminMarkedCount,
-    getMatchesForReco : getMatchesForReco
+    getMatchesForReco: getMatchesForReco,
+    getDiscoverableMatchesCount : getDiscoverableMatchesCount
 }

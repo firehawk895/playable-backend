@@ -196,16 +196,17 @@ function getTotalConnections(userId) {
  * @returns {!Promise}
  */
 function getGcmIdsForUserIds(userIdList) {
+    var kew = require('kew')
     var gcmUserIds = kew.defer();
     var queries = []
     userIdList.forEach(function (userId) {
         queries.push(dbUtils.createSearchByIdQuery(userId))
     })
-
+    
     var theFinalQuery = dbUtils.queryJoinerOr(queries)
-
+    
     console.log(theFinalQuery)
-
+    
     db.newSearchBuilder()
         .collection("users")
         .query(theFinalQuery)

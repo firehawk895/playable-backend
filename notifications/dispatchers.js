@@ -18,12 +18,15 @@ var MatchModel = require('../models/Match');
 var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
+var CronJob = require('cron').CronJob;
 
 var Firebase = require("firebase");
 var notificationsRef = new Firebase(config.firebase.url, config.firebase.secret);
 
 var NF = require('../notifications/notificationFactory');
 var date = new Date()
+
+console.log("dispatchers loaded (sounds very cool)")
 
 /**
  * Legend:
@@ -45,6 +48,22 @@ function welcome(userId, usersName) {
     NF.send(nofObj, constants.notification.type.inApp, null, [userId]);
 }
 
+var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
+    MatchModel.getDiscoverableMatchesCount()
+        .then(function(count) {
+            var nofObj = {
+                "created": date.getTime(),
+                "is_clicked": false,
+                "is_read": false,
+                "link": 'discover',
+                "title": "Discover matches around you",
+                "text": "There are " + count + " around you! Click to play!",
+                "photo": ""
+            };
+            everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.both)
+        })
+})
+
 function newEvent(eventId, eventName) {
     console.log("disaptching everyone! new Event!")
     var nofObj = {
@@ -61,38 +80,48 @@ function newEvent(eventId, eventName) {
 }
 
 function joinedEvent(eventId, eventName, userId, google_form) {
-    // var nofObj = {
-    //     "eventId": eventId,
-    //     "created": date.getTime(),
-    //     "is_clicked": false,
-    //     "is_read": false,
-    //     "link": 'events',
-    //     "title": "You successfully joined the event " + eventName,
-    //     "text": "New event " + eventName + " hosted! Check it out now!",
-    //     "photo": ""
-    // };
+    var UserModel = require('../models/User');
+    console.log("joinedEvent dispatcher hit")
+    var nofObj = {
+        "eventId": eventId,
+        "created": date.getTime(),
+        "is_clicked": false,
+        "is_read": false,
+        "link": 'events',
+        "title": "You successfully joined the event " + eventName,
+        "text": "New event " + eventName + " hosted! Check it out now!",
+        "photo": ""
+    };
+    console.log("elucidating nof object : ")
+    console.log(nofObj)
     UserModel.getGcmIdsForUserIds([userId])
         .then(function (gcmIds) {
-            console.log("this worked")
-            // NF.send(nofObj, constants.notifications.type.both, gcmIds, [userId]);
+            console.log("getGcmIdsForUserIds worked")
+            NF.send(nofObj, constants.notifications.type.both, gcmIds, [userId]);
         })
-        .fail(function(err) {
+        .fail(function (err) {
             console.log(err)
-            console.log("dispatching notification failed")
+            console.log("getGcmIdsForUserIds failed")
         })
 
-    // console.log("time to get user")
-    // db.get("users", userId)
-    //     .then(function(theUser) {
-    //         console.log("user received")
-    //         console.log(theUser)
-    //         var theUser = theUser.body
-    //         console.log("user determined to be not participating in event")
-    //         message = "You have been registered for the event - " + eventName + "."
-    //         if(google_form)
-    //             message = message + " Please fill out this google form so we can serve you better - " + google_form
-    //         customUtils.sendSms(message, theUser)
-    //     })
+    message = "You have been registered for the event - " + eventName + "."
+    if (google_form)
+        message = message + " Please fill out this google form so we can serve you better - " + google_form
+
+    UserModel.getUserPromise(userId)
+        .then(function (result) {
+            console.log("asdasdasdasdasdasd asdasdasd asdasda dssd asd as")
+            var theUser = result.body
+            console.log(theUser)
+            return customUtils.sendSms(message, theUser.phoneNumber)
+        })
+        .then(function (result) {
+            console.log("sms dispatched")
+        })
+        .fail(function (err) {
+            console.log("joinedEvent nof dispatch failed")
+            console.log(err)
+        })
 }
 
 function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, hostName) {
@@ -176,7 +205,7 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
             }
         })
         .fail(function (err) {
-            console.log(err.body.message);
+            console.log(err);
         });
 }
 

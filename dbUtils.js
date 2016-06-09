@@ -4,6 +4,7 @@ oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 var constants = require('./constants');
 var qbchat = require('./Chat/qbchat');
+var kew = require('kew')
 
 /**
  * Orchestrate query wrappers ---------------------------------->
@@ -202,6 +203,77 @@ function createFuzzyQuery(field, value) {
     return "value." + field + ":" + value + "*"
 }
 
+/**
+ * this returns an array of promises that allows to retrieve an entire
+ * dump of the database collection - again non graph relations
+ * you can select the field list here
+ * @param collection
+ * @returns {!Promise}
+ */
+function allItemsPromisesListWithFields(collection, query, fields) {
+    console.log("inside allItemsPromisesList")
+    var promiseList = kew.defer()
+    var promiseListArray = []
+    var offset = 0
+    db.newSearchBuilder()
+        .collection(collection)
+        .withFields(fields)
+        .limit(100)
+        .offset(offset)
+        .query(query)
+        .then(function (results) {
+            console.log("this many results")
+            console.log(results.body.total_count)
+            var totalCount = results.body.total_count
+            var remaining = 0
+            do {
+                promiseListArray.push(
+                    db.newSearchBuilder()
+                        .collection(collection)
+                        .withFields(fields)
+                        .limit(100)
+                        .offset(offset)
+                        .query(query)
+                )
+                offset += 100
+                remaining = totalCount - offset;
+            } while (remaining > 0)
+            promiseList.resolve(promiseListArray)
+        })
+        .fail(function (err) {
+            promiseList.reject(err)
+        })
+    return promiseList
+}
+
+/**
+ * @refer - getAllItems(collection, query)
+ * @param collection
+ * @param query
+ * @returns {!Promise}
+ */
+function getAllItemsWithFields(collection, query, fields) {
+    var allItems = kew.defer()
+    allItemsPromisesListWithFields(collection, query, fields)
+        .then(function (promiseList) {
+            return kew.all(promiseList)
+        })
+        .then(function (promiseResults) {
+            var allItemsList = []
+            console.log(injectId(promiseResults[0]))
+            promiseResults.forEach(function (item) {
+                // console.log(item.body.results[0].path.destination)
+                var injectedItems = injectId(item)
+                allItemsList = allItemsList.concat(injectedItems)
+            })
+            allItems.resolve(allItemsList)
+        })
+        .fail(function (err) {
+            allItems.reject(err)
+        })
+    return allItems
+}
+
 module.exports = {
     injectId: injectId,
     createGetOneOnOneGraphRelationQuery: createGetOneOnOneGraphRelationQuery,
@@ -216,7 +288,8 @@ module.exports = {
     queryJoinerOr : queryJoinerOr,
     createExistsQuery : createExistsQuery,
     incrementFieldValue : incrementFieldValue,
-    createFieldQuery:createFieldQuery
+    createFieldQuery:createFieldQuery,
+    getAllItemsWithFields : getAllItemsWithFields
 }
 
 

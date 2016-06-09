@@ -57,7 +57,6 @@ var requestsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNod
  */
 requestsRef.on("child_added", function (childSnapshot, prevChildKey) {
     var userId = childSnapshot.key()
-    console.log("hello")
     var userRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId, config.firebase.secret)
     /**
      * Register a child_changed listener for one user's request
