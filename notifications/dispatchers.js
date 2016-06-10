@@ -60,7 +60,7 @@ function welcome(userId, usersName) {
  * TODO : untested
  * @type {*|CronJob}
  */
-var discoverDailyNof = new CronJob('00 16 05 * * 0-7', function () {
+var discoverDailyNof = new CronJob('00 19 05 * * 0-7', function () {
     var MatchModel = require('../models/Match')
     console.log("Cron being fired : discover matches notification")
     MatchModel.getDiscoverableMatchesCount()
