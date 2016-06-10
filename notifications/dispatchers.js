@@ -60,7 +60,7 @@ function welcome(userId, usersName) {
  * TODO : untested
  * @type {*|CronJob}
  */
-var discoverDailyNof = new CronJob('00 19 05 * * 0-7', function () {
+var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
     var MatchModel = require('../models/Match')
     console.log("Cron being fired : discover matches notification")
     MatchModel.getDiscoverableMatchesCount()
@@ -72,7 +72,7 @@ var discoverDailyNof = new CronJob('00 19 05 * * 0-7', function () {
                 "is_read": false,
                 "link": constants.notifications.links.discover,
                 "title": "Discover matches around you",
-                "text": "There are " + count + " around you! Click to play!",
+                "text": "There are " + count + " matches hosted around you! Click to play!",
                 "photo": ""
             };
             everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.push)
