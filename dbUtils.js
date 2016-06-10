@@ -274,6 +274,17 @@ function getAllItemsWithFields(collection, query, fields) {
     return allItems
 }
 
+/**
+ * when you do a db.post
+ * the id of the newly created record is present in the header
+ * this method returns that id
+ * @param result
+ * @returns {*}
+ */
+function getIdAfterPost(result) {
+    return result.headers.location.match(/[0-9a-z]{16}/)[0];
+}
+
 module.exports = {
     injectId: injectId,
     createGetOneOnOneGraphRelationQuery: createGetOneOnOneGraphRelationQuery,
@@ -289,7 +300,8 @@ module.exports = {
     createExistsQuery : createExistsQuery,
     incrementFieldValue : incrementFieldValue,
     createFieldQuery:createFieldQuery,
-    getAllItemsWithFields : getAllItemsWithFields
+    getAllItemsWithFields : getAllItemsWithFields,
+    getIdAfterPost : getIdAfterPost
 }
 
 

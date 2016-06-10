@@ -157,6 +157,13 @@ module.exports = {
             inApp: "app",
             push: "push",
             both: "both",
+        },
+        links: {
+            discover : 'discover',
+            eventId : 'eventId',
+            matchId : 'matchId',
+            request : 'request',
+            userId : 'userId'
         }
     },
     sportsCoverPics: {

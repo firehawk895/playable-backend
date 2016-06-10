@@ -17,7 +17,7 @@ var router = express.Router();
 //var qbchat = require('qbchat.js');
 //var kew = require('kew')
 
-//kardo sab import, node only uses it once
+//kardo sab import, node only upushRequestNotificationses it once
 var config = require('../config.js');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;

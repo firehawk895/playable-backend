@@ -18,8 +18,6 @@ var qbchat = require('../Chat/qbchat');
 var UserModel = require('../models/User');
 
 var EventModel = require('../models/Event');
-console.log("Event model")
-console.log(EventModel)
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
@@ -386,5 +384,17 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             customUtils.sendErrors(err, res)
         })
 }])
+
+router.get('/test', function (req, res) {
+    res.status(200)
+    MatchModel.getMatchesForReco()
+        .then(function(results) {
+            res.status(200)
+            res.json({data : [results[0]]})
+        })
+        .fail(function(err) {
+            console.log(err)
+        })
+})
 
 module.exports = router;

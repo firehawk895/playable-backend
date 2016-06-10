@@ -23,6 +23,9 @@ var CronJob = require('cron').CronJob;
 var Firebase = require("firebase");
 var notificationsRef = new Firebase(config.firebase.url, config.firebase.secret);
 
+var Firebase = require("firebase");
+var requestsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
+
 var NF = require('../notifications/notificationFactory');
 var date = new Date()
 
@@ -40,38 +43,38 @@ function welcome(userId, usersName) {
         "created": date.getTime(),
         "is_clicked": false,
         "is_read": false,
-        "link": 'discover',
+        "link": constants.notifications.links.discover,
         "title": titleString,
         "text": "Welcome to Playable! We look forward to providing you a great playing experience :)",
         "photo": ""
     };
-    NF.send(nofObj, constants.notification.type.inApp, null, [userId]);
+    NF.send(nofObj, constants.notifications.type.inApp, null, [userId]);
 }
 
 var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
     MatchModel.getDiscoverableMatchesCount()
-        .then(function(count) {
+        .then(function (count) {
             var nofObj = {
                 "created": date.getTime(),
                 "is_clicked": false,
                 "is_read": false,
-                "link": 'discover',
+                "link": constants.notifications.links.discover,
                 "title": "Discover matches around you",
                 "text": "There are " + count + " around you! Click to play!",
                 "photo": ""
             };
-            everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.both)
+            everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.push)
         })
 })
 
 function newEvent(eventId, eventName) {
     console.log("disaptching everyone! new Event!")
     var nofObj = {
-        "eventId": eventId,
+        "id": eventId,
         "created": date.getTime(),
         "is_clicked": false,
         "is_read": false,
-        "link": 'events',
+        "link": constants.notifications.links.eventId,
         "title": "New event : " + eventName,
         "text": "New event " + eventName + " hosted! Check it out now!",
         "photo": ""
@@ -87,7 +90,8 @@ function joinedEvent(eventId, eventName, userId, google_form) {
         "created": date.getTime(),
         "is_clicked": false,
         "is_read": false,
-        "link": 'events',
+        "link": constants.notifications.links.eventId,
+        "id": eventId,
         "title": "You successfully joined the event " + eventName,
         "text": "New event " + eventName + " hosted! Check it out now!",
         "photo": ""
@@ -110,7 +114,6 @@ function joinedEvent(eventId, eventName, userId, google_form) {
 
     UserModel.getUserPromise(userId)
         .then(function (result) {
-            console.log("asdasdasdasdasdasd asdasdasd asdasda dssd asd as")
             var theUser = result.body
             console.log(theUser)
             return customUtils.sendSms(message, theUser.phoneNumber)
@@ -124,21 +127,190 @@ function joinedEvent(eventId, eventName, userId, google_form) {
         })
 }
 
-function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, hostName) {
-    UserModel.getGcmIdsForUserIds(invitedUserIdList)
-        .then(function (invitedUserGCMidList) {
+// function invitedToMatch(invitedUserIdList, matchId, matchSport, hostUserId, hostName) {
+//     UserModel.getGcmIdsForUserIds(invitedUserIdList)
+//         .then(function (invitedUserGCMidList) {
+//             var nofObj = {
+//                 "matchId": matchId,
+//                 "userId": hostUserId,
+//                 "created": date.getTime(),
+//                 "is_clicked": false,
+//                 "is_read": false,
+//                 "link": 'matches',
+//                 "title": "You have been invited to play!",
+//                 "text": "You have been invited to play a match of " + matchSport + " by " + hostName,
+//                 "photo": ""
+//             };
+//             NF.send(nofObj, constants.notifications.type.both, invitedUserGCMidList, invitedUserIdList);
+//         })
+// }
+
+/**
+ * I have decided that each request method should have the responsibility to create their own notification
+ * otherwise there will be tight coupling between the conditions written here and with requests.
+ * doing it in the requests section ensures encapsulation
+ * @param username
+ * @param message
+ */
+// requestsRef.on("child_added", function (childSnapshot, prevChildKey) {
+//     var userId = childSnapshot.key()
+//     var userRequestRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests + "/" + userId, config.firebase.secret)
+//     /**
+//      * Register a child_changed listener for one user's request
+//      * */
+//     userRequestRef.child("data").on("child_added", function (childSnapshot, prevChildKey) {
+//         console.log("child_changed of request")
+//         var requestObj = childSnapshot.val()
+//         console.log(requestObj)
+//
+//         //if (requestObj.status == constants.requests.status.accepted) {
+//         if(customUtils.isRecent(requestObj.timestamp)) {
+//            
+//         }
+//         console.log("status changed... parsing it up")
+//         RequestModel.parseRequestObject(requestObj)
+//         //}
+//
+//     })
+// })
+
+/**
+ * generate notifications for create requests
+ * TODO: untested
+ * @param message
+ * @param timestamp
+ * @param userId
+ */
+function pushRequestNotification(message, timestamp, userId) {
+    var UserModel = require('../models/User');
+    var nofObj = {
+        "created": timestamp,
+        "is_clicked": false,
+        "is_read": false,
+        "link": constants.notifications.links.request,
+        "title": "You have a request!",
+        "text": message,
+        "photo": ""
+    };
+    UserModel.getGcmIdsForUserIds([userId])
+        .then(function (gcmIds) {
+            console.log("getGcmIdsForUserIds worked")
+            NF.send(nofObj, constants.notifications.type.push, gcmIds, null);
+        })
+        .fail(function (err) {
+            console.log(err)
+            console.log("pushRequestNotification getGcmIdsForUserIds failed")
+        })
+}
+
+/**
+ * generate notification for acceptinng a connection request
+ * TODO : untested
+ * @param senderId
+ * @param accepterId
+ */
+function acceptConnectionRequest(senderId, accepterId) {
+    var UserModel = require('../models/User');
+    var theUser
+    UserModel.getUserPromise(accepterId)
+        .then(function (result) {
+            theUser = result.body
+            return UserModel.getGcmIdsForUserIds([senderId])
+        })
+        .then(function (gcmIds) {
             var nofObj = {
-                "matchId": matchId,
-                "userId": hostUserId,
                 "created": date.getTime(),
                 "is_clicked": false,
                 "is_read": false,
-                "link": 'matches',
-                "title": "You have been invited to play!",
-                "text": "You have been invited to play a match of " + matchSport + " by " + hostName,
+                "link": constants.notifications.links.userId,
+                "title": "Request Accepted",
+                "text": theUser.name + " has accepted your request to connect. Chat and play with him now!",
                 "photo": ""
             };
-            NF.send(nofObj, constants.notification.type.both, invitedUserGCMidList, invitedUserIdList);
+            NF.send(nofObj, constants.notifications.type.push, gcmIds, null);
+        })
+        .fail(function (err) {
+            console.log("error: acceptConnectionRequest push notification" + senderId + " -> " + accepterId)
+            console.log(err)
+        })
+}
+
+/**
+ * generate notification for a one on one match being hosted
+ * TODO : untested
+ * @param user1id
+ * @param user2id
+ * @param matchPayload
+ */
+function acceptMatchRequest(user1id, user2id, matchPayload) {
+    var UserModel = require('../models/User');
+    var nofObj1
+    var nofObj2
+    kew.all([
+        UserModel.getUserPromise(user1id),
+        UserModel.getUserPromise(user2id)
+    ])
+        .then(function (userdata) {
+            nofObj1 = {
+                "created": date.getTime(),
+                "is_clicked": false,
+                "is_read": false,
+                "link": constants.notifications.links.request,
+                "title": "1on1 Match Accepted",
+                "text": "Game on! Your match of " + matchPayload.sport + "with " + userdata[0].body.name + " has been hosted! Chat with your partner!",
+                "photo": ""
+            };
+            nofObj2 = {
+                "created": date.getTime(),
+                "is_clicked": false,
+                "is_read": false,
+                "link": constants.notifications.links.request,
+                "title": "1on1 Match Accepted",
+                "text": "Game on! Your match of " + matchPayload.sport + "with " + userdata[1].body.name + " has been hosted! Chat with your partner!",
+                "photo": ""
+            };
+            return kew.all([
+                UserModel.getGcmIdsForUserIds([user1id]),
+                UserModel.getGcmIdsForUserIds([user1id])
+            ])
+        })
+        .then(function (gcmIds) {
+            NF.send(nofObj1, constants.notifications.type.push, gcmIds[0], null);
+            NF.send(nofObj2, constants.notifications.type.push, gcmIds[1], null);
+        })
+        .fail(function (err) {
+            console.log("acceptMatchRequest push notification failed")
+            console.log(err)
+        })
+}
+
+/**
+ * TODO : not tested
+ * @param fromUserId
+ * @param toUserId
+ * @param matchPayload
+ */
+function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
+    var UserModel = require('../models/User');
+    UserModel.getUserPromise(function (result) {
+        var theUser = result.body
+        var nofObj = {
+            "created": date.getTime(),
+            "is_clicked": false,
+            "is_read": false,
+            "link": constants.notifications.links.matchId,
+            "title": "Your invite was accepted!",
+            "text": "Game on! Your match of " + matchPayload.sport + "with " + theUser.name + " has been hosted! Chat with your partner!",
+            "photo": ""
+        };
+        return UserModel.getGcmIdsForUserIds([toUserId])
+    })
+        .then(function (gcmIds) {
+
+            NF.send(nofObj, constants.notifications.type.push, gcmIds, null)
+        })
+        .fail(function (err) {
+
         })
 }
 
@@ -161,7 +333,7 @@ function feedback(username, message) {
             console.log("result.body.total_count > 0 -- " + result.body.total_count)
             if (result.body.total_count > 0) {
                 user = result.body.results[0].value;
-                NF.send(nofObj, constants.notification.type.both, [user.gcmId], [user.id]);
+                NF.send(nofObj, constants.notifications.type.both, [user.gcmId], [user.id]);
             } else {
                 request.post(config.newSlack.feedbackHook, {
                     body: JSON.stringify({text: "User nahi mila bhai, chasma pehen lo"})
@@ -174,6 +346,9 @@ function feedback(username, message) {
 }
 
 /**
+ * this approach is more scalable when users increase in the system
+ * because it does not attempt to load all users in memory
+ * ya we are talking about post series A funding.
  * recursive dispatch notifications to everyone
  * @param offset
  * @param nofObj
@@ -212,7 +387,10 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
 module.exports = {
     welcome: welcome,
     newEvent: newEvent,
-    invitedToMatch: invitedToMatch,
     joinedEvent: joinedEvent,
-    feedback: feedback
+    feedback: feedback,
+    pushRequestNotification: pushRequestNotification,
+    acceptConnectionRequest: acceptConnectionRequest,
+    acceptMatchRequest: acceptMatchRequest,
+    acceptJoinMatchRequest: acceptJoinMatchRequest
 }

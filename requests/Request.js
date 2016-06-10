@@ -7,6 +7,7 @@ var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
+var Dispatchers = require('../notifications/dispatchers');
 var customUtils = require('../utils');
 var Firebase = require("firebase");
 var date = new Date()
@@ -32,6 +33,7 @@ function createConnectionRequest(user1id, user2id, user1name, user1photo) {
         photo: user1photo,
         timestamp: date.getTime()
     }
+    Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], user2id)
     pushRequestToFirebase(payload, user2id)
     return kew.all([
         dbUtils.createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
@@ -56,6 +58,7 @@ function createMatchRequest(user1id, user2id, matchPayload, user1name) {
         match: matchPayload,
         timestamp: date.getTime()
     }
+    Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], user2id)
     pushRequestToFirebase(payload, user2id)
     return kew.all([
         dbUtils.createGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.requestedToConnect),
@@ -96,6 +99,7 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
         },
         timestamp: date.getTime()
     }
+    Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], inviteeId)
     pushRequestToFirebase(payload, inviteeId)
 }
 
@@ -119,6 +123,7 @@ function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterNa
         match: matchPayload,
         timestamp: date.getTime()
     }
+    Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], hostId)
     pushRequestToFirebase(payload, hostId)
 }
 
@@ -213,6 +218,7 @@ function parseJoinMatchRequest(requestObj) {
         console.log("and this user is being joined" + fromUserId)
         MatchModel.joinMatch(matchPayload["id"], fromUserId)
             .then(function (result) {
+                Dispatchers.acceptJoinMatchRequest(fromUserId, toUserId, matchPayload)
                 //what to do?
                 console.log("")
             })
@@ -259,9 +265,10 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         })
 
     function createOneOnOneFixAmatch(user1id, matchPayload) {
+        var createOneOnOneFixAmatchStatus = kew.defer()
         return db.post('matches', matchPayload)
             .then(function (result) {
-                matchPayload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+                matchPayload["id"] = dbUtils.getIdAfterPost(result)
                 if (matchPayload.isFacility) {
                     MatchModel.connectFacilityToMatch(matchPayload["id"], matchPayload["facilityId"])
                 }
@@ -284,15 +291,23 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
             })
             .then(function (results) {
-                EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
+                createOneOnOneFixAmatchStatus.resolve(results)
+                Dispatchers.acceptMatchRequest(user1id, user2id, matchPayload)
+                //not doing this anymore, we run a cron, because a match time can change
+                // EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
                 return UserModel.getConnectionStatusPromise(user1id, user2id)
             })
             .then(function (result) {
-                if (result != constants.connections.status.connected)
+                if (result != constants.connections.status.connected) {
                     UserModel.createConnection(user1id, user2id)
+                }
             })
+            .fail(function(err) {
+                createOneOnOneFixAmatchStatus.reject(err)
+            })
+        return createOneOnOneFixAmatchStatus
     }
-    createOneOnOneFixAmatch(user1id, matchPayload)
+    // createOneOnOneFixAmatch(user1id, matchPayload)
 }
 
 function parseConnectRequest(requestObj) {
@@ -300,6 +315,7 @@ function parseConnectRequest(requestObj) {
         acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
             .then(function (results) {
                 console.log("acceptConnectionRequest success")
+                Dispatchers.acceptConnectionRequest(requestObj.toUserId, requestObj.fromUserId)
             })
             .fail(function (err) {
                 console.log("acceptConnectionRequest failed")
