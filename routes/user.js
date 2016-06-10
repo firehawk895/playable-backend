@@ -1228,10 +1228,7 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
     var inviteeId = req.body.inviteeId
 
     if (errors.length > 0) {
-        responseObj["data"] = errors
-        res.status(422)
-        res.json(responseObj)
-
+        customUtils.sendErrors(err, res)
     } else {
         RequestModel.createMatchRequest(userId, inviteeId, req.body, usersName)
             .then(function (result) {
