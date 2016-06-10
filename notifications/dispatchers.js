@@ -60,9 +60,11 @@ function welcome(userId, usersName) {
  * TODO : untested
  * @type {*|CronJob}
  */
-var discoverDailyNof = new CronJob('00 00 5 * * 0-7', function () {
+var discoverDailyNof = new CronJob('00 09 05 * * 0-7', function () {
+    console.log("Cron being fired : discover matches notification")
     MatchModel.getDiscoverableMatchesCount()
         .then(function (count) {
+            console.log("new matches : " + count)
             var nofObj = {
                 "created": date.getTime(),
                 "is_clicked": false,
