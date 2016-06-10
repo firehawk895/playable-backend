@@ -60,7 +60,7 @@ function welcome(userId, usersName) {
  * TODO : untested
  * @type {*|CronJob}
  */
-var discoverDailyNof = new CronJob('00 09 05 * * 0-7', function () {
+var discoverDailyNof = new CronJob('00 16 05 * * 0-7', function () {
     console.log("Cron being fired : discover matches notification")
     MatchModel.getDiscoverableMatchesCount()
         .then(function (count) {
@@ -76,7 +76,7 @@ var discoverDailyNof = new CronJob('00 09 05 * * 0-7', function () {
             };
             everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.push)
         })
-})
+}, null, true, 'Asia/Kolkata')
 
 /**
  * TESTED
