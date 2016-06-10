@@ -77,7 +77,7 @@ var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
 })
 
 /**
- * TODO: untested
+ * TESTED
  * @param eventId
  * @param eventName
  */
@@ -96,6 +96,13 @@ function newEvent(eventId, eventName) {
     everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.both)
 }
 
+/**
+ * TESTED
+ * @param eventId
+ * @param eventName
+ * @param userId
+ * @param google_form
+ */
 function joinedEvent(eventId, eventName, userId, google_form) {
     var UserModel = require('../models/User');
     console.log("joinedEvent dispatcher hit")

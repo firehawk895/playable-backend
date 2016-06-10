@@ -283,12 +283,32 @@ function getMatchHistoryPromise(userId) {
 }
 
 function removeFromMatch(userId, matchId) {
-    //decrease slots_filled of the given match
-    //remove from chat channel
+    var ChatModel = require('../Chat/Chat')
+    var dbUtils = require('../dbUtils');
     return kew.all([
         dbUtils.deleteGraphRelationPromise('matches', matchId, 'users', userId, constants.graphRelations.matches.participants),
         dbUtils.deleteGraphRelationPromise('users', userId, 'matches', matchId, constants.graphRelations.users.playsMatches),
+        getMatchChatRoom(matchId)
     ])
+        .then(function (results) {
+            ChatModel.removeUsersFromRoom(results[2], [userId])
+        })
+        .fail(function (err) {
+            console.log("removeFromMatch " + userId + " failed for match " + matchId)
+        })
+}
+
+function getMatchChatRoom(matchId) {
+    var chatRoomId = kew.defer()
+    getMatchPromise(matchId)
+        .then(function (result) {
+            var theMatch = result.body
+            chatRoomId.resolve(theMatch.qbId)
+        })
+        .fail(function (err) {
+            chatRoomId.reject(err)
+        })
+    return chatRoomId
 }
 
 /**
@@ -576,5 +596,5 @@ module.exports = {
     incrementMatchesPlayed: incrementMatchesPlayed,
     getAdminMarkedCount: getAdminMarkedCount,
     getMatchesForReco: getMatchesForReco,
-    getDiscoverableMatchesCount : getDiscoverableMatchesCount
+    getDiscoverableMatchesCount: getDiscoverableMatchesCount
 }

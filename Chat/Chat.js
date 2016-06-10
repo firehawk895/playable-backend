@@ -111,7 +111,7 @@ function addUsersToRoom(newRoomQbId, arrayOfQbIds) {
     getSession()
         .then(function (result) {
             QB.chat.dialog.update(newRoomQbId, {push_all: {occupants_ids: arrayOfQbIds}},
-                function(err, result) {
+                function (err, result) {
                     if (err) {
                         console.log(err);
                         joined.reject(err)
@@ -127,12 +127,58 @@ function addUsersToRoom(newRoomQbId, arrayOfQbIds) {
     return joined
 }
 
+function removeUsersFromRoom(roomId, arrayOfUserIds) {
+    console.log("removing users from room")
+    console.log(roomId)
+    console.log(arrayOfUserIds)
+    var removed = kew.defer()
+    getSession()
+        .then(function (result) {
+            QB.chat.dialog.delete(roomId, {pull_all: {occupants_ids: arrayOfUserIds}},
+                function (err, result) {
+                    if (err) {
+                        console.log(err);
+                        removed.reject(err)
+                    } else {
+                        removed.resolve(result)
+                    }
+                }
+            );
+        })
+        .fail(function (err) {
+            removed.reject(err)
+        })
+    return removed
+}
+
+function deleteRoom(roomId) {
+    console.log("deleteRoom")
+    console.log(roomId)
+    var deleted = kew.defer()
+    getSession()
+        .then(function (result) {
+            QB.chat.dialog.delete(roomId,
+                function (err, result) {
+                    if (err) {
+                        deleted.reject(err)
+                    } else {
+                        deleted.resolve(result)
+                    }
+                }
+            );
+        })
+        .fail(function (err) {
+            deleted.reject(err)
+        })
+    return deleted
+}
+
 function getSession() {
     // var qbchat = require('../Chat/qbchat');
     console.log("getting the session")
     var sessionStatus = kew.defer()
     console.log('about to QB init')
-    
+
     QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 
     console.log("QB.createSession")
@@ -171,6 +217,8 @@ function getSession() {
 module.exports = {
     getUsersDialogs: getUsersDialogs,
     createGroupChatRoom: createGroupChatRoom,
-    addUsersToRoom: addUsersToRoom
+    addUsersToRoom: addUsersToRoom,
+    deleteRoom: deleteRoom,
+    removeUsersFromRoom : removeUsersFromRoom
 }
 
