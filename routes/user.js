@@ -419,7 +419,7 @@ var extractFacebookFriends = function (userId, accessToken) {
 
     var getFriends = function (theUrl) {
         request.get({url: theUrl, json: true}, function (err, response, payload) {
-            if (response.statusCode == 200) {
+            if (response && response.statusCode == 200) {
                 if (payload.data && payload.data.length > 0) {
                     //we have a few friends to store
                     friendsData.push.apply(friendsData, payload.data)

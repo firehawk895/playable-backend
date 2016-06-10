@@ -36,6 +36,11 @@ console.log("dispatchers loaded (sounds very cool)")
  * 'link' key to be used for information that allows to redirect inside the mobile app
  */
 
+/**
+ * TODO : untested
+ * @param userId
+ * @param usersName
+ */
 function welcome(userId, usersName) {
     var titleString = "Hello " + usersName + "!";
 
@@ -51,6 +56,10 @@ function welcome(userId, usersName) {
     NF.send(nofObj, constants.notifications.type.inApp, null, [userId]);
 }
 
+/**
+ * TODO : untested
+ * @type {*|CronJob}
+ */
 var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
     MatchModel.getDiscoverableMatchesCount()
         .then(function (count) {
@@ -67,6 +76,11 @@ var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
         })
 })
 
+/**
+ * TODO: untested
+ * @param eventId
+ * @param eventName
+ */
 function newEvent(eventId, eventName) {
     console.log("disaptching everyone! new Event!")
     var nofObj = {
