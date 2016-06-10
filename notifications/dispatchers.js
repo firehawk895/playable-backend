@@ -60,7 +60,7 @@ function welcome(userId, usersName) {
  * TODO : untested
  * @type {*|CronJob}
  */
-var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
+var discoverDailyNof = new CronJob('00 00 5 * * 0-7', function () {
     MatchModel.getDiscoverableMatchesCount()
         .then(function (count) {
             var nofObj = {
