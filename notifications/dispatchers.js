@@ -234,6 +234,8 @@ function pushRequestNotification(message, timestamp, userId) {
  * @param accepterId
  */
 function acceptConnectionRequest(senderId, accepterId) {
+    console.log("acceptConnectionRequest")
+    console.log("senderId " + senderId + " accepterId " + accepterId)
     var UserModel = require('../models/User');
     var theUser
     UserModel.getUserPromise(accepterId)
