@@ -134,7 +134,7 @@ function removeUsersFromRoom(roomId, arrayOfUserIds) {
     var removed = kew.defer()
     getSession()
         .then(function (result) {
-            QB.chat.dialog.delete(roomId, {pull_all: {occupants_ids: arrayOfUserIds}},
+            QB.chat.dialog.update(roomId, {pull_all: {occupants_ids: arrayOfUserIds}},
                 function (err, result) {
                     if (err) {
                         console.log(err);
