@@ -206,6 +206,9 @@ function updateMatchConnections(userId, matchId) {
  * @param matchId
  */
 function createChatRoomForMatch(hostUserQbId, matchId) {
+    console.log("createChatRoomForMatch : ")
+    console.log(hostUserQbId)
+    console.log(matchId)
     /**
      * format of match dialog title:
      * <matchRoom>:::matchId

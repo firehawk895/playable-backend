@@ -348,4 +348,5 @@ module.exports = {
     acceptConnectionRequest: acceptConnectionRequest,
     parseRequestObject: parseRequestObject,
     createRequestToJoinMatch: createRequestToJoinMatch,
+    acceptMatchRequest : acceptMatchRequest
 }

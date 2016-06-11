@@ -1250,7 +1250,8 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
                 name: user.name,
                 username: user.username,
                 avatar: user.avatar,
-                avatarThumb: user.avatarThumb
+                avatarThumb: user.avatarThumb,
+                qbId: user.qbId
             },
             isFacility: req.body.isFacility,
             isAdminMarked: false, //admins marking this as done -- if its a facility match
