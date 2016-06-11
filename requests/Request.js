@@ -241,10 +241,12 @@ function parseJoinMatchRequest(requestObj) {
  * @param user2id
  */
 function acceptMatchRequest(user1id, user2id, matchPayload) {
+    console.log("acceptMatchRequest : ")
+    console.log("   user1id : " + user1id)
+    console.log("   user2id : " + user2id)
     var UserModel = require('../models/User')
     var MatchModel = require('../models/Match')
     var dbUtils = require('../dbUtils');
-    var EventSystem = require('../dbUtils');
     var oio = require('orchestrate');
     oio.ApiEndPoint = config.db.region;
     var db = oio(config.db.key);
@@ -261,10 +263,12 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         })
         .fail(function (err) {
             console.log(err)
-            console.log("accepting OneOnOneFixAmatch, attempt to reparse")
+            console.log("accepting OneOnOneFixAmatch failed, attempt to reparse")
         })
 
     function createOneOnOneFixAmatch(user1id, matchPayload) {
+        console.log("here is the match payload being created : ")
+        console.log(matchPayload)
         var createOneOnOneFixAmatchStatus = kew.defer()
         return db.post('matches', matchPayload)
             .then(function (result) {
@@ -285,7 +289,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 promises.push(dbUtils.createGraphRelationPromise('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.isHostedByUser))
                 //The match has participants (user)
                 promises.push(dbUtils.createGraphRelationPromise('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants))
-                promises.push(MatchModel.createChatRoomForMatch(user1id, matchPayload["id"]))
+                promises.push(MatchModel.createChatRoomForMatch(matchPayload["host"]["id"], matchPayload["id"]))
 
                 return kew.all(promises)
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])

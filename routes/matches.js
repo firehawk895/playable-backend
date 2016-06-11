@@ -90,9 +90,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 res.json(responseObj);
             })
             .fail(function (err) {
-                responseObj["errors"] = [err];
-                res.status(422);
-                res.json(responseObj);
+                customUtils.sendErrors(err, res)
             })
     }
 }])
