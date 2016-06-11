@@ -256,48 +256,49 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var page = req.query.page || 1
     var offset = limit * (page - 1)
 
-    console.log("default time and isDiscoverable query")
-    if (req.query.showAll)
-        queries.push("@path.kind:item")
-    else
-        queries.push(MatchModel.createIsDiscoverableQuery())
-
-    var isDistanceQuery = false
-    var isMatchQuery = false
-    var getFeatured = false
-
     if (req.query.matchId) {
         isMatchQuery = true
         console.log("we have a specific matchId query")
-        queries.push(dbUtils.createSearchByIdQuery(req.query.matchId))
-    }
+        //all other queries must be destroyed and only this should prevail
+        queries = [dbUtils.createSearchByIdQuery(req.query.matchId)]
+    } else {
+        console.log("default time and isDiscoverable query")
+        if (req.query.showAll)
+            queries.push("@path.kind:item")
+        else
+            queries.push(MatchModel.createIsDiscoverableQuery())
 
-    if (req.query.isFacility) {
-        console.log("only facility matches")
-        queries.push("value.isFacility:true")
-    }
+        var isDistanceQuery = false
+        var isMatchQuery = false
+        var getFeatured = false
 
-    if (req.query.gender) {
-        console.log("we have a gender query")
-        var genderArray = req.query.gender.split(',')
-        queries.push(MatchModel.createGenderQuery(genderArray))
-    }
+        if (req.query.isFacility) {
+            console.log("only facility matches")
+            queries.push("value.isFacility:true")
+        }
 
-    if (req.query.lat && req.query.long && req.query.radius) {
-        console.log("we have a distance query")
-        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-        isDistanceQuery = true;
-    }
+        if (req.query.gender) {
+            console.log("we have a gender query")
+            var genderArray = req.query.gender.split(',')
+            queries.push(MatchModel.createGenderQuery(genderArray))
+        }
 
-    if (req.query.sports) {
-        console.log("we have a sports filter")
-        var sportsArray = req.query.sports.split(',');
-        queries.push(MatchModel.createSportsQuery(sportsArray))
-    }
+        if (req.query.lat && req.query.long && req.query.radius) {
+            console.log("we have a distance query")
+            queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+            isDistanceQuery = true;
+        }
 
-    if (req.query.skill_level_min && req.query.skill_level_max) {
-        console.log("we have a skill level filter")
-        queries.push(MatchModel.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
+        if (req.query.sports) {
+            console.log("we have a sports filter")
+            var sportsArray = req.query.sports.split(',');
+            queries.push(MatchModel.createSportsQuery(sportsArray))
+        }
+
+        if (req.query.skill_level_min && req.query.skill_level_max) {
+            console.log("we have a skill level filter")
+            queries.push(MatchModel.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
+        }
     }
 
     var theFinalQuery = dbUtils.queryJoiner(queries)
@@ -343,7 +344,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         promises.push(kew.resolve([]))
     }
 
-    if(req.query.showAll) promises.push(MatchModel.getAdminMarkedCount())
+    if (req.query.showAll) promises.push(MatchModel.getAdminMarkedCount())
 
     var theMasterResults
     kew.all(promises)
@@ -385,12 +386,42 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
 router.get('/test', function (req, res) {
     res.status(200)
-    MatchModel.getMatchesForReco()
-        .then(function(results) {
+
+    var user1id = "47a7897ce58217ad"
+    var user2id = "19d662fd0287a6c2"
+    var matchPayload = {
+        description: 'bjkk',
+        hasCustomGender: false,
+        hasFemale: false,
+        hasMale: false,
+        host: {
+            avatar: 'https://graph.facebook.com/10153182210946213/picture?type=large',
+            avatarThumb: 'https://graph.facebook.com/10153182210946213/picture',
+            id: '47a7897ce58217ad',
+            name: 'Ankan Adhikari',
+            username: 'ankan_b387',
+            qbId: 13654128
+        },
+        isAdminMarked: false,
+        isDiscoverable: true,
+        isFacility: false,
+        location: {lat: 28.5331782, long: 77.2120782},
+        location_name: '7, Toot Sarai Rd,New Delhi,Delhi',
+        playing_time: 1465991040,
+        skill_level_max: 5,
+        skill_level_min: 1,
+        slots: 2,
+        slots_filled: 1,
+        sport: 'cricket',
+        title: 'hggh',
+        type: 'match'
+    }
+    RequestModel.acceptMatchRequest(user1id, user2id, matchPayload)
+        .then(function (results) {
             res.status(200)
-            res.json({data : [results[0]]})
+            res.json({data: "ok"})
         })
-        .fail(function(err) {
+        .fail(function (err) {
             console.log(err)
         })
 })

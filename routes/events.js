@@ -107,36 +107,36 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var responseObj = {}
 
 
-    console.log("default time and isDiscoverable query")
-    if (req.query.showAll)
-        queries.push("@path.kind:item")
-    else
-        queries.push(MatchModel.createIsDiscoverableQuery())
-
-    console.log("the future query : " + MatchModel.createOnlyFutureTypeQuery())
-    queries.push(MatchModel.createOnlyFutureTypeQuery())
-    var isDistanceQuery = false;
-
     if (req.query.eventId) {
         isEventQuery = true
         console.log("we have a specific eventId query")
         queries.push(dbUtils.createSearchByIdQuery(req.query.eventId))
-    }
+    } else {
+        console.log("default time and isDiscoverable query")
+        if (req.query.showAll)
+            queries.push("@path.kind:item")
+        else
+            queries.push(MatchModel.createIsDiscoverableQuery())
 
-    if (req.query.lat && req.query.long && req.query.radius) {
-        console.log("we have a distance query")
-        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-        isDistanceQuery = true;
-    }
-    
-    if(req.query.featured) {
-        console.log("featured query")
-        queries.push(dbUtils.createFieldQuery("isFeatured", "true"))
-    }
+        console.log("the future query : " + MatchModel.createOnlyFutureTypeQuery())
+        queries.push(MatchModel.createOnlyFutureTypeQuery())
+        var isDistanceQuery = false;
 
-    var theFinalQuery = dbUtils.queryJoiner(queries)
-    console.log("The final query")
-    console.log(theFinalQuery)
+        if (req.query.lat && req.query.long && req.query.radius) {
+            console.log("we have a distance query")
+            queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+            isDistanceQuery = true;
+        }
+
+        if(req.query.featured) {
+            console.log("featured query")
+            queries.push(dbUtils.createFieldQuery("isFeatured", "true"))
+        }
+
+        var theFinalQuery = dbUtils.queryJoiner(queries)
+        console.log("The final query")
+        console.log(theFinalQuery)
+    }
 
     /**
      * remove sort by location if query does not have
