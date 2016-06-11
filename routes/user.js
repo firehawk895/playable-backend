@@ -1216,6 +1216,7 @@ router.post('/connect', [passport.authenticate('bearer', {session: false}), func
  */
 router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}
+    var user = req.user.results[0].value
     var userId = req.user.results[0].value.id;
     var usersName = req.user.results[0].value.name;
 
@@ -1230,7 +1231,38 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
     if (errors.length > 0) {
         customUtils.sendErrors(err, res)
     } else {
-        RequestModel.createMatchRequest(userId, inviteeId, req.body, usersName)
+        var payload = {
+            title: req.body.title,
+            description: req.body.description,
+            sport: req.body.sport,
+            skill_level_min: req.body.skill_level_min,
+            skill_level_max: req.body.skill_level_max,
+            playing_time: req.body.playing_time,
+            slots_filled: 1, //the host is a participant of the match
+            slots: req.body.slots,
+            location_name: req.body.location_name,
+            location: {
+                lat: req.body.lat,
+                long: req.body.long
+            },
+            host: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                avatar: user.avatar,
+                avatarThumb: user.avatarThumb
+            },
+            isFacility: req.body.isFacility,
+            isAdminMarked: false, //admins marking this as done -- if its a facility match
+            facilityId: req.body.facilityId,
+            type: "match",
+            hasMale: false,
+            hasFemale: false,
+            hasCustomGender: false,
+            isDiscoverable: true
+        }
+        
+        RequestModel.createMatchRequest(userId, inviteeId, payload, usersName)
             .then(function (result) {
                 responseObj["data"] = []
                 responseObj["message"] = "Fix A Match request successfully sent"
