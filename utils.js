@@ -121,17 +121,24 @@ function stringToBoolean(theString) {
  */
 function getFormattedDate(unix_timestamp) {
     var date = new Date(unix_timestamp * 1000);
-    
-// Hours part from the timestamp
     var hours = date.getHours();
-// Minutes part from the timestamp
-    var minutes = "0" + date.getMinutes();
-// Seconds part from the timestamp
-    var seconds = "0" + date.getSeconds();
-
-// Will display time in 10:30:23 format
-    var formattedTime = date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear() + ", " +  hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-    return formattedTime
+    var minutes = date.getMinutes();
+    var ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0'+minutes : minutes;
+    var strTime = hours + ':' + minutes + ' ' + ampm;
+    return strTime;
+// // Hours part from the timestamp
+//     var hours = date.getHours();
+// // Minutes part from the timestamp
+//     var minutes = "0" + date.getMinutes();
+// // Seconds part from the timestamp
+//     var seconds = "0" + date.getSeconds();
+//
+// // Will display time in 10:30:23 format
+//     var formattedTime = date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear() + ", " +  hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+//     return formattedTime
 }
 
 /**
