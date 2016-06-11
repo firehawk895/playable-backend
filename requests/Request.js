@@ -275,10 +275,10 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         console.log("here is the match payload being created : ")
         console.log(matchPayload)
         var createOneOnOneFixAmatchStatus = kew.defer()
+        matchPayload["image"] = constants.sportsCoverPics[matchPayload["sport"]]
         db.post('matches', matchPayload)
             .then(function (result) {
                 matchPayload["id"] = dbUtils.getIdAfterPost(result)
-                matchPayload["image"] = constants.sportsCoverPics[matchPayload["sport"]]
                 if (matchPayload.isFacility) {
                     MatchModel.connectFacilityToMatch(matchPayload["id"], matchPayload["facilityId"])
                 }
