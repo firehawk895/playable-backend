@@ -278,6 +278,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         db.post('matches', matchPayload)
             .then(function (result) {
                 matchPayload["id"] = dbUtils.getIdAfterPost(result)
+                matchPayload["image"] = constants.sportsCoverPics[matchPayload["sport"]]
                 if (matchPayload.isFacility) {
                     MatchModel.connectFacilityToMatch(matchPayload["id"], matchPayload["facilityId"])
                 }
