@@ -1262,6 +1262,13 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
             isDiscoverable: true
         }
         
+        console.log("createMatchRequest")
+        console.log(userId)
+        console.log(inviteeId)
+        console.log(payload)
+        console.log(usersName)
+        console.log("-------------------")
+        
         RequestModel.createMatchRequest(userId, inviteeId, payload, usersName)
             .then(function (result) {
                 responseObj["data"] = []

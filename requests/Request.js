@@ -47,6 +47,7 @@ function createConnectionRequest(user1id, user2id, user1name, user1photo) {
  * @param user2id
  */
 function createMatchRequest(user1id, user2id, matchPayload, user1name) {
+    matchPayload = customUtils.undefinedRemover(matchPayload)
     console.log("createMatchRequest")
     var payload = {
         fromUserId: user1id,
