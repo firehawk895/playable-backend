@@ -90,14 +90,14 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var limit = req.query.limit || 100
-    var page =  req.query.page || 1
+    var page = req.query.page || 1
     var offset = limit * (page - 1)
 
     var userId = req.user.results[0].value.id
 
     var promises = []
     var isEventQuery = false
-    
+
     //var user = {}
     //user.location = {
     //    'lat': req.user.results[0].value.location.lat,
@@ -122,21 +122,22 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         queries.push(MatchModel.createOnlyFutureTypeQuery())
         var isDistanceQuery = false;
 
-        if (req.query.lat && req.query.long && req.query.radius) {
-            console.log("we have a distance query")
-            queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-            isDistanceQuery = true;
-        }
-
-        if(req.query.featured) {
+        if (req.query.featured) {
             console.log("featured query")
             queries.push(dbUtils.createFieldQuery("isFeatured", "true"))
         }
 
-        var theFinalQuery = dbUtils.queryJoiner(queries)
-        console.log("The final query")
-        console.log(theFinalQuery)
     }
+    
+    if (req.query.lat && req.query.long && req.query.radius) {
+        console.log("we have a distance query")
+        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        isDistanceQuery = true;
+    }
+
+    var theFinalQuery = dbUtils.queryJoiner(queries)
+    console.log("The final query")
+    console.log(theFinalQuery)
 
     /**
      * remove sort by location if query does not have
@@ -170,7 +171,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
     var theMasterResults
     kew.all(promises)
-        .then(function(results) {
+        .then(function (results) {
             //results[0] is the main query
             //results[1] is the event participants query
             theMasterResults = results
@@ -190,7 +191,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             res.status(200)
             res.json(responseObj)
         })
-        .fail(function(err) {
+        .fail(function (err) {
             customUtils.sendErrors(err, res)
         })
 }])
@@ -250,7 +251,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 note: req.body.note //TODO : limit the length so this field cannot be exploited
             }
 
-            if(coverPhotoInfo) {
+            if (coverPhotoInfo) {
                 sanitizedPayload.coverPhoto = coverPhotoInfo.url
                 sanitizedPayload.coverPhotoThumb = coverPhotoInfo.urlThumb
             }
@@ -276,15 +277,15 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
 router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     console.log("delete event")
     var id = req.query.id
-    
+
     console.log("being deleted -- " + id)
 
     db.remove('events', id, true)
-        .then(function(result) {
+        .then(function (result) {
             res.status(200);
-            res.json({data:{}, msg : "Delete successful"});
+            res.json({data: {}, msg: "Delete successful"});
         })
-        .fail(function(err) {
+        .fail(function (err) {
             customUtils.sendErrors(err, res)
         })
 }])

@@ -283,12 +283,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             queries.push(MatchModel.createGenderQuery(genderArray))
         }
 
-        if (req.query.lat && req.query.long && req.query.radius) {
-            console.log("we have a distance query")
-            queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-            isDistanceQuery = true;
-        }
-
         if (req.query.sports) {
             console.log("we have a sports filter")
             var sportsArray = req.query.sports.split(',');
@@ -299,6 +293,12 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             console.log("we have a skill level filter")
             queries.push(MatchModel.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
         }
+    }
+    
+    if (req.query.lat && req.query.long && req.query.radius) {
+        console.log("we have a distance query")
+        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        isDistanceQuery = true;
     }
 
     var theFinalQuery = dbUtils.queryJoiner(queries)
@@ -405,7 +405,10 @@ router.get('/test', function (req, res) {
         isAdminMarked: false,
         isDiscoverable: true,
         isFacility: false,
-        location: {lat: 28.5331782, long: 77.2120782},
+        location: {
+            lat: 28.5331782,
+            long: 77.2120782
+        },
         location_name: '7, Toot Sarai Rd,New Delhi,Delhi',
         playing_time: 1465991040,
         skill_level_max: 5,
