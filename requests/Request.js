@@ -245,6 +245,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
     console.log("acceptMatchRequest : ")
     console.log("   user1id : " + user1id)
     console.log("   user2id : " + user2id)
+    console.log(matchPayload)
     var UserModel = require('../models/User')
     var MatchModel = require('../models/Match')
     var dbUtils = require('../dbUtils');
@@ -258,6 +259,9 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
     ])
         .then(function (result) {
             return createOneOnOneFixAmatch(user1id, matchPayload)
+        })
+        .then(function(matchId) {
+            return MatchModel.joinMatch(matchId, user2id)
         })
         .then(function (result) {
             console.log("accepting OneOnOneFixAmatch fully done")
@@ -296,14 +300,16 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
             })
             .then(function (results) {
-                createOneOnOneFixAmatchStatus.resolve(results)
+                createOneOnOneFixAmatchStatus.resolve(matchPayload["id"])
                 Dispatchers.acceptMatchRequest(user1id, user2id, matchPayload)
                 //not doing this anymore, we run a cron, because a match time can change
                 // EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
                 return UserModel.getConnectionStatusPromise(user1id, user2id)
             })
             .then(function (result) {
+                console.log("connection status checked.")
                 if (result != constants.connections.status.connected) {
+                    console.log("users are already connection, create connection is skipped")
                     UserModel.createConnection(user1id, user2id)
                 }
             })
