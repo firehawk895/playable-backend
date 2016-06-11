@@ -290,7 +290,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 promises.push(dbUtils.createGraphRelationPromise('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.isHostedByUser))
                 //The match has participants (user)
                 promises.push(dbUtils.createGraphRelationPromise('matches', matchPayload["id"], 'users', user1id, constants.graphRelations.matches.participants))
-                promises.push(MatchModel.createChatRoomForMatch(matchPayload["host"]["id"], matchPayload["id"]))
+                promises.push(MatchModel.createChatRoomForMatch(matchPayload["host"]["qbId"], matchPayload["id"]))
 
                 return kew.all(promises)
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])

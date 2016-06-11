@@ -1229,7 +1229,7 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
     var inviteeId = req.body.inviteeId
 
     if (errors.length > 0) {
-        customUtils.sendErrors(err, res)
+        customUtils.sendErrors(errors, res)
     } else {
         var payload = {
             title: req.body.title,
