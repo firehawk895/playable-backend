@@ -62,9 +62,16 @@ var recommendationCron = new CronJob('0 0 0/12 * * *', function () {
             results.forEach(function (result) {
                 console.log(result.id)
                 RecommendationModel.createRecommendationCron(result.id)
-                db.newPatchBuilder("matches", result.id)
-                    .add("value.recommended", true)
+                db.newPatchBuilder("matches", "11f173b11a60b85a")
+                    .add("recommended", true)
                     .apply()
+                    .then(function (result) {
+                        console.log("match recommended value switched to true")
+                    })
+                    .fail(function (err) {
+                        console.log(err)
+                        console.log("UNABLE to set match recommended value switched to true")
+                    })
             })
         })
 }, null, true, 'Asia/Kolkata')
