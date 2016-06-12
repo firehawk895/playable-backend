@@ -289,6 +289,16 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
     }
 }])
 
+router.get('/csv', function(req, res) {
+    dbUtils.generateCsvFile("matches", "@path.kind:item")
+        .then(function(result) {
+            res.sendFile("../csv/matches.csv")
+        })
+        .fail(function(err) {
+            customUtils.sendErrors(err, res)
+        })
+})
+
 router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     console.log("delete event")
     var id = req.query.id

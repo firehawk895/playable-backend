@@ -207,6 +207,17 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         })
 }])
 
+router.get('/csv', function(req, res) {
+    dbUtils.generateCsvFile("facilities", "@path.kind:item")
+        .then(function(result) {
+            res.status(200)
+            res.sendFile('facilities.csv', {root: path.join(__dirname, '../csv')});
+        })
+        .fail(function(err) {
+            customUtils.sendErrors(err, res)
+        })
+})
+
 router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     console.log("delete facility")
     var id = req.query.id

@@ -5,7 +5,8 @@ var db = oio(config.db.key);
 var constants = require('./constants');
 var qbchat = require('./Chat/qbchat');
 var kew = require('kew')
-
+var json2csv = require('json2csv')
+var fs = require('fs')
 /**
  * Orchestrate query wrappers ---------------------------------->
  * Query helpers to make life a lot, lot easier
@@ -275,6 +276,114 @@ function getAllItemsWithFields(collection, query, fields) {
 }
 
 /**
+ * this returns an array of promises that allows to retrieve an entire
+ * dump of the database collection - again non graph relations
+ * @param collection
+ * @returns {!Promise}
+ */
+function allItemsPromisesList(collection, query) {
+    console.log("inside allItemsPromisesList")
+    var promiseList = kew.defer()
+    var promiseListArray = []
+    var offset = 0
+    db.newSearchBuilder()
+        .collection(collection)
+        .limit(100)
+        .offset(offset)
+        .query(query)
+        .then(function (results) {
+            console.log("this many results")
+            console.log(results.body.total_count)
+            var totalCount = results.body.total_count
+            var remaining = 0
+            do {
+                promiseListArray.push(
+                    db.newSearchBuilder()
+                        .collection(collection)
+                        .limit(100)
+                        .offset(offset)
+                        .query(query)
+                )
+                offset += 100
+                remaining = totalCount - offset;
+            } while (remaining > 0)
+            promiseList.resolve(promiseListArray)
+        })
+        .fail(function (err) {
+            promiseList.reject(err)
+        })
+    return promiseList
+}
+
+/**
+ * this returns all the items in a database collection
+ * asynchronously - non graph queries
+ * @param collection
+ * @returns {!Promise}
+ */
+function getAllItems(collection, query) {
+    var allItems = kew.defer()
+    allItemsPromisesList(collection, query)
+        .then(function (promiseList) {
+            return kew.all(promiseList)
+        })
+        .then(function (promiseResults) {
+            var allItemsList = []
+            console.log(injectId(promiseResults[0]))
+            promiseResults.forEach(function (item) {
+                // console.log(item.body.results[0].path.destination)
+                var injectedItems = injectId(item)
+                allItemsList = allItemsList.concat(injectedItems)
+            })
+            allItems.resolve(allItemsList)
+        })
+        .fail(function (err) {
+            allItems.reject(err)
+        })
+    return allItems
+}
+
+function generateCsv(collection, query) {
+    var generatedCsvStatus = kew.defer()
+    getAllItems(collection, query)
+        .then(function (results) {
+            json2csv({data: results}, function (err, csv) {
+                if (err) {
+                    console.log(err);
+                    generatedCsvStatus.reject(err)
+                } else {
+                    console.log(csv);
+                    generatedCsvStatus.resolve(csv)
+                }
+            });
+        })
+        .fail(function (err) {
+            generatedCsvStatus.reject(err)
+        })
+    return generatedCsvStatus
+}
+
+function generateCsvFile(collection, query) {
+    var fs = require('fs')
+    var fileStatus = kew.defer()
+    generateCsv(collection, query)
+        .then(function (csvDump) {
+            var filename = collection + ".csv"
+            var filepath = __dirname + "/csv/" + filename
+            fs.writeFile(filepath, csvDump, function (err) {
+                if (err) {
+                    console.log(err);
+                    fileStatus.reject(err)
+                } else {
+                    fileStatus.resolve()
+                    console.log("The file was saved!");
+                }
+            });
+        })
+    return fileStatus
+}
+
+/**
  * when you do a db.post
  * the id of the newly created record is present in the header
  * this method returns that id
@@ -301,7 +410,8 @@ module.exports = {
     incrementFieldValue : incrementFieldValue,
     createFieldQuery:createFieldQuery,
     getAllItemsWithFields : getAllItemsWithFields,
-    getIdAfterPost : getIdAfterPost
+    getIdAfterPost : getIdAfterPost,
+    generateCsvFile : generateCsvFile
 }
 
 

@@ -39,6 +39,7 @@
     "validator": "4.5.0",
     "xml2js": "0.4.16",
     "youtube-api": "1.4.0",
-    "youtube-playlist-info": "0.1.0"
+    "youtube-playlist-info": "0.1.0",
+    "json2csv": "3.4.2"
   }
 }

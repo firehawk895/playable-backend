@@ -13,6 +13,8 @@ var config = require('../config.js');
 var multer = require('multer'),
     fs = require('fs');
 
+var path = require('path')
+
 var QB = require('quickblox');
 QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
 
@@ -1601,6 +1603,17 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         }
     })
 };
+
+router.get('/csv', function(req, res) {
+    dbUtils.generateCsvFile("users", "@path.kind:item")
+        .then(function(result) {
+            res.status(200)
+            res.sendFile('users.csv', {root: path.join(__dirname, '../csv')});
+        })
+        .fail(function(err) {
+            customUtils.sendErrors(err, res)
+        })
+})
 
 var generateTokenAndLogin = function (user, res) {
     var responseObj = {};

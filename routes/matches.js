@@ -384,6 +384,17 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         })
 }])
 
+router.get('/csv', function(req, res) {
+    dbUtils.generateCsvFile("matches", "@path.kind:item")
+        .then(function(result) {
+            res.status(200)
+            res.sendFile('matches.csv', {root: path.join(__dirname, '../csv')});
+        })
+        .fail(function(err) {
+            customUtils.sendErrors(err, res)
+        })
+})
+
 router.get('/test', function (req, res) {
     res.status(200)
 
