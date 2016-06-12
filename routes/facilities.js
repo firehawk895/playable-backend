@@ -26,6 +26,9 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
     var images = new Array()
     var responseObj = {}
 
+    console.log("raw payload : ")
+    console.log(req.body)
+
     // 1st para in async.each() is the array of items
     async.each(req.files.image,
         // 2nd param is the function that each item is passed to
@@ -74,7 +77,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                 thumbsUps: 0
             }
 
-            console.log("the payload recceived : ")
+            console.log("the payload modified : ")
             console.log(payload)
 
             db.post('facilities', payload)
