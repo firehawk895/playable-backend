@@ -73,17 +73,19 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
                 totalRatings: 0,
                 thumbsUps: 0
             }
+
+            console.log("the payload recceived : ")
+            console.log(payload)
+
             db.post('facilities', payload)
                 .then(function (result) {
-                    payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+                    payload["id"] = dbUtils.getIdAfterPost(result);
                     responseObj["data"] = payload
                     res.status(201);
                     res.json(responseObj);
                 })
                 .fail(function (err) {
-                    responseObj["errors"] = [err.body.message]
-                    res.status(503);
-                    res.json(responseObj);
+                    customUtils.sendErrors(err, res)
                 })
         }
     );
