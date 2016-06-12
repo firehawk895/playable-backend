@@ -100,6 +100,9 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
     var facilityId = req.query.facilityId
     var payload
 
+    console.log("raw payload : ")
+    console.log(req.body)
+
     // 1st para in async.each() is the array of items
     async.each(req.files.image,
         // 2nd param is the function that each item is passed to
@@ -147,17 +150,19 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 totalRatings: 0,
                 thumbsUps: 0
             }
+            
+            console.log("payload after sanitization : ")
+            console.log(sanitziedPayload)
+            
             db.merge('facilities', facilityId, sanitziedPayload)
                 .then(function (result) {
-                    payload["id"] = result.headers.location.match(/[0-9a-z]{16}/)[0];
+                    payload["id"] = dbUtils.getIdAfterPost(result)
                     responseObj["data"] = payload
                     res.status(201);
                     res.json(responseObj);
                 })
                 .fail(function (err) {
-                    responseObj["errors"] = [err.body.message]
-                    res.status(503);
-                    res.json(responseObj);
+                    customUtils.sendErrors(err, res)
                 })
         }
     );
