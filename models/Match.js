@@ -60,6 +60,16 @@ function createIsDiscoverableQuery() {
     return query
 }
 
+function recommendedQuery() {
+    var currentUnixTime = Math.round(date.getTime() / 1000)
+    console.log("the current unix timestamp -- " + currentUnixTime)
+    var query = "value.playing_time:[*" + " TO " + currentUnixTime + "]"  //this means greater than equalto
+    //https://orchestrate.io/docs/apiref#search
+    //matches that are not discoverable for any reason are set to isDiscoverable: false
+    query = query + " AND NOT value.recommended:true"
+    return query
+}
+
 /**
  * Note : For lucene you can use filed grouping:
  * Field Grouping
@@ -599,5 +609,6 @@ module.exports = {
     incrementMatchesPlayed: incrementMatchesPlayed,
     getAdminMarkedCount: getAdminMarkedCount,
     getMatchesForReco: getMatchesForReco,
-    getDiscoverableMatchesCount: getDiscoverableMatchesCount
+    getDiscoverableMatchesCount: getDiscoverableMatchesCount,
+    recommendedQuery : recommendedQuery
 }

@@ -36,19 +36,18 @@ var kew = require('kew')
  * @param matchId
  * @param playing_time
  */
-function createRecommendationCron(matchId, playing_time) {
+function createRecommendationCron(matchId) {
     //create new cron for the playing_time + constants.recommendation.dispatchTime
     //get all match participants
     //create recommendation objects for each user in firebase
     console.log("welcome to the jungle")
     console.log(matchId)
-    console.log(playing_time)
+    // console.log(playing_time)
     var matchPromise = MatchModel.getMatchPromise(matchId)
     var participantsPromise = MatchModel.getMatchParticipantsPromise(matchId)
     //
     kew.all([matchPromise, participantsPromise])
         .then(function (results) {
-            console.log("the match details fetchhhhhhhhhh")
             var match = results[0].body
             var participants = dbUtils.injectId(results[1])
             console.log(participants)

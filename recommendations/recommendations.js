@@ -18,6 +18,8 @@ var Firebase = require("firebase");
 var newMatchesRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.events.newMatches)
 var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.recommendations)
 
+var dbUtils = require('../dbUtils');
+
 //this is for manually testing recommendations
 // RecommendationModel.createRecommendationCron("11a8b7494b60a63b", "1464640883000")
 // RecommendationModel.createRecommendationCron("11dc75b38e60e590", "1464640883000")
@@ -43,6 +45,25 @@ var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.fire
 //         console.log(e)
 //     }
 // })
+
+// var recommendationCron = new CronJob('00 00 10 * * 0-7', function () {
+var recommendationCron = new CronJob('0 0/5 * * * ?', function () {
+    var dbUtils = require('../dbUtils');
+    var MatchModel = require('../models/Match')
+    var RecommendationModel = require('../recommendations/Recommendation')
+
+    dbUtils.getAllItemsWithFields("matches", MatchModel.recommendedQuery(), "value.playing_time")
+        .then(function (results) {
+            console.log("these are matches pending for reco rating generation : ")
+            results.forEach(function (result) {
+                console.log(result.id)
+                RecommendationModel.createRecommendationCron(result.id)
+                db.newPatchBuilder("matches", result.id)
+                    .add("value.recommended", true)
+                    .apply()
+            })
+        })
+}, null, true, 'Asia/Kolkata')
 
 /**
  * listener:
