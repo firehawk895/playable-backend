@@ -50,7 +50,8 @@ console.log("recommendation cron loaded")
 // })
 
 // var recommendationCron = new CronJob('00 00 10 * * 0-7', function () {
-var recommendationCron = new CronJob('0 0/1 * * * 0-7', function () {
+var recommendationCron = new CronJob('0 0 0/12 * * *', function () {
+    console.log("recommendationCron done")
     var dbUtils = require('../dbUtils');
     var MatchModel = require('../models/Match')
     var RecommendationModel = require('../recommendations/Recommendation')

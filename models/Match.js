@@ -66,7 +66,7 @@ function recommendedQuery() {
     var query = "value.playing_time:[*" + " TO " + currentUnixTime + "]"  //this means greater than equalto
     //https://orchestrate.io/docs/apiref#search
     //matches that are not discoverable for any reason are set to isDiscoverable: false
-    query = query + " AND NOT value.recommended:true"
+    query = query + " AND NOT value.recommended:true AND value.slots_filled:[2 TO *]"
     return query
 }
 
