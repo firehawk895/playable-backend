@@ -179,7 +179,7 @@ module.exports = {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/ultimate_frisbee_d88036.jpg',
             urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-ultimate_frisbee_d88036.png'
         },
-        tt: {
+        tabletennis: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/table_tennis_64b262.jpeg',
             urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-table_tennis_64b262.png'
         },

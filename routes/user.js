@@ -93,7 +93,7 @@ router.post('/mysports', [passport.authenticate('bearer', {session: false}), fun
                 "squash": (req.body.squash || null),
                 "swimming": (req.body.swimming || null),
                 "tennis": (req.body.tennis || null),
-                "tt": (req.body.tt || null),
+                "tabletennis": (req.body.tabletennis || null),
                 "ultimatefrisbee": (req.body.ultimatefrisbee || null),
             },
             hasSelectedSports: true
