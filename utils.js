@@ -126,7 +126,7 @@ function getFormattedDate(unix_timestamp) {
     var ampm = hours >= 12 ? 'pm' : 'am';
     hours = hours % 12;
     hours = hours ? hours : 12; // the hour '0' should be '12'
-    minutes = minutes < 10 ? '0'+minutes : minutes;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
     var strTime = hours + ':' + minutes + ' ' + ampm;
     return strTime;
 // // Hours part from the timestamp
@@ -323,6 +323,40 @@ function undefinedRemover(test) {
     return test
 }
 
+/**
+ * Capture a razorpay payment for authorization
+ * @param paymentId the razorpay generated payment Id
+ * @param amount authorized amount in paise
+ */
+var captureRazorPayment = function (paymentId, amount) {
+    var captureStatus = kew.defer()
+    if (!paymentId || !amount) {
+        captureStatus.reject(new Error("Invalid paymentId and/or amount"))
+    } else {
+        //example razorpay URL (with auth)
+        //https://rzp_test_Ad93zqidD9eZwy:69b2e24411e384f91213f22a@api.razorpay.com/v1/payments
+
+        var baseURL = "https://" + config.razorpay.key + ":" + config.razorpay.secret + "@api.razorpay.com/v1/payments/" + paymentId + "/capture"
+
+        //https://www.npmjs.com/package/request
+        var form = {
+            amount: parseInt(amount)
+        }
+
+        request.post({url: baseURL, form: form}, function (err, httpResponse, body) {
+            console.log(body)
+            if (httpResponse.statusCode >= 400) {
+                captureStatus.reject(err)
+                console.log("payment capture failed");
+            } else {
+                captureStatus.resolve(body)
+                console.log("payment capture succeeded");
+            }
+        });
+    }
+    return captureStatus
+}
+
 
 /**
  * Time capsule:
@@ -348,6 +382,7 @@ exports.sendErrors = sendErrors;
 exports.isRecent = isRecent
 exports.undefinedRemover = undefinedRemover,
     exports.getCurrentUnixTime = getCurrentUnixTime
-    exports.getFormattedDate = getFormattedDate
+exports.getFormattedDate = getFormattedDate,
+    exports.captureRazorPayment = captureRazorPayment
 //sms
 exports.sendSms = sendSms

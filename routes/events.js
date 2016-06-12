@@ -128,7 +128,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         }
 
     }
-    
+
     if (req.query.lat && req.query.long && req.query.radius) {
         console.log("we have a distance query")
         queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
@@ -201,15 +201,30 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
     var userId = req.user.results[0].value.id;
     var responseObj = {}
 
-    EventModel.joinEvent(userId, eventId)
-        .then(function (result) {
-            responseObj["data"] = []
-            res.status(200)
-            res.json(responseObj)
-        })
-        .fail(function (err) {
-            customUtils.sendErrors(err, res)
-        })
+    if (req.query.paymentId && req.query.amount) {
+        customUtils.captureRazorPayment(req.query.paymentId, req.query.amount)
+            .then(function (result) {
+                return EventModel.joinEvent(userId, eventId)
+            })
+            .then(function (result) {
+                responseObj["data"] = []
+                res.status(200)
+                res.json(responseObj)
+            })
+            .fail(function (err) {
+                customUtils.sendErrors(err, res)
+            })
+    } else {
+        EventModel.joinEvent(userId, eventId)
+            .then(function (result) {
+                responseObj["data"] = []
+                res.status(200)
+                res.json(responseObj)
+            })
+            .fail(function (err) {
+                customUtils.sendErrors(err, res)
+            })
+    }
 }])
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
