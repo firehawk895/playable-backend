@@ -329,6 +329,7 @@ function undefinedRemover(test) {
  * @param amount authorized amount in paise
  */
 var captureRazorPayment = function (paymentId, amount) {
+    var request = require('request')
     var captureStatus = kew.defer()
     if (!paymentId || !amount) {
         captureStatus.reject(new Error("Invalid paymentId and/or amount"))
