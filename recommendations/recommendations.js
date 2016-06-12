@@ -62,7 +62,7 @@ var recommendationCron = new CronJob('0 0 0/12 * * *', function () {
             results.forEach(function (result) {
                 console.log(result.id)
                 RecommendationModel.createRecommendationCron(result.id)
-                db.newPatchBuilder("matches", "11f173b11a60b85a")
+                db.newPatchBuilder("matches", result.id)
                     .add("recommended", true)
                     .apply()
                     .then(function (result) {
