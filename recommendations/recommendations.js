@@ -19,6 +19,9 @@ var newMatchesRef = new Firebase(config.firebase.url + "/" + constants.firebaseN
 var recommendationsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.recommendations)
 
 var dbUtils = require('../dbUtils');
+var CronJob = require('cron').CronJob;
+
+console.log("recommendation cron loaded")
 
 //this is for manually testing recommendations
 // RecommendationModel.createRecommendationCron("11a8b7494b60a63b", "1464640883000")
@@ -47,7 +50,7 @@ var dbUtils = require('../dbUtils');
 // })
 
 // var recommendationCron = new CronJob('00 00 10 * * 0-7', function () {
-var recommendationCron = new CronJob('0 0/5 * * * ?', function () {
+var recommendationCron = new CronJob('0 0/1 * * * 0-7', function () {
     var dbUtils = require('../dbUtils');
     var MatchModel = require('../models/Match')
     var RecommendationModel = require('../recommendations/Recommendation')
