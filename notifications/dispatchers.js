@@ -42,6 +42,10 @@ console.log("dispatchers loaded (sounds very cool)")
  * @param usersName
  */
 function welcome(userId, usersName) {
+    console.log("welcome notification -- ")
+    console.log("userId : " + userId)
+    console.log("usersName : " + usersName)
+
     var titleString = "Hello " + usersName + "!";
 
     var nofObj = {

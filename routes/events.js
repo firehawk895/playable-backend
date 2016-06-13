@@ -113,27 +113,33 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         queries.push(dbUtils.createSearchByIdQuery(req.query.eventId))
     } else {
         console.log("default time and isDiscoverable query")
-        if (req.query.showAll)
-            queries.push("@path.kind:item")
+        queries.push(MatchModel.createIsDiscoverableQuery())
+
+        if (req.query.isFeatured == "true")
+            queries.push(EventModel.createFeaturedQuery())
         else
-            queries.push(MatchModel.createIsDiscoverableQuery())
+            queries.push(EventModel.createNotFeaturedQuery())
 
-        console.log("the future query : " + MatchModel.createOnlyFutureTypeQuery())
-        queries.push(MatchModel.createOnlyFutureTypeQuery())
-        var isDistanceQuery = false;
 
-        if (req.query.featured) {
-            console.log("featured query")
-            queries.push(dbUtils.createFieldQuery("isFeatured", "true"))
-        }
+        // var isDistanceQuery = false;
 
+        // if (req.query.featured == "false") {
+        //
+        // } else {
+        //     console.log("featured query")
+        //     queries.push(dbUtils.createFieldQuery("isFeatured", "true"))
+        // }
     }
 
-    if (req.query.lat && req.query.long && req.query.radius) {
-        console.log("we have a distance query")
-        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-        isDistanceQuery = true;
-    }
+    if (req.query.showAll)
+        queries = ["@path.kind:item"]
+
+
+    // if (req.query.lat && req.query.long && req.query.radius) {
+    //     console.log("we have a distance query")
+    //     queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+    //     isDistanceQuery = true;
+    // }
 
     var theFinalQuery = dbUtils.queryJoiner(queries)
     console.log("The final query")
@@ -143,24 +149,24 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
      * remove sort by location if query does not have
      * location
      */
-    if (isDistanceQuery) {
-        var distanceQuery = db.newSearchBuilder()
-            .collection("events")
-            .limit(limit)
-            .offset(offset)
-            .sort('location', 'distance:asc')
-            .query(theFinalQuery)
-        promises.push(distanceQuery)
-    } else {
-        var distanceLessQuery = db.newSearchBuilder()
-            .collection("events")
-            .limit(limit)
-            .offset(offset)
-            .sortBy("@path.reftime:desc")
-            //.sort('location', 'distance:asc')
-            .query(theFinalQuery)
-        promises.push(distanceLessQuery)
-    }
+    // if (isDistanceQuery) {
+    //     var distanceQuery = db.newSearchBuilder()
+    //         .collection("events")
+    //         .limit(limit)
+    //         .offset(offset)
+    //         .sort('location', 'distance:asc')
+    //         .query(theFinalQuery)
+    //     promises.push(distanceQuery)
+    // } else {
+    var distanceLessQuery = db.newSearchBuilder()
+        .collection("events")
+        .limit(limit)
+        .offset(offset)
+        .sortBy("@path.reftime:desc")
+        //.sort('location', 'distance:asc')
+        .query(theFinalQuery)
+    promises.push(distanceLessQuery)
+    // }
 
     //push event participants
     if (isEventQuery) {
@@ -179,9 +185,9 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             return MatchModel.injectIsJoined(theMasterResults[0], userId)
         })
         .then(function (results) {
-            if (distanceQuery) {
-                results = MatchModel.insertDistance(results, req.query.lat, req.query.long)
-            }
+            // if (distanceQuery) {
+            //     results = MatchModel.insertDistance(results, req.query.lat, req.query.long)
+            // }
             responseObj["total_count"] = results.body.total_count
             responseObj["data"] = dbUtils.injectId(results)
             if (isEventQuery) {
@@ -289,12 +295,13 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
     }
 }])
 
-router.get('/csv', function(req, res) {
-    dbUtils.generateCsvFile("matches", "@path.kind:item")
-        .then(function(result) {
-            res.sendFile("../csv/matches.csv")
+router.get('/csv', function (req, res) {
+    dbUtils.generateCsvFile("events", "@path.kind:item")
+        .then(function (result) {
+            res.status(200)
+            res.sendFile('eventa.csv', {root: path.join(__dirname, '../csv')});
         })
-        .fail(function(err) {
+        .fail(function (err) {
             customUtils.sendErrors(err, res)
         })
 })

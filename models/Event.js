@@ -91,6 +91,14 @@ function joinEvent(userId, eventId) {
     return joinedEventStatus
 }
 
+function createNotFeaturedQuery() {
+    return "value.isFeatured:false"
+}
+
+function createFeaturedQuery() {
+    return "value.isFeatured:true"
+}
+
 function getEventParticipantsPromise(eventId) {
     return dbUtils.getGraphResultsPromise('events', eventId, constants.graphRelations.events.participants)
 }
@@ -106,5 +114,7 @@ module.exports = {
     checkEventParticipationPromise: checkEventParticipationPromise,
     getFeaturedEventsPromise: getFeaturedEventsPromise,
     joinEvent: joinEvent,
-    getEventParticipantsPromise: getEventParticipantsPromise
+    getEventParticipantsPromise: getEventParticipantsPromise,
+    createNotFeaturedQuery : createNotFeaturedQuery,
+    createFeaturedQuery : createFeaturedQuery
 }

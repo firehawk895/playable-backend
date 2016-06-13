@@ -117,11 +117,11 @@ function createGenderQuery(genderArray) {
 /**
  * assuming the field type is time
  */
-function createOnlyFutureTypeQuery() {
-    var currentUnixTime = Math.round(date.getTime() / 1000);
-    //this means greater than equalto
-    return "value.time: " + currentUnixTime + "~*"
-}
+// function createOnlyFutureTypeQuery() {
+//     var currentUnixTime = Math.round(date.getTime() / 1000);
+//     //this means greater than equalto
+//     return "value.time: " + currentUnixTime + "~*"
+// }
 
 /**
  * check if a user is participating in a match
@@ -589,7 +589,7 @@ module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,
     createSportsQuery: createSportsQuery,
     getMatchHistoryPromise: getMatchHistoryPromise,
-    createOnlyFutureTypeQuery: createOnlyFutureTypeQuery,
+    // createOnlyFutureTypeQuery: createOnlyFutureTypeQuery,
     connectFacilityToMatch: connectFacilityToMatch,
     checkMatchParticipationPromise: checkMatchParticipationPromise,
     updateGenderInPayload: updateGenderInPayload,

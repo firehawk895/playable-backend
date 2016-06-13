@@ -1449,12 +1449,8 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
 
                     user['password'] = undefined;
 
-                    var notifObj = {
-                        user: id,
-                        name: user.name
-                    };
                     //notify.emit('welcome', notifObj)
-                    EventSystem.welcome(notifObj.id, notifObj.name)
+                    EventSystem.welcome(id, user.name)
                 })
                 .then(function () {
                     var accessToken = customUtils.generateToken();
@@ -1569,7 +1565,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                         name: user.name
                     };
                     //notify.emit('welcome', notifObj)
-                    EventSystem.welcome(notifObj.id, notifObj.name)
+                    EventSystem.welcome(id, user.name)
                 })
                 .then(function () {
                     var accessToken = customUtils.generateToken();
