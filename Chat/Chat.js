@@ -137,7 +137,8 @@ function removeUsersFromRoom(roomId, arrayOfUserIds) {
             QB.chat.dialog.update(roomId, {pull_all: {occupants_ids: arrayOfUserIds}},
                 function (err, result) {
                     if (err) {
-                        console.log(err);
+                        console.log("removeUsersFromRoom error")
+                        console.log(err)
                         removed.reject(err)
                     } else {
                         removed.resolve(result)
@@ -146,6 +147,8 @@ function removeUsersFromRoom(roomId, arrayOfUserIds) {
             );
         })
         .fail(function (err) {
+            console.log("removeUsersFromRoom error")
+            console.log(err)
             removed.reject(err)
         })
     return removed

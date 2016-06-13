@@ -94,7 +94,7 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
         type: constants.requests.type.invite,
         status: constants.requests.status.pending,
         photo: "",
-        msg: hostName + " has invited you to play a game of " + matchPayload.sport + " with you",
+        msg: hostName + " has invited you to play a game of " + matchPayload.sport,
         match: {
             id: matchPayload.id
         },

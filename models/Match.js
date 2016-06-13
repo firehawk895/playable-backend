@@ -297,14 +297,27 @@ function getMatchHistoryPromise(userId) {
 
 function removeFromMatch(userId, matchId) {
     var ChatModel = require('../Chat/Chat')
+    var UserModel = require('../models/User')
     var dbUtils = require('../dbUtils');
+    var match
+    var user
     return kew.all([
         dbUtils.deleteGraphRelationPromise('matches', matchId, 'users', userId, constants.graphRelations.matches.participants),
         dbUtils.deleteGraphRelationPromise('users', userId, 'matches', matchId, constants.graphRelations.users.playsMatches),
-        getMatchChatRoom(matchId)
+        getMatchPromise(matchId),
+        UserModel.getUserPromise(userId)
     ])
         .then(function (results) {
-            ChatModel.removeUsersFromRoom(results[2], [userId])
+            match = results[2].body
+            user = results[3].body
+            
+            if(match.isDiscoverable == false)
+                db.merge("matches", matchId, {isDiscoverable : true})
+            
+            return kew.all([
+                ChatModel.removeUsersFromRoom(match.qbId, [results[3].body.qbId]),
+                decrementSlotsFilled(matchId)
+            ])
         })
         .fail(function (err) {
             console.log("removeFromMatch " + userId + " failed for match " + matchId)
@@ -585,6 +598,13 @@ function getDiscoverableMatchesCount() {
     return count
 }
 
+function decrementSlotsFilled(matchId) {
+    console.log("decrement slots filled matches")
+    db.newPatchBuilder("matches", matchId)
+        .inc("slots_filled", -1)
+        .apply()
+}
+
 module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,
     createSportsQuery: createSportsQuery,
@@ -610,5 +630,6 @@ module.exports = {
     getAdminMarkedCount: getAdminMarkedCount,
     getMatchesForReco: getMatchesForReco,
     getDiscoverableMatchesCount: getDiscoverableMatchesCount,
-    recommendedQuery : recommendedQuery
+    recommendedQuery : recommendedQuery,
+    decrementSlotsFilled : decrementSlotsFilled
 }

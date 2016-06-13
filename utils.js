@@ -120,6 +120,8 @@ function stringToBoolean(theString) {
  * @returns {string}
  */
 function getFormattedDate(unix_timestamp) {
+    var IST_offset = 19800;
+    unix_timestamp = unix_timestamp + IST_offset
     var date = new Date(unix_timestamp * 1000);
     var hours = date.getHours();
     var minutes = date.getMinutes();
