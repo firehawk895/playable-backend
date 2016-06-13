@@ -136,6 +136,10 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
                 return db.get('matches', req.query.matchId)
             })
             .then(function (theMatch) {
+                //that edge case :/
+                if (theMatch.slots_filled < theMatch.slots) {
+                    db.merge('matches', req.query.matchId, {isDiscoverable: true})
+                }
                 //payload["id"] = matchId;
                 responseObj["data"] = theMatch.body;
                 res.status(201);
