@@ -130,6 +130,7 @@ function getFormattedDate(unix_timestamp) {
     hours = hours ? hours : 12; // the hour '0' should be '12'
     minutes = minutes < 10 ? '0' + minutes : minutes;
     var strTime = hours + ':' + minutes + ' ' + ampm;
+    strTime = date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear() + " " + strTime
     return strTime;
 // // Hours part from the timestamp
 //     var hours = date.getHours();
