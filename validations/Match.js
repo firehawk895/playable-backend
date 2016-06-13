@@ -160,6 +160,14 @@ validatePatchMatch = function (reqBody) {
             errors.push("isFacility can be true or false only")
     }
 
+    if (!validator.isNull(reqBody.slots)) {
+        if (validator.isInt(reqBody.slots, {min: 2}))
+            reqBody.slots = parseInt(reqBody.slots)
+        else
+            errors.push("slots must be minimum of 2")
+    }
+    
+
     if (!validator.isNull(reqBody.isAdminMarked)) {
         if (validator.isBoolean(reqBody.isAdminMarked))
             reqBody.isAdminMarked = customUtils.stringToBoolean(reqBody.isAdminMarked)
