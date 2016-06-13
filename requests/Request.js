@@ -310,8 +310,14 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
             .then(function (result) {
                 console.log("connection status checked.")
                 if (result != constants.connections.status.connected) {
+                    console.log("A connection is born")
+                    kew.all([
+                        dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.waitingToAccept),
+                        dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.requestedToConnect),
+                        UserModel.createConnection(user1id, user2id)
+                    ])
+                } else {
                     console.log("users are already connection, create connection is skipped")
-                    UserModel.createConnection(user1id, user2id)
                 }
             })
             .fail(function(err) {
