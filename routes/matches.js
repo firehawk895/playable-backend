@@ -120,6 +120,9 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
                 lat: req.body.lat,
                 long: req.body.long
             },
+            slots: req.body.slots,
+            skill_level_min: req.body.skill_level_min,
+            skill_level_max: req.body.skill_level_max,
             isAdminMarked: req.body.isAdminMarked,
             isFacility: req.body.isFacility,
             facilityId: req.body.facilityId,
@@ -294,7 +297,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             queries.push(MatchModel.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
         }
     }
-    
+
     if (req.query.lat && req.query.long && req.query.radius) {
         console.log("we have a distance query")
         queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
@@ -384,13 +387,13 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         })
 }])
 
-router.get('/csv', function(req, res) {
+router.get('/csv', function (req, res) {
     dbUtils.generateCsvFile("matches", "@path.kind:item")
-        .then(function(result) {
+        .then(function (result) {
             res.status(200)
             res.sendFile('matches.csv', {root: path.join(__dirname, '../csv')});
         })
-        .fail(function(err) {
+        .fail(function (err) {
             customUtils.sendErrors(err, res)
         })
 })

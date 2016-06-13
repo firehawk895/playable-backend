@@ -175,6 +175,18 @@ validatePatchMatch = function (reqBody) {
             errors.push("isAdminMarked can be true or false only")
     }
 
+    if(!validator.isNull(reqBody.skill_level_min) && !validator.isNull(reqBody.skill_level_max)) {
+        if (validator.isInt(reqBody.skill_level_min) &&
+            validator.isInt(reqBody.skill_level_max) &&
+            parseInt(reqBody.skill_level_min) <= parseInt(reqBody.skill_level_max)) {
+            reqBody.skill_level_min = parseInt(reqBody.skill_level_min)
+            reqBody.skill_level_max = parseInt(reqBody.skill_level_max)
+        } else {
+            errors.push("The skill level must be a valid range of 1-5")
+        }
+    }
+    
+
     if (!validator.isNull(reqBody.note)) {
         //do nothing so far, maybe someday you want to put a string limit
     }
