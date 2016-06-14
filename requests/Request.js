@@ -272,6 +272,8 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         })
 
     function createOneOnOneFixAmatch(user1id, matchPayload) {
+        var MatchModel = require('../models/Match')
+        var UserModel = require('../models/User')
         console.log("here is the match payload being created : ")
         console.log(matchPayload)
         var createOneOnOneFixAmatchStatus = kew.defer()
@@ -305,7 +307,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 Dispatchers.acceptMatchRequest(user1id, user2id, matchPayload)
                 //not doing this anymore, we run a cron, because a match time can change
                 // EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
-                return UserModel.getConnectionStatusPromise(user1id, user2id)
+                UserModel.getConnectionStatusPromise(user1id, user2id)
             })
             .then(function (result) {
                 console.log("connection status checked.")
