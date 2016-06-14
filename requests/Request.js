@@ -260,7 +260,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         .then(function (result) {
             return createOneOnOneFixAmatch(user1id, matchPayload)
         })
-        .then(function(matchId) {
+        .then(function (matchId) {
             return MatchModel.joinMatch(matchId, user2id)
         })
         .then(function (result) {
@@ -309,22 +309,19 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
             })
             .then(function (result) {
                 console.log("connection status checked.")
-                if (result != constants.connections.status.connected) {
-                    console.log("A connection is born")
-                    kew.all([
-                        dbUtils.deleteGraphRelationPromise('users', user1id, 'users', user2id, constants.graphRelations.users.waitingToAccept),
-                        dbUtils.deleteGraphRelationPromise('users', user2id, 'users', user1id, constants.graphRelations.users.requestedToConnect),
-                        UserModel.createConnection(user1id, user2id)
-                    ])
+                if (result == constants.connections.status.connected) {
+                    console.log("users are already connections, create connection is skipped")
                 } else {
-                    console.log("users are already connection, create connection is skipped")
+                    console.log("the people are not connected!")
+                    acceptConnectionRequest(user1id, user2id)
                 }
             })
-            .fail(function(err) {
+            .fail(function (err) {
                 createOneOnOneFixAmatchStatus.reject(err)
             })
         return createOneOnOneFixAmatchStatus
     }
+
     // createOneOnOneFixAmatch(user1id, matchPayload)
 }
 
@@ -355,5 +352,5 @@ module.exports = {
     acceptConnectionRequest: acceptConnectionRequest,
     parseRequestObject: parseRequestObject,
     createRequestToJoinMatch: createRequestToJoinMatch,
-    acceptMatchRequest : acceptMatchRequest
+    acceptMatchRequest: acceptMatchRequest
 }
