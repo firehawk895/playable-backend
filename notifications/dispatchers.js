@@ -273,15 +273,18 @@ function acceptConnectionRequest(accepterId, senderId) {
  * @param matchPayload
  */
 function acceptMatchRequest(user1id, user2id, matchPayload) {
+    console.log("notification dispatcher : acceptMatchRequest")
+    console.log(user1id)
+    console.log(user2id)
+    console.log(matchPayload)
     var UserModel = require('../models/User');
     var nofObj1
     var nofObj2
     kew.all([
         UserModel.getUserPromise(user1id),
-        UserModel.getUserPromise(user2id)
     ])
         .then(function (userdata) {
-            nofObj1 = {
+            nofObj = {
                 "created": date.getTime(),
                 "is_clicked": false,
                 "is_read": false,
