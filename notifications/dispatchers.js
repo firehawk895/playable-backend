@@ -282,39 +282,60 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
     var nofObj2
     kew.all([
         UserModel.getUserPromise(user1id),
+        UserModel.getUserPromise(user2id)
     ])
-        .then(function (userdata) {
-            nofObj = {
+        .then(function (results) {
+            var user1 = results.body
+            var user2 = results.body
+            var nofObj = {
                 "created": date.getTime(),
                 "is_clicked": false,
                 "is_read": false,
                 "link": constants.notifications.links.request,
                 "title": "1on1 Match Accepted",
-                "text": "Game on! Your match of " + matchPayload.sport + "with " + userdata[0].body.name + " has been hosted! Chat with your partner!",
+                "text": "Game on! Your match of " + matchPayload.sport + "with " + user2.name + " has been hosted! Chat with your partner!",
                 "photo": ""
             };
-            nofObj2 = {
-                "created": date.getTime(),
-                "is_clicked": false,
-                "is_read": false,
-                "link": constants.notifications.links.request,
-                "title": "1on1 Match Accepted",
-                "text": "Game on! Your match of " + matchPayload.sport + "with " + userdata[1].body.name + " has been hosted! Chat with your partner!",
-                "photo": ""
-            };
-            return kew.all([
-                UserModel.getGcmIdsForUserIds([user1id]),
-                UserModel.getGcmIdsForUserIds([user1id])
-            ])
+            console.log("dispatching : ")
+            console.log(nofObj)
+            NF.send(nofObj, constants.notifications.type.push, [user1.gcmId], null);
         })
-        .then(function (gcmIds) {
-            NF.send(nofObj1, constants.notifications.type.push, gcmIds[0], null);
-            NF.send(nofObj2, constants.notifications.type.push, gcmIds[1], null);
-        })
-        .fail(function (err) {
-            console.log("acceptMatchRequest push notification failed")
-            console.log(err)
-        })
+
+    // kew.all([
+    //     UserModel.getUserPromise(user1id),
+    // ])
+    //     .then(function (userdata) {
+    //         nofObj = {
+    //             "created": date.getTime(),
+    //             "is_clicked": false,
+    //             "is_read": false,
+    //             "link": constants.notifications.links.request,
+    //             "title": "1on1 Match Accepted",
+    //             "text": "Game on! Your match of " + matchPayload.sport + "with " + userdata[0].body.name + " has been hosted! Chat with your partner!",
+    //             "photo": ""
+    //         };
+    //         nofObj2 = {
+    //             "created": date.getTime(),
+    //             "is_clicked": false,
+    //             "is_read": false,
+    //             "link": constants.notifications.links.request,
+    //             "title": "1on1 Match Accepted",
+    //             "text": "Game on! Your match of " + matchPayload.sport + "with " + userdata[1].body.name + " has been hosted! Chat with your partner!",
+    //             "photo": ""
+    //         };
+    //         return kew.all([
+    //             UserModel.getGcmIdsForUserIds([user1id]),
+    //             UserModel.getGcmIdsForUserIds([user1id])
+    //         ])
+    //     })
+    //     .then(function (gcmIds) {
+    //         NF.send(nofObj1, constants.notifications.type.push, gcmIds[0], null);
+    //         NF.send(nofObj2, constants.notifications.type.push, gcmIds[1], null);
+    //     })
+    //     .fail(function (err) {
+    //         console.log("acceptMatchRequest push notification failed")
+    //         console.log(err)
+    //     })
 }
 
 /**
