@@ -98,11 +98,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
     var promises = []
     var isEventQuery = false
 
-    //var user = {}
-    //user.location = {
-    //    'lat': req.user.results[0].value.location.lat,
-    //    'long': req.user.results[0].value.location.long
-    //}
     var queries = []
     var responseObj = {}
 
@@ -121,7 +116,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             queries.push(EventModel.createNotFeaturedQuery())
 
 
-        // var isDistanceQuery = false;
+        var isDistanceQuery = false;
 
         // if (req.query.featured == "false") {
         //
@@ -135,11 +130,11 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         queries = ["@path.kind:item"]
 
 
-    // if (req.query.lat && req.query.long && req.query.radius) {
-    //     console.log("we have a distance query")
-    //     queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
-    //     isDistanceQuery = true;
-    // }
+    if (req.query.lat && req.query.long && req.query.radius) {
+        console.log("we have a distance query")
+        queries.push(dbUtils.createDistanceQuery(req.query.lat, req.query.long, req.query.radius))
+        isDistanceQuery = true;
+    }
 
     var theFinalQuery = dbUtils.queryJoiner(queries)
     console.log("The final query")
@@ -149,15 +144,15 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
      * remove sort by location if query does not have
      * location
      */
-    // if (isDistanceQuery) {
-    //     var distanceQuery = db.newSearchBuilder()
-    //         .collection("events")
-    //         .limit(limit)
-    //         .offset(offset)
-    //         .sort('location', 'distance:asc')
-    //         .query(theFinalQuery)
-    //     promises.push(distanceQuery)
-    // } else {
+    if (isDistanceQuery) {
+        var distanceQuery = db.newSearchBuilder()
+            .collection("events")
+            .limit(limit)
+            .offset(offset)
+            .sort('location', 'distance:asc')
+            .query(theFinalQuery)
+        promises.push(distanceQuery)
+    } else {
     var distanceLessQuery = db.newSearchBuilder()
         .collection("events")
         .limit(limit)
@@ -166,7 +161,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
         //.sort('location', 'distance:asc')
         .query(theFinalQuery)
     promises.push(distanceLessQuery)
-    // }
+    }
 
     //push event participants
     if (isEventQuery) {
@@ -185,9 +180,9 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
             return MatchModel.injectIsJoined(theMasterResults[0], userId)
         })
         .then(function (results) {
-            // if (distanceQuery) {
-            //     results = MatchModel.insertDistance(results, req.query.lat, req.query.long)
-            // }
+            if (distanceQuery) {
+                results = MatchModel.insertDistance(results, req.query.lat, req.query.long)
+            }
             responseObj["total_count"] = results.body.total_count
             responseObj["data"] = dbUtils.injectId(results)
             if (isEventQuery) {
