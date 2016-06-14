@@ -303,18 +303,11 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
             })
             .then(function (results) {
-                console.log("log this : createOneOnOneFixAmatchStatus resolved!")
                 //not doing this anymore, we run a cron, because a match time can change
                 // EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
                 //frustration
-                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
-                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
-                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
-                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
-                console.log("never entered")
                 UserModel.getConnectionStatusPromise(user1id, user2id)
                     .then(function(result) {
-                        console.log("the code that never executed nor will it ever. behenchod.")
                         if (result == constants.connections.status.connected) {
                             console.log("users are already connections, create connection is skipped")
                         } else {

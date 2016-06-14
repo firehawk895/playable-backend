@@ -285,8 +285,8 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         UserModel.getUserPromise(user2id)
     ])
         .then(function (results) {
-            var user1 = results.body
-            var user2 = results.body
+            var user1 = results[0].body
+            var user2 = results[1].body
             var nofObj = {
                 "created": date.getTime(),
                 "is_clicked": false,
