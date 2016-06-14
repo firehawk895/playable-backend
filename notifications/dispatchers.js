@@ -12,6 +12,7 @@ var UserModel = require('../models/User');
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
+var kew = require('kew');
 var constants = require('../constants');
 var qbchat = require('../Chat/qbchat');
 var MatchModel = require('../models/Match');
@@ -278,8 +279,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
     console.log(user2id)
     console.log(matchPayload)
     var UserModel = require('../models/User');
-    var nofObj1
-    var nofObj2
+    var kew = require('kew');
     kew.all([
         UserModel.getUserPromise(user1id),
         UserModel.getUserPromise(user2id)
