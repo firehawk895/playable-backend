@@ -308,17 +308,28 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 Dispatchers.acceptMatchRequest(user1id, user2id, matchPayload)
                 //not doing this anymore, we run a cron, because a match time can change
                 // EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
-                return UserModel.getConnectionStatusPromise(user1id, user2id)
+                //frustration
+                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
+                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
+                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
+                console.log("UserModel.getConnectionStatusPromise(user1id, user2id)")
+                console.log("never entered")
+                UserModel.getConnectionStatusPromise(user1id, user2id)
+                    .then(function(result) {
+                        console.log("the code that never executed nor will it ever. behenchod.")
+                        if (result == constants.connections.status.connected) {
+                            console.log("users are already connections, create connection is skipped")
+                        } else {
+                            console.log("the people are not connected!")
+                            acceptConnectionRequest(user1id, user2id)
+                        }
+                    })
+                    .fail(function (err) {
+                        console.log("UserModel.getConnectionStatusPromise(user1id, user2id) problems")
+                        console.log(err)
+                    })
             })
-            .then(function (result) {
-                console.log("connection status checked.")
-                if (result == constants.connections.status.connected) {
-                    console.log("users are already connections, create connection is skipped")
-                } else {
-                    console.log("the people are not connected!")
-                    acceptConnectionRequest(user1id, user2id)
-                }
-            })
+            
             .fail(function (err) {
                 createOneOnOneFixAmatchStatus.reject(err)
             })
