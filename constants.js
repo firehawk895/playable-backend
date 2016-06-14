@@ -186,16 +186,16 @@ module.exports = {
             urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-table_tennis_64b262.png'
         },
         badminton: {
-            url: 'https://s3.amazonaws.com/pyoopil-prod-server/badminton_b5f5d4.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-badminton_b5f5d4.png'
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/badminton_16d145.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-badminton_16d145.png'
         },
         squash: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/squash_add7e3.jpg',
             urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-squash_add7e3.png'
         },
         tennis: {
-            url: 'https://s3.amazonaws.com/pyoopil-prod-server/tennis_f769dd.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-tennis_f769dd.png'
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/tennis_3de818.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-badminton-22.png'
         }
         ,
         cycling: {
