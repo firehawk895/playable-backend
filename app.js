@@ -39,7 +39,7 @@ var recommendations = require('./recommendations/recommendations');
 var dispatchers = require('./notifications/dispatchers');
 
 var QuickBlox = require('quickblox').QuickBlox;
-var QB = new QuickBlox()
+QB = new QuickBlox()
 
 //----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');

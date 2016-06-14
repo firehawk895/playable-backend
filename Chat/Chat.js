@@ -5,10 +5,10 @@ oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 var constants = require('../constants');
 // var qbchat = require('../Chat/qbchat');
-// var QuickBlox = require('quickblox').QuickBlox;
+var QuickBlox = require('quickblox').QuickBlox;
 // var QB = new QuickBlox()
 
-var QB = require('quickblox').QuickBlox
+// var QB = require('quickblox').QuickBlox
 
 var dbUtils = require('../dbUtils');
 var kew = require('kew')
