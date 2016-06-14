@@ -154,8 +154,8 @@ router.post('/auth/google', function (req, res, next) {
             if (validator.isNull(payload.name)) errors.push("Name is missing");
             //if profile is missing set your own profile, because it has not been set in google.
             if (validator.isNull(payload.picture)) {
-                avatar = "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png";
-                avatarThumb = "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_profile_photo-1.png";
+                avatar = "https://s3.amazonaws.com/pyoopil-prod-serverresized/profile.png";
+                avatarThumb = "https://s3.amazonaws.com/pyoopil-prod-serverresized/profile.png";
             } else {
                 avatar = payload.picture.replace('s96-c/', '');
                 avatarThumb = payload.picture;

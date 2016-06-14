@@ -19,7 +19,7 @@ module.exports = {
     ],
     //following the facebook format
     "cover": {
-        "source": "https://s3-ap-southeast-1.amazonaws.com/playable-prod/default_cover_photo.jpg"
+        "source": "https://s3.amazonaws.com/pyoopil-prod-serverresized/playable-cover.png"
     },
     "skill_rating_min": 1,
     "skill_rating_max": 5,
