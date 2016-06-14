@@ -24,6 +24,8 @@ var userRef = new Firebase(feedbackRefUrl, config.firebase.secret);
 
 var EventSystem = require('../notifications/dispatchers');
 
+console.log("Feedback channel dispatchers loaded")
+
 /**
  * Register a listener for a user
  */

@@ -376,8 +376,8 @@ function feedback(username, message) {
         "is_read": false,
         "link": "Feedback Channel",
         "title": "Response for your Feedback",
-        "text": "You got a response from Playable Team : " + message,
-        "photo": "https://s3-ap-southeast-1.amazonaws.com/pyoopil-tssc-files/pyoopil-logo.png"
+        "text": "You got a response from Playable Team : " + message.split(":")[1].trim(),
+        "photo": ""
     };
 
     db.newSearchBuilder()
@@ -386,7 +386,9 @@ function feedback(username, message) {
         .then(function (result) {
             console.log("result.body.total_count > 0 -- " + result.body.total_count)
             if (result.body.total_count > 0) {
-                user = result.body.results[0].value;
+                var user = result.body.results[0].value;
+                console.log("feedback user")
+                console.log(user)
                 NF.send(nofObj, constants.notifications.type.both, [user.gcmId], [user.id]);
             } else {
                 request.post(config.newSlack.feedbackHook, {
