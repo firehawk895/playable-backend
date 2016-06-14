@@ -38,6 +38,9 @@ var requests = require('./requests/requests');
 var recommendations = require('./recommendations/recommendations');
 var dispatchers = require('./notifications/dispatchers');
 
+var QuickBlox = require('quickblox').QuickBlox;
+var QB = new QuickBlox()
+
 //----------------------------- Start Extended Validators --------------------------------------
 var validator = require('validator');
 validator.extend('isTimeInFuture', function (time) {
@@ -195,5 +198,15 @@ app.use(function (err, req, res, next) {
 //    error: {}
 //  });
 //});
+QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
+QB.createSession(config.qb.params, function (err, session) {
+    if (err) {
+        console.log("error on servers starts QB session")
+        console.log(err)
+        //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+    } else {
+        console.log("servers starts QB session")
+    }
+});
 
 module.exports = app;

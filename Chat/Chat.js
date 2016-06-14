@@ -5,9 +5,10 @@ oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 var constants = require('../constants');
 // var qbchat = require('../Chat/qbchat');
-var QuickBlox = require('quickblox').QuickBlox;
-var QB = new QuickBlox()
+// var QuickBlox = require('quickblox').QuickBlox;
+// var QB = new QuickBlox()
 
+var QB = require('quickblox').QuickBlox
 
 var dbUtils = require('../dbUtils');
 var kew = require('kew')
@@ -180,22 +181,43 @@ function getSession() {
     // var qbchat = require('../Chat/qbchat');
     console.log("getting the session")
     var sessionStatus = kew.defer()
-    console.log('about to QB init')
+    // console.log('about to QB init')
 
-    QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
-
-    console.log("QB.createSession")
-    QB.createSession(config.qb.params, function (err, session) {
-        if (err) {
-            console.log(err)
-            console.log("eh whats going on?")
-            sessionStatus.reject(err)
-            //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+    QB.getSession(function(err, session) {
+        if(err) {
+            console.log("QB session doesnt exist, recreating")
+            QB.createSession(config.qb.params, function (err, session) {
+                QB.createSession(config.qb.params, function (err, session) {
+                    if (err) {
+                        console.log(err)
+                        console.log("eh whats going on?")
+                        sessionStatus.reject(err)
+                        //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+                    } else {
+                        console.log("resolvng")
+                        sessionStatus.resolve(session)
+                    }
+                });
+            })
         } else {
-            console.log("resolvng")
             sessionStatus.resolve(session)
         }
-    });
+    })
+
+    // QB.init(config.qb.appId, config.qb.authKey, config.qb.authSecret, false);
+
+    // console.log("QB.createSession")
+    // QB.createSession(config.qb.params, function (err, session) {
+    //     if (err) {
+    //         console.log(err)
+    //         console.log("eh whats going on?")
+    //         sessionStatus.reject(err)
+    //         //customUtils.sendErrors(["Can't connect to the chat server, try again later"], 503, res)
+    //     } else {
+    //         console.log("resolvng")
+    //         sessionStatus.resolve(session)
+    //     }
+    // });
 
     // qbchat.getSession(function (err, session) {
     //     if (err) {
