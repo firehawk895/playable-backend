@@ -303,11 +303,12 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                 //notifyMatchCreated(matchPayload["id"], matchPayload["playing_time"])
             })
             .then(function (results) {
+                console.log("log this : createOneOnOneFixAmatchStatus resolved!")
                 createOneOnOneFixAmatchStatus.resolve(matchPayload["id"])
                 Dispatchers.acceptMatchRequest(user1id, user2id, matchPayload)
                 //not doing this anymore, we run a cron, because a match time can change
                 // EventSystem.dispatchEvent(constants.events.matches.created, matchPayload)
-                UserModel.getConnectionStatusPromise(user1id, user2id)
+                return UserModel.getConnectionStatusPromise(user1id, user2id)
             })
             .then(function (result) {
                 console.log("connection status checked.")
