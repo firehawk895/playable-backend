@@ -286,7 +286,7 @@ router.post('/auth/facebook', function (req, res, next) {
                 }
 
                 avatar = "https://graph.facebook.com/" + payload.id + "/picture?type=large";
-                avatarThumb = "https://graph.facebook.com/" + payload.id + "/picture";
+                avatarThumb = "https://graph.facebook.com/" + payload.id + "/picture?width=100&height=100";
 
                 //----------------------------------------sign up scenarios ----------------------------
                 console.log("entering search?");
