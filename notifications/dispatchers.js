@@ -107,6 +107,16 @@ function newEvent(eventId, eventName) {
     everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.both)
 }
 
+function newMatch(matchId, matchName, hostName, hostNumber, hostUsername, sport, isFacility) {
+    var message
+    if(isFacility) {
+        message = "FACILITY MATCH HOSTED : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport 
+    } else {
+        message = "vela match hosted : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport
+    }
+    sendSlackMessage(message)
+}
+
 /**
  * TESTED
  * @param eventId
@@ -459,5 +469,6 @@ module.exports = {
     acceptConnectionRequest: acceptConnectionRequest,
     acceptMatchRequest: acceptMatchRequest,
     acceptJoinMatchRequest: acceptJoinMatchRequest,
-    sendSlackMessage: sendSlackMessage
+    sendSlackMessage: sendSlackMessage,
+    newMatch : newMatch
 }

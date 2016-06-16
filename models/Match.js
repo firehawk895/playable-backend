@@ -439,7 +439,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //    "matchId": payload["id"],
             //    "pathTitle": reqBody.title
             //}
-            // EventSystem.dispatchEvent(constants.firebaseNodes.events.newMatches, payload)
+            EventSystem.newMatch(payload["id"], payload["name"], hostData["name"], hostData["phoneNumber"], hostData["username"], payload["sport"], payload["sport"])
             return kew.all(promises)
         })
         .then(function (result) {
