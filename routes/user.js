@@ -38,7 +38,7 @@ var dbUtils = require('../dbUtils');
 var EventSystem = require('../notifications/dispatchers');
 
 // var date = new Date();
-var now = date.getTime();
+// var now = date.getTime();
 var bunyan = require('bunyan');
 var log = bunyan.createLogger({
     name: 'users',
