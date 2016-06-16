@@ -321,7 +321,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
                     })
                 createOneOnOneFixAmatchStatus.resolve(matchPayload["id"])
                 Dispatchers.acceptMatchRequest(user1id, user2id, matchPayload)
-                EventSystem.newMatch(matchPayload["id"], matchPayload["name"], matchPayload["host"]["name"], matchPayload["host"]["phoneNumber"], matchPayload["host"]["username"], matchPayload["sport"], matchPayload["isFacility"])
+                Dispatchers.newMatch(matchPayload["id"], matchPayload["title"], matchPayload["host"]["name"], matchPayload["host"]["phoneNumber"], matchPayload["host"]["username"], matchPayload["sport"], matchPayload["isFacility"])
             })
             
             .fail(function (err) {

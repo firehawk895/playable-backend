@@ -440,7 +440,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //    "matchId": payload["id"],
             //    "pathTitle": reqBody.title
             //}
-            dispatchers.newMatch(payload["id"], payload["name"], hostData["name"], hostData["phoneNumber"], hostData["username"], payload["sport"], payload["sport"])
+            dispatchers.newMatch(payload["id"], payload["title"], hostData["name"], hostData["phoneNumber"], hostData["username"], payload["sport"], payload["isFacility"])
             return kew.all(promises)
         })
         .then(function (result) {
