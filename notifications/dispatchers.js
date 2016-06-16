@@ -8,6 +8,8 @@ var message = new gcm.Message();
 var customUtils = require('../utils.js');
 var UserModel = require('../models/User');
 
+var request = require('request');
+
 //kardo sab import, node only uses it once
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
@@ -28,7 +30,7 @@ var Firebase = require("firebase");
 var requestsRef = new Firebase(config.firebase.url + "/" + constants.firebaseNodes.requests)
 
 var NF = require('../notifications/notificationFactory');
-var date = new Date()
+// var date = new Date()
 
 console.log("dispatchers loaded (sounds very cool)")
 
@@ -42,7 +44,7 @@ console.log("dispatchers loaded (sounds very cool)")
  * @param userId
  * @param usersName
  */
-function welcome(userId, usersName) {
+function welcome(userId, usersName, phoneNumber, username) {
     console.log("welcome notification -- ")
     console.log("userId : " + userId)
     console.log("usersName : " + usersName)
@@ -50,7 +52,7 @@ function welcome(userId, usersName) {
     var titleString = "Hello " + usersName + "!";
 
     var nofObj = {
-        "created": date.getTime(),
+        "created": (new Date()).getTime(),
         "is_clicked": false,
         "is_read": false,
         "link": constants.notifications.links.discover,
@@ -59,6 +61,7 @@ function welcome(userId, usersName) {
         "photo": ""
     };
     NF.send(nofObj, constants.notifications.type.inApp, null, [userId]);
+    sendSlackMessage("New player in the house nigga!!!! - Naam: " + usersName + ", username: " + username + ", phone: " + phoneNumber)
 }
 
 /**
@@ -72,7 +75,7 @@ var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
         .then(function (count) {
             console.log("new matches : " + count)
             var nofObj = {
-                "created": date.getTime(),
+                "created": (new Date()).getTime(),
                 "is_clicked": false,
                 "is_read": false,
                 "link": constants.notifications.links.discover,
@@ -93,7 +96,7 @@ function newEvent(eventId, eventName) {
     console.log("disaptching everyone! new Event!")
     var nofObj = {
         "id": eventId,
-        "created": date.getTime(),
+        "created": (new Date()).getTime(),
         "is_clicked": false,
         "is_read": false,
         "link": constants.notifications.links.eventId,
@@ -116,7 +119,7 @@ function joinedEvent(eventId, eventName, userId, google_form) {
     console.log("joinedEvent dispatcher hit")
     var nofObj = {
         "eventId": eventId,
-        "created": date.getTime(),
+        "created": (new Date()).getTime(),
         "is_clicked": false,
         "is_read": false,
         "link": constants.notifications.links.eventId,
@@ -250,7 +253,7 @@ function acceptConnectionRequest(accepterId, senderId) {
         })
         .then(function (gcmIds) {
             var nofObj = {
-                "created": date.getTime(),
+                "created": (new Date()).getTime(),
                 "is_clicked": false,
                 "is_read": false,
                 "link": constants.notifications.links.userId,
@@ -288,7 +291,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
             var user1 = results[0].body
             var user2 = results[1].body
             var nofObj = {
-                "created": date.getTime(),
+                "created": (new Date()).getTime(),
                 "is_clicked": false,
                 "is_read": false,
                 "link": constants.notifications.links.request,
@@ -349,7 +352,7 @@ function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
     UserModel.getUserPromise(function (result) {
         var theUser = result.body
         var nofObj = {
-            "created": date.getTime(),
+            "created": (new Date()).getTime(),
             "is_clicked": false,
             "is_read": false,
             "link": constants.notifications.links.matchId,
@@ -370,8 +373,8 @@ function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
 
 function feedback(username, message) {
     var nofObj = {
-        "created": date.getTime(),
-        "id": date.getTime(),
+        "created": (new Date()).getTime(),
+        "id": (new Date()).getTime(),
         "is_clicked": false,
         "is_read": false,
         "link": "Feedback Channel",
@@ -440,6 +443,13 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
         });
 }
 
+var sendSlackMessage = function (message) {
+    var request = require('request');
+    request.post(config.newSlack.feedbackHook, {
+        body: JSON.stringify({text: message})
+    })
+}
+
 module.exports = {
     welcome: welcome,
     newEvent: newEvent,
@@ -448,5 +458,6 @@ module.exports = {
     pushRequestNotification: pushRequestNotification,
     acceptConnectionRequest: acceptConnectionRequest,
     acceptMatchRequest: acceptMatchRequest,
-    acceptJoinMatchRequest: acceptJoinMatchRequest
+    acceptJoinMatchRequest: acceptJoinMatchRequest,
+    sendSlackMessage: sendSlackMessage
 }

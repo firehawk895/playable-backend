@@ -37,7 +37,7 @@ var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../notifications/dispatchers');
 
-var date = new Date();
+// var date = new Date();
 var now = date.getTime();
 var bunyan = require('bunyan');
 var log = bunyan.createLogger({
@@ -513,8 +513,8 @@ router.post('/signup', function (req, res, next) {
                         "tagline": req.body.tagline,
                         "phoneNumberVerified": false,
                         "isVerified": isVerified,
-                        "last_seen": date.getTime(),
-                        "created": date.getTime(),
+                        "last_seen": (new Date()).getTime(),
+                        "created": (new Date()).getTime(),
                         "cover": constants.cover,
                         "hasSelectedSports": false,
                         "matchesPlayed": 0,
@@ -720,7 +720,7 @@ router.post('/verify/phone', [passport.authenticate('bearer', {session: false}),
         var otp = customUtils.getRandomArbitrary(1000, 9999)
 
         var date = new Date()
-        var now = date.getTime()
+        var now = (new Date()).getTime()
         var payload = {
             'phoneNumber': req.body.phoneNumber,
             'otp': otp,
@@ -1407,9 +1407,9 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
         "tagline": undefined,
         "isVerified": true,
         "phoneNumberVerified": false,
-        "last_seen": date.getTime(),
+        "last_seen": (new Date()).getTime(),
         "google": payload['sub'],
-        "created": date.getTime(),
+        "created": (new Date()).getTime(),
         "cover": constants.cover,
         "hasSelectedSports": false,
         "matchesPlayed": 0,
@@ -1439,8 +1439,8 @@ var signUpFreshGoogleUser = function (payload, avatar, avatarThumb, res) {
                         "username": user['username'],
                         "qbId": user['qbId'],
                         "dbId": user['id'],
-                        "created": date.getTime(),
-                        "id": date.getTime()
+                        "created": (new Date()).getTime(),
+                        "id": (new Date()).getTime()
                     }
                     if (typeof user['gcmId'] !== 'undefined')
                         chatObj['gcmId'] = user['gcmId']
@@ -1510,9 +1510,9 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
         "tagline": undefined,
         "phoneNumberVerified": false,
         "isVerified": true,
-        "last_seen": date.getTime(),
+        "last_seen": (new Date()).getTime(),
         "facebook": payload['id'],
-        "created": date.getTime(),
+        "created": (new Date()).getTime(),
         "cover": payload['cover'],
         "gender": payload["gender"],
         "hasSelectedSports": false,
@@ -1550,8 +1550,8 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                         "username": user['username'],
                         "qbId": user['qbId'],
                         "dbId": user['id'],
-                        "created": date.getTime(),
-                        "id": date.getTime()
+                        "created": (new Date()).getTime(),
+                        "id": (new Date()).getTime()
                     }
                     if (typeof user['gcmId'] !== 'undefined')
                         chatObj['gcmId'] = user['gcmId']
@@ -1567,7 +1567,7 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
                         name: user.name
                     };
                     //notify.emit('welcome', notifObj)
-                    EventSystem.welcome(id, user.name)
+                    EventSystem.welcome(id, user.name, user.phoneNumber, user.username)
                 })
                 .then(function () {
                     var accessToken = customUtils.generateToken();

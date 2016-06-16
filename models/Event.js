@@ -26,8 +26,7 @@ function checkEventParticipationPromise(eventId, userId) {
  * @returns {SearchBuilder} promise
  */
 function getFeaturedEventsPromise() {
-    var date = new Date()
-    var currentUnixTime = Math.round(date.getTime() / 1000)
+    var currentUnixTime = Math.round((new Date()).getTime() / 1000)
     /**
      * TODO: Red alert! can't put this outside! how!
      * no idea why in the world if this is outside the method this doesnt work

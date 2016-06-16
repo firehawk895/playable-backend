@@ -15,7 +15,7 @@ var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-var now = new Date().getTime()
+// var now = new Date().getTime()
 
 var Firebase = require("firebase");
 var feedbackRefUrl = config.firebase.url + "/FeedbackUpdated"
@@ -41,7 +41,7 @@ userRef.on("child_added", function (snapshot) {
          * when the server starts, dispatch messages
          * of timestamp 1 minute before the current time
          * */
-        if (messageObj.timestamp > (now - 60)) {
+        if (messageObj.timestamp > ((new Date()) - 60)) {
             /**
              * The Message from Playable, or the slack channel
              * should not be resent back to the channel
@@ -75,12 +75,10 @@ router.post('/', multer(), function (req, res) {
             var thisUsersRefUrl = feedbackRefUrl + "/" + username
             var thisUsersRef = new Firebase(thisUsersRefUrl, config.firebase.secret)
 
-            var date = new Date()
-            var time = date.getTime()
             var messageObj = {
                 displayName: "Playable",
                 text: dollarMatcher[2],
-                timestamp: time
+                timestamp: (new Date()).getTime()
             }
 
             thisUsersRef.push().set(messageObj, function (error) {

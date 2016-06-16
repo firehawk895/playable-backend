@@ -14,7 +14,7 @@ var dbUtils = require('../dbUtils');
 var kew = require('kew');
 var EventSystem = require('../events/events');
 var ChatModel = require('../Chat/Chat');
-var date = new Date()
+// var date = new Date()
 
 /**
  * LUCENE query generators ------------------------------------->
@@ -51,7 +51,7 @@ function connectFacilityToMatch(matchId, facilityId) {
  * @returns {string}
  */
 function createIsDiscoverableQuery() {
-    var currentUnixTime = Math.round(date.getTime() / 1000)
+    var currentUnixTime = Math.round((new Date()).getTime() / 1000)
     console.log("the current unix timestamp -- " + currentUnixTime)
     var query = "value.playing_time:[" + currentUnixTime + " TO *]"  //this means greater than equalto
     //https://orchestrate.io/docs/apiref#search
@@ -61,7 +61,7 @@ function createIsDiscoverableQuery() {
 }
 
 function recommendedQuery() {
-    var currentUnixTime = Math.round(date.getTime() / 1000)
+    var currentUnixTime = Math.round((new Date()).getTime() / 1000)
     console.log("the current unix timestamp -- " + currentUnixTime)
     var query = "value.playing_time:[*" + " TO " + currentUnixTime + "]"  //this means greater than equalto
     //https://orchestrate.io/docs/apiref#search

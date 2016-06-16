@@ -10,7 +10,7 @@ var EventSystem = require('../events/events');
 var Dispatchers = require('../notifications/dispatchers');
 var customUtils = require('../utils');
 var Firebase = require("firebase");
-var date = new Date()
+// var date = new Date()
 var kew = require('kew')
 
 var oio = require('orchestrate');
@@ -31,7 +31,7 @@ function createConnectionRequest(user1id, user2id, user1name, user1photo) {
         status: constants.requests.status.pending,
         msg: user1name + " has requested to connect with you",
         photo: user1photo,
-        timestamp: date.getTime()
+        timestamp: (new Date()).getTime()
     }
     Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], user2id)
     pushRequestToFirebase(payload, user2id)
@@ -57,7 +57,7 @@ function createMatchRequest(user1id, user2id, matchPayload, user1name) {
         photo: "",
         msg: user1name + " wants to play a game of " + matchPayload.sport + " with you",
         match: matchPayload,
-        timestamp: date.getTime()
+        timestamp: (new Date()).getTime()
     }
     Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], user2id)
     pushRequestToFirebase(payload, user2id)
@@ -98,7 +98,7 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
         match: {
             id: matchPayload.id
         },
-        timestamp: date.getTime()
+        timestamp: (new Date()).getTime()
     }
     Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], inviteeId)
     pushRequestToFirebase(payload, inviteeId)
@@ -122,7 +122,7 @@ function createRequestToJoinMatch(hostId, requesterId, matchPayload, requesterNa
         photo: requesterPhoto,
         msg: requesterName + " wants to join your game of " + matchPayload.sport + " on " + formatted,
         match: matchPayload,
-        timestamp: date.getTime()
+        timestamp: (new Date()).getTime()
     }
     Dispatchers.pushRequestNotification(payload["msg"], payload["timestamp"], hostId)
     pushRequestToFirebase(payload, hostId)

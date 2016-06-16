@@ -17,7 +17,7 @@ var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
 var db = oio(config.db.key);
 
-var now = new Date().getTime()
+// var now = new Date().getTime()
 
 var Firebase = require("firebase");
 var feedbackRefUrl = config.firebase.url + "/FeedbackUpdated"
