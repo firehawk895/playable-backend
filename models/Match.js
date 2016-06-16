@@ -13,6 +13,7 @@ var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var kew = require('kew');
 var EventSystem = require('../events/events');
+var dispatchers = require('../notifications/dispatchers');
 var ChatModel = require('../Chat/Chat');
 // var date = new Date()
 
@@ -439,7 +440,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //    "matchId": payload["id"],
             //    "pathTitle": reqBody.title
             //}
-            EventSystem.newMatch(payload["id"], payload["name"], hostData["name"], hostData["phoneNumber"], hostData["username"], payload["sport"], payload["sport"])
+            dispatchers.newMatch(payload["id"], payload["name"], hostData["name"], hostData["phoneNumber"], hostData["username"], payload["sport"], payload["sport"])
             return kew.all(promises)
         })
         .then(function (result) {
