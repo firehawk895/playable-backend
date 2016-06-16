@@ -310,10 +310,10 @@ function removeFromMatch(userId, matchId) {
         .then(function (results) {
             match = results[2].body
             user = results[3].body
-            
-            if(match.isDiscoverable == false)
-                db.merge("matches", matchId, {isDiscoverable : true})
-            
+
+            if (match.isDiscoverable == false)
+                db.merge("matches", matchId, {isDiscoverable: true})
+
             return kew.all([
                 ChatModel.removeUsersFromRoom(match.qbId, [results[3].body.qbId]),
                 decrementSlotsFilled(matchId)
@@ -605,6 +605,29 @@ function decrementSlotsFilled(matchId) {
         .apply()
 }
 
+function deleteMatch(matchId) {
+    var deleteMatchStatus = kew.defer()
+    if (matchId) {
+        getMatchPromise(matchId)
+            .then(function (result) {
+                var theMatch = result.body
+                return ChatModel.deleteRoom(theMatch.qbId)
+            })
+            .then(function (result) {
+                return db.remove("matches", matchId, true)
+            })
+            .then(function (result) {
+                deleteMatchStatus.resolve(result)
+            })
+            .fail(function (err) {
+                deleteMatchStatus.reject(err)
+            })
+    } else {
+        deleteMatchStatus.reject(new Error("id is missing"))
+    }
+    return deleteMatchStatus
+}
+
 module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,
     createSportsQuery: createSportsQuery,
@@ -630,6 +653,7 @@ module.exports = {
     getAdminMarkedCount: getAdminMarkedCount,
     getMatchesForReco: getMatchesForReco,
     getDiscoverableMatchesCount: getDiscoverableMatchesCount,
-    recommendedQuery : recommendedQuery,
-    decrementSlotsFilled : decrementSlotsFilled
+    recommendedQuery: recommendedQuery,
+    decrementSlotsFilled: decrementSlotsFilled,
+    deleteMatch: deleteMatch
 }

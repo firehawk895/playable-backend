@@ -448,4 +448,18 @@ router.get('/test', function (req, res) {
         })
 })
 
+router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var responseObj = {}
+    var id = req.query.id
+    MatchModel.deleteMatch(id)
+        .then(function (result) {
+            responseObj["data"] = []
+            res.status(200)
+            res.send(responseObj)
+        })
+        .fail(function (err) {
+            customUtils.sendErrors(err, res)
+        })
+}])
+
 module.exports = router;
