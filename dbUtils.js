@@ -329,7 +329,7 @@ function getAllItems(collection, query) {
         })
         .then(function (promiseResults) {
             var allItemsList = []
-            console.log(injectId(promiseResults[0]))
+            // console.log(injectId(promiseResults[0]))
             promiseResults.forEach(function (item) {
                 // console.log(item.body.results[0].path.destination)
                 var injectedItems = injectId(item)
@@ -352,7 +352,7 @@ function generateCsv(collection, query) {
                     console.log(err);
                     generatedCsvStatus.reject(err)
                 } else {
-                    console.log(csv);
+                    // console.log(csv);
                     generatedCsvStatus.resolve(csv)
                 }
             });

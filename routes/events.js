@@ -24,6 +24,7 @@ var kew = require('kew');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../notifications/dispatchers');
 var customUtils = require('../utils')
+var path = require('path')
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
     //TODO : move this to the model class
@@ -294,7 +295,7 @@ router.get('/csv', function (req, res) {
     dbUtils.generateCsvFile("events", "@path.kind:item")
         .then(function (result) {
             res.status(200)
-            res.sendFile('eventa.csv', {root: path.join(__dirname, '../csv')});
+            res.sendFile('events.csv', {root: path.join(__dirname, '../csv')});
         })
         .fail(function (err) {
             customUtils.sendErrors(err, res)

@@ -1600,13 +1600,13 @@ var signUpFreshFacebookUser = function (payload, avatar, avatarThumb, res, chang
     })
 };
 
-router.get('/csv', function(req, res) {
+router.get('/csv', function (req, res) {
     dbUtils.generateCsvFile("users", "@path.kind:item")
-        .then(function(result) {
+        .then(function (result) {
             res.status(200)
             res.sendFile('users.csv', {root: path.join(__dirname, '../csv')});
         })
-        .fail(function(err) {
+        .fail(function (err) {
             customUtils.sendErrors(err, res)
         })
 })

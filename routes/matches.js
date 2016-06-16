@@ -23,6 +23,7 @@ var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
 var MatchModel = require('../models/Match.js')
 var date = new Date()
+var path = require('path')
 
 //var Notifications = require('../notifications');
 //var notify = new Notifications();

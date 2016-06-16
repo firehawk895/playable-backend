@@ -20,6 +20,7 @@ var EventModel = require('../models/Event');
 var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
+var path = require('path')
 
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
@@ -170,6 +171,17 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
         }
     );
 }])
+
+router.get('/csv', function (req, res) {
+    dbUtils.generateCsvFile("facilities", "@path.kind:item")
+        .then(function (result) {
+            res.status(200)
+            res.sendFile('facilities.csv', {root: path.join(__dirname, '../csv')});
+        })
+        .fail(function (err) {
+            customUtils.sendErrors(err, res)
+        })
+})
 
 router.get('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     console.log("get facilities")
