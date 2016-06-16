@@ -1172,6 +1172,30 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 router.get('/connections', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var userId = req.user.results[0].value.id;
     var responseObj = {}
+    var promisesArray = [UserModel.getUsersConnectionsPromise(userId)]
+    //remove the existing match participants from the connections
+    //so that they dont appear in the suggestions :)
+    if (req.query.matchId)
+        promisesArray.push(MatchModel.getMatchParticipantsPromise(req.query.matchId))
+
+    kew.all(promisesArray)
+        .then(function (results) {
+            responseObj["data"] = dbUtils.injectId(results[0])
+            if (req.query.matchId) {
+                var matchParticipants = dbUtils.injectId(results[1])
+                responseObj["data"] = customUtils.removeSubArray(responseObj["data"], matchParticipants)
+            }
+            res.status(200)
+            res.json(responseObj)
+        })
+        .fail(function (err) {
+            customUtils.sendErrors(err, res)
+        })
+}])
+
+router.get('/connections/all', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    var userId = req.user.results[0].value.id;
+    var responseObj = {}
     var promisesArray = [UserModel.getUsersConnectionsPromise(userId), UserModel.getUsersLooseConnectionsPromise(userId)]
     //remove the existing match participants from the connections
     //so that they dont appear in the suggestions :)
