@@ -72,7 +72,8 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
                 name: user.name,
                 username: user.username,
                 avatar: user.avatar,
-                avatarThumb: user.avatarThumb
+                avatarThumb: user.avatarThumb,
+                phoneNumber: user.phoneNumber
             },
             isFacility: req.body.isFacility,
             isAdminMarked: false, //admins marking this as done -- if its a facility match
