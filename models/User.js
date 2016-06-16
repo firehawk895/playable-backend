@@ -37,6 +37,15 @@ function getUsersConnectionsPromise(userId) {
 }
 
 /**
+ * get a promise of the user's loose connections
+ * @param userId
+ * @returns {GraphBuilder}
+ */
+function getUsersLooseConnectionsPromise(userId) {
+    return dbUtils.getGraphResultsPromise('users', userId, constants.graphRelations.users.looseConnections)
+}
+
+/**
  *
  * @param userId
  */
@@ -245,5 +254,6 @@ module.exports = {
     createPlayerDiscoverableQuery: createPlayerDiscoverableQuery,
     createConnection: createConnection,
     getUserPromise: getUserPromise,
-    getGcmIdsForUserIds: getGcmIdsForUserIds
+    getGcmIdsForUserIds: getGcmIdsForUserIds,
+    getUsersLooseConnectionsPromise : getUsersLooseConnectionsPromise
 }

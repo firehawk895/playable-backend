@@ -361,6 +361,29 @@ var captureRazorPayment = function (paymentId, amount) {
     return captureStatus
 }
 
+var getUniqueObjectsById = function (theArrayOfObjects) {
+    // var arr = {};
+    //
+    // for ( var i=0, len=things.thing.length; i < len; i++ )
+    //     arr[things.thing[i]['place']] = things.thing[i];
+    //
+    // things.thing = new Array();
+    // for ( var key in arr )
+    //     things.thing.push(arr[key]);
+
+    var theMap = {}
+    theArrayOfObjects.forEach(function (anObject) {
+        theMap[anObject["id"]] = anObject
+    })
+
+    var theUniqueArray = []
+    Object.keys(theMap).forEach(function(theKey){
+        theUniqueArray.push(theMap[theKey])
+    })
+
+    return theUniqueArray
+}
+
 
 /**
  * Time capsule:
@@ -384,9 +407,9 @@ exports.removeSubArray = removeSubArray;
 exports.getDistanceFromLatLonInKm = getDistanceFromLatLonInKm;
 exports.sendErrors = sendErrors;
 exports.isRecent = isRecent
-exports.undefinedRemover = undefinedRemover,
-    exports.getCurrentUnixTime = getCurrentUnixTime
-exports.getFormattedDate = getFormattedDate,
-    exports.captureRazorPayment = captureRazorPayment
-//sms
+exports.undefinedRemover = undefinedRemover
+exports.getCurrentUnixTime = getCurrentUnixTime
+exports.getFormattedDate = getFormattedDate
+exports.captureRazorPayment = captureRazorPayment
 exports.sendSms = sendSms
+exports.getUniqueObjectsById = getUniqueObjectsById

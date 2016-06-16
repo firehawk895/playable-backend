@@ -1172,7 +1172,7 @@ router.patch('/password', [passport.authenticate('bearer', {session: false}), fu
 router.get('/connections', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var userId = req.user.results[0].value.id;
     var responseObj = {}
-    var promisesArray = [UserModel.getUsersConnectionsPromise(userId)]
+    var promisesArray = [UserModel.getUsersConnectionsPromise(userId), UserModel.getUsersLooseConnectionsPromise(userId)]
     //remove the existing match participants from the connections
     //so that they dont appear in the suggestions :)
     if (req.query.matchId)
@@ -1180,7 +1180,9 @@ router.get('/connections', [passport.authenticate('bearer', {session: false}), f
 
     kew.all(promisesArray)
         .then(function (results) {
-            responseObj["data"] = dbUtils.injectId(results[0])
+            var theConnections = (dbUtils.injectId(results[0])).concat(dbUtils.injectId(results[1]))
+            theConnections = customUtils.getUniqueObjectsById(theConnections)
+            responseObj["data"] = theConnections
             if (req.query.matchId) {
                 var matchParticipants = dbUtils.injectId(results[1])
                 responseObj["data"] = customUtils.removeSubArray(responseObj["data"], matchParticipants)
@@ -1264,14 +1266,14 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
             hasCustomGender: false,
             isDiscoverable: true
         }
-        
+
         console.log("createMatchRequest")
         console.log(userId)
         console.log(inviteeId)
         console.log(payload)
         console.log(usersName)
         console.log("-------------------")
-        
+
         RequestModel.createMatchRequest(userId, inviteeId, payload, usersName)
             .then(function (result) {
                 responseObj["data"] = []

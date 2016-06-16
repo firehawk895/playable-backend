@@ -201,8 +201,8 @@ function updateMatchConnections(userId, matchId) {
 
             playerList.forEach(function (playerId) {
                 kew.all([
-                    dbUtils.createGraphRelationPromise('users', userId, 'users', playerId, constants.graphRelations.users.connections),
-                    dbUtils.createGraphRelationPromise('users', playerId, 'users', userId, constants.graphRelations.users.connections)
+                    dbUtils.createGraphRelationPromise('users', userId, 'users', playerId, constants.graphRelations.users.looseConnections),
+                    dbUtils.createGraphRelationPromise('users', playerId, 'users', userId, constants.graphRelations.users.looseConnections)
                 ])
             })
         })

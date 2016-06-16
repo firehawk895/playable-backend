@@ -94,6 +94,7 @@ module.exports = {
         },
         users: {
             connections: "connections",
+            looseConnections: "looseConnections" ,
             playsMatches: 'plays',
             hostsMatch: 'hosts',
             requestedToConnect: "requestedToConnect",
