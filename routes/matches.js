@@ -98,6 +98,10 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
 }])
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
+    console.log("himmmy baby-----START")
+    console.log(req.body)
+    console.log("himmmy baby-----END")
+    
     var responseObj = {}
     var user = req.user.results[0].value
     var matchId = req.body.matchId
