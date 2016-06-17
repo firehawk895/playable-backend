@@ -112,6 +112,10 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
     var errors = validationResponse.errors
     var payload = {}
 
+    console.log("reqbody after validation--- STARTS")
+    console.log(req.body)
+    console.log("reqbody after validation -- ENDS")
+
     if (errors.length > 0) {
         responseObj["errors"] = errors;
         res.status(422);
@@ -135,6 +139,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
             note: req.body.note //TODO : limit the length so this field cannot be exploited
         }
 
+        console.log("now the sanitized payload")
         console.log(sanitizedPayload)
 
         db.merge('matches', req.query.matchId, sanitizedPayload)
@@ -178,7 +183,6 @@ router.post('/remove', [passport.authenticate('bearer', {session: false}), funct
 }])
 
 router.post('/join', [passport.authenticate('bearer', {session: false}), function (req, res) {
-    console.log("definitely here")
     var matchId = req.body.matchId;
     var userId = req.user.results[0].value.id;
     var responseObj = {}
@@ -208,14 +212,11 @@ router.post('/join/request', [passport.authenticate('bearer', {session: false}),
     var usersPhoto = req.user.results[0].value.avatarThumb
     var responseObj = {}
 
-    console.log("whats going on")
 
     MatchModel.getMatchPromise(matchId)
         .then(function (results) {
             var theMatch = results.body
-            console.log("got the match")
             theMatch["id"] = matchId
-            console.log(theMatch)
             RequestModel.createRequestToJoinMatch(theMatch.host.id, userId, theMatch, usersFullName, usersPhoto)
             responseObj["data"] = {}
             res.status(200)
@@ -386,7 +387,6 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
                 responseObj["featuredEvents"] = featuredEvents
             }
             if (req.query.showAll) {
-                console.log(theMasterResults[3])
                 responseObj["adminMarked"] = theMasterResults[3].body.total_count
             }
             res.status(200)
