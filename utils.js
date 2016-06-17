@@ -105,7 +105,7 @@ function toTitleCase(str) {
 }
 
 function stringToBoolean(theString) {
-    if (theString.trim() == "true") {
+    if (theString == "true") {
         return true;
     } else {
         return false;
