@@ -169,10 +169,15 @@ validatePatchMatch = function (reqBody) {
     
 
     if (!validator.isNull(reqBody.isAdminMarked)) {
-        if (validator.isBoolean(reqBody.isAdminMarked))
+        if (validator.isBoolean(reqBody.isAdminMarked)) {
+            console.log("admin marked value:")
+            console.log(reqBody.isAdminMarked)
             reqBody.isAdminMarked = customUtils.stringToBoolean(reqBody.isAdminMarked)
-        else
+        }
+        else {
             errors.push("isAdminMarked can be true or false only")
+        }
+
     }
 
     if(!validator.isNull(reqBody.skill_level_min) && !validator.isNull(reqBody.skill_level_max)) {
