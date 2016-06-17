@@ -105,7 +105,8 @@ function toTitleCase(str) {
 }
 
 function stringToBoolean(theString) {
-    if (theString == "true") {
+    var re = new RegExp("true*");
+    if (re.test(theString)) {
         return true;
     } else {
         return false;
