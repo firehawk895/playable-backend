@@ -71,6 +71,17 @@ function recommendedQuery() {
     return query
 }
 
+function matchWithinHourQuery() {
+    var currentUnixTime = Math.round((new Date()).getTime() / 1000)
+    console.log("the current unix timestamp -- " + currentUnixTime)
+    var anHourLater = currentUnixTime + 3600
+    var query = "value.playing_time:[" + currentUnixTime + " TO " + anHourLater + "]"  //this means greater than equalto
+    //https://orchestrate.io/docs/apiref#search
+    //matches that are not discoverable for any reason are set to isDiscoverable: false
+    query = query + " AND NOT value.notified:true AND value.slots_filled:[2 TO *]"
+    return query
+}
+
 /**
  * Note : For lucene you can use filed grouping:
  * Field Grouping
@@ -656,5 +667,6 @@ module.exports = {
     getDiscoverableMatchesCount: getDiscoverableMatchesCount,
     recommendedQuery: recommendedQuery,
     decrementSlotsFilled: decrementSlotsFilled,
-    deleteMatch: deleteMatch
+    deleteMatch: deleteMatch,
+    matchWithinHourQuery : matchWithinHourQuery
 }

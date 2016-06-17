@@ -61,7 +61,7 @@ function welcome(userId, usersName, phoneNumber, username) {
         "photo": ""
     };
     NF.send(nofObj, constants.notifications.type.inApp, null, [userId]);
-    sendSlackMessage("New player in the house nigga!!!! - Naam: " + usersName + ", username: " + username + ", phone: " + phoneNumber)
+    sendSlackMessage("*NEW PLAYER* in the house nigga!!!! - Naam: " + usersName + ", username: " + username + ", phone: " + phoneNumber)
 }
 
 /**
@@ -87,6 +87,42 @@ var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
         })
 }, null, true, 'Asia/Kolkata')
 
+var matchReminderCron = new CronJob('0 0/15 * * * *', function () {
+    console.log("recommendationCron done")
+    var dbUtils = require('../dbUtils');
+    var customUtils = require('../utils');
+    var MatchModel = require('../models/Match')
+
+    dbUtils.getAllItemsWithFields("matches", MatchModel.matchWithinHourQuery(), ["value.playing_time", "value.title", "value.sport"])
+        .then(function (results) {
+            console.log("these are matches within the next hour :")
+            results.forEach(function (result) {
+                console.log(result.id)
+                var nofObj = {
+                    "created": (new Date()).getTime(),
+                    "id": result.id,
+                    "is_clicked": false,
+                    "is_read": false,
+                    "link": constants.notifications.links.matchId,
+                    "title": "You have an upcoming match!",
+                    "text": "Your match titled " + result.title + " of " + result.sport + " is about to begin at " + customUtils.getFormattedDate(result.playing_time),
+                    "photo": ""
+                };
+                matchNotificationDispatcher(result.id, nofObj, constants.notifications.type.both)
+                db.newPatchBuilder("matches", result.id)
+                    .add("notified", true)
+                    .apply()
+                    .then(function (result) {
+                        console.log("match notified value switched to true")
+                    })
+                    .fail(function (err) {
+                        console.log(err)
+                        console.log("UNABLE to set match notified value switched to true")
+                    })
+            })
+        })
+}, null, true, 'Asia/Kolkata')
+
 /**
  * TESTED
  * @param eventId
@@ -109,10 +145,10 @@ function newEvent(eventId, eventName) {
 
 function newMatch(matchId, matchName, hostName, hostNumber, hostUsername, sport, isFacility) {
     var message
-    if(isFacility) {
-        message = "FACILITY MATCH HOSTED : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport 
+    if (isFacility) {
+        message = "*FACILITY MATCH HOSTED* : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport
     } else {
-        message = "vela match hosted : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport
+        message = "*vela match hosted* : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport
     }
     sendSlackMessage(message)
 }
@@ -158,7 +194,7 @@ function joinedEvent(eventId, eventName, userId, google_form) {
         .then(function (result) {
             var theUser = result.body
             console.log(theUser)
-            sendSlackMessage("Bakra has joined event - " + eventName + " , bakraName: " + theUser.name + " bakraNumber: " + theUser.phoneNumber + " bakraUsername: "+ theUser.username)
+            sendSlackMessage("Bakra has joined event - " + eventName + " , bakraName: " + theUser.name + " bakraNumber: " + theUser.phoneNumber + " bakraUsername: " + theUser.username)
             return customUtils.sendSms(message, theUser.phoneNumber)
         })
         .then(function (result) {
@@ -454,6 +490,26 @@ var everyoneNotificationDispatcer = function (offset, nofObj, type) {
         });
 }
 
+var matchNotificationDispatcher = function (matchId, nofObj, type) {
+    var MatchModel = require('../models/Match')
+    var dbUtils = require('../dbUtils')
+    MatchModel.getMatchParticipantsPromise(matchId)
+        .then(function (results) {
+            var theUsers = dbUtils.injectId(results)
+            var gcmIds = theUsers.map(function (aUser) {
+                return aUser.gcmId
+            })
+            var inAppIds = theUsers.map(function (aUser) {
+                return aUser.id
+            })
+            NF.send(nofObj, type, gcmIds, inAppIds)
+        })
+        .fail(function (err) {
+            console.log("matchNotificationDispatcher failed")
+            console.log(err)
+        })
+}
+
 var sendSlackMessage = function (message) {
     var request = require('request');
     request.post(config.newSlack.feedbackHook, {
@@ -471,5 +527,5 @@ module.exports = {
     acceptMatchRequest: acceptMatchRequest,
     acceptJoinMatchRequest: acceptJoinMatchRequest,
     sendSlackMessage: sendSlackMessage,
-    newMatch : newMatch
+    newMatch: newMatch
 }
