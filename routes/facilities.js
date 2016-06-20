@@ -24,8 +24,12 @@ var path = require('path')
 
 
 router.post('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
-    var images = new Array()
+    var images = []
     var responseObj = {}
+    
+    if(!isArray(req.files.image))
+        req.files.image = [req.files.image]
+        
 
     console.log("raw payload : ")
     console.log(req.body)
@@ -96,6 +100,9 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 }])
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
+    if(!isArray(req.files.image))
+        req.files.image = [req.files.image]
+    
     var images = []
     var responseObj = {}
     var facilityId = req.query.facilityId
