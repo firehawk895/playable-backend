@@ -27,6 +27,9 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
     var images = []
     var responseObj = {}
     
+    console.log("files array : ")
+    console.log(req.files.image)
+    
     if(!isArray(req.files.image))
         req.files.image = [req.files.image]
         
@@ -100,6 +103,11 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
 }])
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
+
+    console.log("files array : ")
+    console.log(req.files.image)
+    
+    
     if(!isArray(req.files.image))
         req.files.image = [req.files.image]
     
