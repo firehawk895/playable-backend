@@ -30,7 +30,7 @@ router.post('/', [passport.authenticate('bearer', {session: false}), multer(), f
     console.log("files array : ")
     console.log(req.files.image)
     
-    if(!isArray(req.files.image))
+    if(!Array.isArray(req.files.image))
         req.files.image = [req.files.image]
         
 
@@ -108,7 +108,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
     console.log(req.files.image)
     
     
-    if(!isArray(req.files.image))
+    if(!Array.isArray(req.files.image))
         req.files.image = [req.files.image]
     
     var images = []
