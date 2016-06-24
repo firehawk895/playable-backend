@@ -255,6 +255,31 @@ function createPlayerSportQuery(sportsArray) {
     return dbUtils.queryJoinerOr(queries)
 }
 
+/**
+ * Crate a lucene OR query with the array of gender provided
+ * @param genderArray
+ * @returns {*}
+ */
+function createGenderQuery(genderArray) {
+    var queries = []
+    genderArray.forEach(function (gender) {
+        switch (gender) {
+            case "male":
+                queries.push("value.gender:male")
+                break
+            case "female":
+                queries.push("value.gender:female")
+                break
+            case "other":
+                queries.push("value.gender:other")
+                break
+        }
+    })
+    console.log("final Query promse")
+    console.log(queries)
+    return dbUtils.queryJoinerOr(queries)
+}
+
 module.exports = {
     getConnectionStatusPromise: getConnectionStatusPromise,
     getTotalConnections: getTotalConnections,
@@ -264,5 +289,6 @@ module.exports = {
     getUserPromise: getUserPromise,
     getGcmIdsForUserIds: getGcmIdsForUserIds,
     getUsersLooseConnectionsPromise : getUsersLooseConnectionsPromise,
-    createPlayerSportQuery : createPlayerSportQuery
+    createPlayerSportQuery : createPlayerSportQuery,
+    createGenderQuery : createGenderQuery
 }

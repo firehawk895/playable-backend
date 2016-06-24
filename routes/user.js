@@ -1338,6 +1338,12 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
         queries.push(UserModel.createPlayerSportQuery(sportsArray))
     }
 
+    if (req.query.gender) {
+        console.log("we have a gender query")
+        var genderArray = req.query.gender.split(',')
+        queries.push(UserModel.createGenderQuery(genderArray))
+    }
+
     var theFinalQuery = dbUtils.queryJoiner(queries)
     console.log("The final query")
     console.log(theFinalQuery)

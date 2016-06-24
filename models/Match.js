@@ -668,5 +668,5 @@ module.exports = {
     recommendedQuery: recommendedQuery,
     decrementSlotsFilled: decrementSlotsFilled,
     deleteMatch: deleteMatch,
-    matchWithinHourQuery : matchWithinHourQuery
+    matchWithinHourQuery: matchWithinHourQuery
 }
