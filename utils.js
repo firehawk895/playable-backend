@@ -263,7 +263,7 @@ function sendErrors(err, res) {
  * if the time is within the last 1 minute
  * this is the definition of recent as far as this method
  * is concerned
- * @param timestamp (in milliseconds)
+ * @param timestamp (in seconds)
  * @returns {boolean}
  */
 function isRecent(timestamp) {
@@ -279,12 +279,12 @@ function isRecent(timestamp) {
  * if the time is within the last 1 minute
  * this is the definition of recent as far as this method
  * is concerned
- * @param timestamp (in seconds)
+ * @param timestamp (in milliseconds)
  * @returns {boolean}
  */
 function isRecentSeconds(timestamp) {
     var date = new Date()
-    console.log(timestamp + " > " + ((date.getTime()) - 60))
+    console.log(timestamp + " > " + ((date.getTime()) - 60000))
     if (timestamp > ((date.getTime()) - 60))
         return true
     else
