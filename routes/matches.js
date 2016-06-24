@@ -34,6 +34,10 @@ var path = require('path')
 
 //TODO: remove sensitive information about host from the json inside the match's host key
 router.post('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
+    console.log("reqbody after validation--- STARTS")
+    console.log(req.body)
+    console.log("reqbody after validation -- ENDS")
+    
     var responseObj = {}
     var user = req.user.results[0].value
     var userId = req.user.results[0].value.id
@@ -98,10 +102,6 @@ router.post('/', [passport.authenticate('bearer', {session: false}), function (r
 }])
 
 router.patch('/', [passport.authenticate('bearer', {session: false}), function (req, res, next) {
-    console.log("himmmy baby-----START")
-    console.log(req.body)
-    console.log("himmmy baby-----END")
-    
     var responseObj = {}
     var user = req.user.results[0].value
     var matchId = req.body.matchId
