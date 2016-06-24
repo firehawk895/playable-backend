@@ -285,7 +285,7 @@ function isRecent(timestamp) {
 function isRecentSeconds(timestamp) {
     var date = new Date()
     console.log(timestamp + " > " + ((date.getTime()) - 60000))
-    if (timestamp > ((date.getTime()) - 60))
+    if (timestamp > ((date.getTime()) - 60000))
         return true
     else
         return false
