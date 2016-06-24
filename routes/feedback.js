@@ -42,11 +42,14 @@ userRef.on("child_added", function (snapshot) {
          * when the server starts, dispatch messages
          * of timestamp 1 minute before the current time
          * */
+        console.log("trueness - " + customUtils.isRecentSeconds(messageObj.timestamp))
         if (customUtils.isRecentSeconds(messageObj.timestamp)) {
             /**
              * The Message from Playable, or the slack channel
              * should not be resent back to the channel
              * */
+            console.log("message object")
+            console.log(messageObj)
             if (messageObj.displayName != "Playable") {
                 console.log("time to post")
                 request.post(config.newSlack.feedbackHook, {
