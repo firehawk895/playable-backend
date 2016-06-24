@@ -25,7 +25,6 @@ var Firebase = require("firebase");
 var myFirebaseRef = new Firebase(config.firebase.url, config.firebase.secret);
 
 var kew = require('kew')
-var date = new Date()
 
 /**
  * Uploads file to S3
@@ -268,6 +267,7 @@ function sendErrors(err, res) {
  * @returns {boolean}
  */
 function isRecent(timestamp) {
+    var date = new Date()
     console.log(timestamp + " > " + ((date.getTime() / 1000) - 60))
     if (timestamp > ((date.getTime() / 1000) - 60))
         return true
@@ -280,6 +280,7 @@ function isRecent(timestamp) {
  * @returns {number}
  */
 function getCurrentUnixTime() {
+    var date = new Date()
     return (date.getTime() / 1000)
 }
 

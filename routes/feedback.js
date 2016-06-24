@@ -10,6 +10,7 @@ var multer = require('multer');
 // var notify = new Notifications();
 
 var config = require('../config.js');
+var customUtils = require('../utils')
 
 var oio = require('orchestrate');
 oio.ApiEndPoint = config.db.region;
@@ -41,7 +42,7 @@ userRef.on("child_added", function (snapshot) {
          * when the server starts, dispatch messages
          * of timestamp 1 minute before the current time
          * */
-        if (messageObj.timestamp > ((new Date()) - 60)) {
+        if (customUtils.isRecent(messageObj.timestamp)) {
             /**
              * The Message from Playable, or the slack channel
              * should not be resent back to the channel

@@ -29,6 +29,7 @@ var RequestModel = require('../requests/Request');
 var dbUtils = require('../dbUtils');
 var EventSystem = require('../events/events');
 var kew = require('kew')
+var Firebase = require("firebase");
 
 /**
  * creates cron jobs that will create recommendations
