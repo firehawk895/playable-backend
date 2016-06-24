@@ -247,6 +247,14 @@ function incrementConnections(userId) {
         })
 }
 
+function createPlayerSportQuery(sportsArray) {
+    var queries = []
+    sportsArray.forEach(function(sport) {
+        queries.push(dbUtils.createExistsQuery("value.sports."+sport))
+    })
+    return dbUtils.queryJoinerOr(queries)
+}
+
 module.exports = {
     getConnectionStatusPromise: getConnectionStatusPromise,
     getTotalConnections: getTotalConnections,
@@ -255,5 +263,6 @@ module.exports = {
     createConnection: createConnection,
     getUserPromise: getUserPromise,
     getGcmIdsForUserIds: getGcmIdsForUserIds,
-    getUsersLooseConnectionsPromise : getUsersLooseConnectionsPromise
+    getUsersLooseConnectionsPromise : getUsersLooseConnectionsPromise,
+    createPlayerSportQuery : createPlayerSportQuery
 }

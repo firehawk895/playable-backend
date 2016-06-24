@@ -1335,7 +1335,7 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
     if (req.query.sports) {
         console.log("we have a sports filter")
         var sportsArray = req.query.sports.split(',');
-        queries.push(MatchModel.createSportsQuery(sportsArray))
+        queries.push(UserModel.createPlayerSportQuery(sportsArray))
     }
 
     var theFinalQuery = dbUtils.queryJoiner(queries)
