@@ -1354,6 +1354,9 @@ router.get('/discover', [passport.authenticate('bearer', {session: false}), func
             .sort('location', 'distance:asc')
             .query(theFinalQuery)
             .then(function (results) {
+                return MatchModel.insertDistance(results, req.query.lat, req.query.long)
+            })
+            .then(function(results) {
                 responseObj["total_count"] = results.body.total_count
                 responseObj["data"] = dbUtils.injectId(results)
                 res.status(200)
