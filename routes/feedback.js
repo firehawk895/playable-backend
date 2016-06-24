@@ -42,7 +42,7 @@ userRef.on("child_added", function (snapshot) {
          * when the server starts, dispatch messages
          * of timestamp 1 minute before the current time
          * */
-        if (customUtils.isRecent(messageObj.timestamp)) {
+        if (customUtils.isRecentSeconds(messageObj.timestamp)) {
             /**
              * The Message from Playable, or the slack channel
              * should not be resent back to the channel

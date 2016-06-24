@@ -263,13 +263,29 @@ function sendErrors(err, res) {
  * if the time is within the last 1 minute
  * this is the definition of recent as far as this method
  * is concerned
- * @param timestamp
+ * @param timestamp (in milliseconds)
  * @returns {boolean}
  */
 function isRecent(timestamp) {
     var date = new Date()
     console.log(timestamp + " > " + ((date.getTime() / 1000) - 60))
     if (timestamp > ((date.getTime() / 1000) - 60))
+        return true
+    else
+        return false
+}
+
+/**
+ * if the time is within the last 1 minute
+ * this is the definition of recent as far as this method
+ * is concerned
+ * @param timestamp (in seconds)
+ * @returns {boolean}
+ */
+function isRecentSeconds(timestamp) {
+    var date = new Date()
+    console.log(timestamp + " > " + ((date.getTime()) - 60))
+    if (timestamp > ((date.getTime()) - 60))
         return true
     else
         return false
@@ -415,3 +431,4 @@ exports.getFormattedDate = getFormattedDate
 exports.captureRazorPayment = captureRazorPayment
 exports.sendSms = sendSms
 exports.getUniqueObjectsById = getUniqueObjectsById
+exports.isRecentSeconds = isRecentSeconds
