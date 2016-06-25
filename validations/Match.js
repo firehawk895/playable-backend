@@ -146,13 +146,6 @@ validatePatchMatch = function (reqBody) {
             errors.push("Enter a valid Longitude")
     }
 
-    if (!validator.isNull(reqBody.long)) {
-        if (validator.isValidLatLong(reqBody.long))
-            reqBody.long = parseFloat(reqBody.long)
-        else
-            errors.push("Enter a valid Longitude")
-    }
-
     if (!validator.isNull(reqBody.isFacility)) {
         if (validator.isBoolean(reqBody.isFacility))
             reqBody.isFacility = customUtils.stringToBoolean(reqBody.isFacility)
@@ -160,12 +153,12 @@ validatePatchMatch = function (reqBody) {
             errors.push("isFacility can be true or false only")
     }
 
-    if (!validator.isNull(reqBody.slots)) {
-        if (validator.isInt(reqBody.slots, {min: 2}))
-            reqBody.slots = parseInt(reqBody.slots)
-        else
-            errors.push("slots must be minimum of 2")
-    }
+    // if (!validator.isNull(reqBody.slots)) {
+    //     if (validator.isInt(reqBody.slots, {min: 2}))
+    //         reqBody.slots = parseInt(reqBody.slots)
+    //     else
+    //         errors.push("slots must be minimum of 2")
+    // }
     
 
     if (!validator.isNull(reqBody.isAdminMarked)) {

@@ -130,7 +130,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
                 lat: req.body.lat,
                 long: req.body.long
             },
-            slots: req.body.slots,
+            // slots: req.body.slots,
             skill_level_min: req.body.skill_level_min,
             skill_level_max: req.body.skill_level_max,
             isAdminMarked: req.body.isAdminMarked,
@@ -148,9 +148,9 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), function (
             })
             .then(function (theMatch) {
                 //that edge case :/
-                if (theMatch.slots_filled < theMatch.slots) {
-                    db.merge('matches', req.query.matchId, {isDiscoverable: true})
-                }
+                // if (theMatch.slots_filled < theMatch.slots) {
+                //     db.merge('matches', req.query.matchId, {isDiscoverable: true})
+                // }
                 //payload["id"] = matchId;
                 responseObj["data"] = theMatch.body;
                 res.status(201);
