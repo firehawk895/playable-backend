@@ -520,6 +520,7 @@ function joinMatch(matchId, joineeId) {
                                 .then(function (result) {
                                     incrementFilledSlots(matchDetails.slots, matchDetails.slots_filled)
                                     joinStatus.resolve()
+                                    dispatchers.userAcceptsHostInvite(matchId, joineeId)
                                 })
                                 .fail(function (err) {
                                     joinStatus.reject(err)

@@ -418,6 +418,42 @@ function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
         })
 }
 
+function userAcceptsHostInvite(matchId, joineeId) {
+    var UserModel = require('../models/User');
+    var MatchModel = require('../models/Match')
+    var promises = [
+        UserModel.getUserPromise(joineeId),
+        MatchModel.getMatchPromise(matchId)
+    ]
+    var theUser
+    var theMatch
+    var nofObj
+    kew.all(promises)
+        .then(function (results) {
+            theUser = results[0].body
+            theMatch = results[1].body
+
+            nofObj = {
+                "created": (new Date()).getTime(),
+                "is_clicked": false,
+                "is_read": false,
+                "link": constants.notifications.links.matchId,
+                "title": "Your invite was accepted!",
+                "text": theUser.name + " has accepted your invite and successfully joined your match of "
+                + theMatch.sport + " titled " + theMatch.title,
+                "photo": ""
+            };
+            return UserModel.getGcmIdsForUserIds([theMatch.host.id])
+        })
+        .then(function (gcmIds) {
+            NF.send(nofObj, constants.notifications.type.both, gcmIds, [theMatch.host.id])
+        })
+        .fail(function (err) {
+            console.log("Error dispatching userAcceptsHostInvite")
+            console.log(err)
+        })
+}
+
 function feedback(username, message) {
     var nofObj = {
         "created": (new Date()).getTime(),
@@ -527,5 +563,6 @@ module.exports = {
     acceptMatchRequest: acceptMatchRequest,
     acceptJoinMatchRequest: acceptJoinMatchRequest,
     sendSlackMessage: sendSlackMessage,
-    newMatch: newMatch
+    newMatch: newMatch,
+    userAcceptsHostInvite : userAcceptsHostInvite
 }
