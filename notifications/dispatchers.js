@@ -40,7 +40,6 @@ console.log("dispatchers loaded (sounds very cool)")
  */
 
 /**
- * TODO : untested
  * @param userId
  * @param usersName
  */
@@ -65,7 +64,6 @@ function welcome(userId, usersName, phoneNumber, username) {
 }
 
 /**
- * TODO : untested
  * @type {*|CronJob}
  */
 var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
@@ -87,6 +85,11 @@ var discoverDailyNof = new CronJob('00 00 10 * * 0-7', function () {
         })
 }, null, true, 'Asia/Kolkata')
 
+/**
+ * fire a reminder notification for an upcoming match.
+ * suppose to be 1 hour before match
+ * @type {*|CronJob}
+ */
 var matchReminderCron = new CronJob('0 0/15 * * * *', function () {
     console.log("recommendationCron done")
     var dbUtils = require('../dbUtils');
@@ -124,7 +127,6 @@ var matchReminderCron = new CronJob('0 0/15 * * * *', function () {
 }, null, true, 'Asia/Kolkata')
 
 /**
- * TESTED
  * @param eventId
  * @param eventName
  */
@@ -154,7 +156,6 @@ function newMatch(matchId, matchName, hostName, hostNumber, hostUsername, sport,
 }
 
 /**
- * TESTED
  * @param eventId
  * @param eventName
  * @param userId
@@ -283,7 +284,7 @@ function pushRequestNotification(message, timestamp, userId) {
 }
 
 /**
- * generate notification for acceptinng a connection request
+ * generate notification for accepting a connection request
  * TODO : untested
  * @param senderId
  * @param accepterId
@@ -318,7 +319,6 @@ function acceptConnectionRequest(accepterId, senderId) {
 
 /**
  * generate notification for a one on one match being hosted
- * TODO : untested
  * @param user1id
  * @param user2id
  * @param matchPayload
@@ -338,10 +338,11 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
             var user1 = results[0].body
             var user2 = results[1].body
             var nofObj = {
+                "id": matchPayload["id"],
                 "created": (new Date()).getTime(),
                 "is_clicked": false,
                 "is_read": false,
-                "link": constants.notifications.links.request,
+                "link": constants.notifications.links.matchId,
                 "title": "1on1 Match Accepted",
                 "text": "Game on! Your match of " + matchPayload.sport + "with " + user2.name + " has been hosted! Chat with your partner!",
                 "photo": ""

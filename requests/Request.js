@@ -46,7 +46,7 @@ function createConnectionRequest(user1id, user2id, user1name, user1photo) {
  * @param user1id
  * @param user2id
  */
-function createMatchRequest(user1id, user2id, matchPayload, user1name) {
+function createMatchRequest(user1id, user2id, matchPayload, user1name, user1photo) {
     matchPayload = customUtils.undefinedRemover(matchPayload)
     console.log("createMatchRequest")
     var payload = {
@@ -54,7 +54,7 @@ function createMatchRequest(user1id, user2id, matchPayload, user1name) {
         toUserId: user2id,
         type: constants.requests.type.match,
         status: constants.requests.status.pending,
-        photo: "",
+        photo: user1photo,
         msg: user1name + " wants to play a game of " + matchPayload.sport + " with you",
         match: matchPayload,
         timestamp: (new Date()).getTime()
@@ -75,7 +75,7 @@ function createMatchRequest(user1id, user2id, matchPayload, user1name) {
  * @param matchPayload
  * @param hostName
  */
-function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
+function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName, hostPhoto) {
     /**
      * Expectations :
      * wait is there a better way to design this?
@@ -93,7 +93,7 @@ function createInviteToMatchRequest(hostId, inviteeId, matchPayload, hostName) {
         toUserId: inviteeId,
         type: constants.requests.type.invite,
         status: constants.requests.status.pending,
-        photo: "",
+        photo: hostPhoto,
         msg: hostName + " has invited you to play a game of " + matchPayload.sport,
         match: {
             id: matchPayload.id
@@ -278,6 +278,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
         console.log(matchPayload)
         var createOneOnOneFixAmatchStatus = kew.defer()
         matchPayload["image"] = constants.sportsCoverPics[matchPayload["sport"]]
+        matchPayload["isDiscoverable"] = false
         db.post('matches', matchPayload)
             .then(function (result) {
                 matchPayload["id"] = dbUtils.getIdAfterPost(result)

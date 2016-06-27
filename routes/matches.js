@@ -24,6 +24,7 @@ var EventSystem = require('../events/events');
 var MatchModel = require('../models/Match.js')
 // var date = new Date()
 var path = require('path')
+var dispatchers = require('../notifications/dispatchers')
 
 //var Notifications = require('../notifications');
 //var notify = new Notifications();
@@ -408,50 +409,51 @@ router.get('/csv', function (req, res) {
         })
 })
 
-router.get('/test', function (req, res) {
-    res.status(200)
+// router.get('/test', function (req, res) {
+    // res.status(200)
+    // dispatchers.userAcceptsHostInvite("123e03343360a503", "71e801c89dba8c46")
 
-    var user1id = "47a7897ce58217ad"
-    var user2id = "19d662fd0287a6c2"
-    var matchPayload = {
-        description: 'bjkk',
-        hasCustomGender: false,
-        hasFemale: false,
-        hasMale: false,
-        host: {
-            avatar: 'https://graph.facebook.com/10153182210946213/picture?type=large',
-            avatarThumb: 'https://graph.facebook.com/10153182210946213/picture',
-            id: '47a7897ce58217ad',
-            name: 'Ankan Adhikari',
-            username: 'ankan_b387',
-            qbId: 13654128
-        },
-        isAdminMarked: false,
-        isDiscoverable: true,
-        isFacility: false,
-        location: {
-            lat: 28.5331782,
-            long: 77.2120782
-        },
-        location_name: '7, Toot Sarai Rd,New Delhi,Delhi',
-        playing_time: 1465991040,
-        skill_level_max: 5,
-        skill_level_min: 1,
-        slots: 2,
-        slots_filled: 1,
-        sport: 'cricket',
-        title: 'hggh',
-        type: 'match'
-    }
-    RequestModel.acceptMatchRequest(user1id, user2id, matchPayload)
-        .then(function (results) {
-            res.status(200)
-            res.json({data: "ok"})
-        })
-        .fail(function (err) {
-            console.log(err)
-        })
-})
+    // var user1id = "47a7897ce58217ad"
+    // var user2id = "19d662fd0287a6c2"
+    // var matchPayload = {
+    //     description: 'bjkk',
+    //     hasCustomGender: false,
+    //     hasFemale: false,
+    //     hasMale: false,
+    //     host: {
+    //         avatar: 'https://graph.facebook.com/10153182210946213/picture?type=large',
+    //         avatarThumb: 'https://graph.facebook.com/10153182210946213/picture',
+    //         id: '47a7897ce58217ad',
+    //         name: 'Ankan Adhikari',
+    //         username: 'ankan_b387',
+    //         qbId: 13654128
+    //     },
+    //     isAdminMarked: false,
+    //     isDiscoverable: true,
+    //     isFacility: false,
+    //     location: {
+    //         lat: 28.5331782,
+    //         long: 77.2120782
+    //     },
+    //     location_name: '7, Toot Sarai Rd,New Delhi,Delhi',
+    //     playing_time: 1465991040,
+    //     skill_level_max: 5,
+    //     skill_level_min: 1,
+    //     slots: 2,
+    //     slots_filled: 1,
+    //     sport: 'cricket',
+    //     title: 'hggh',
+    //     type: 'match'
+    // }
+    // RequestModel.acceptMatchRequest(user1id, user2id, matchPayload)
+    //     .then(function (results) {
+    //         res.status(200)
+    //         res.json({data: "ok"})
+    //     })
+    //     .fail(function (err) {
+    //         console.log(err)
+    //     })
+// })
 
 router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     var responseObj = {}

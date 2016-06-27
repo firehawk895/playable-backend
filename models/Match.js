@@ -419,7 +419,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
                 console.log("malformed invited users")
             }
             invitedUserList.forEach(function (invitedUserId) {
-                RequestModel.createInviteToMatchRequest(hostData.id, invitedUserId, payload, hostData.name)
+                RequestModel.createInviteToMatchRequest(hostData.id, invitedUserId, payload, hostData.name, hostData.avatarThumb)
             })
 
             if (payload.isFacility) {

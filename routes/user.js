@@ -1227,7 +1227,7 @@ router.post('/connect', [passport.authenticate('bearer', {session: false}), func
     var user1 = req.user.results[0].value
     var user2id = req.body.userId
 
-    RequestModel.createConnectionRequest(user1.id, user2id, user1.name, user1.avatar)
+    RequestModel.createConnectionRequest(user1.id, user2id, user1.name, user1.avatarThumb)
         .then(function (result) {
             responseObj["data"] = []
             responseObj["message"] = "Connection request successfully sent"
@@ -1247,6 +1247,7 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
     var user = req.user.results[0].value
     var userId = req.user.results[0].value.id;
     var usersName = req.user.results[0].value.name;
+    var userPhoto = req.user.results[0].value.avatarThumb
 
     //req.checkBody(matchValidation.postMatch)
     var validationResponse = matchValidation.validateFixAMatch(req.body);
@@ -1298,7 +1299,7 @@ router.post('/connect/fixamatch', [passport.authenticate('bearer', {session: fal
         console.log(usersName)
         console.log("-------------------")
 
-        RequestModel.createMatchRequest(userId, inviteeId, payload, usersName)
+        RequestModel.createMatchRequest(userId, inviteeId, payload, usersName, userPhoto)
             .then(function (result) {
                 responseObj["data"] = []
                 responseObj["message"] = "Fix A Match request successfully sent"
