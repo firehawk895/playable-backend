@@ -397,9 +397,10 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
  */
 function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
     var UserModel = require('../models/User');
+    var nofObj
     UserModel.getUserPromise(function (result) {
         var theUser = result.body
-        var nofObj = {
+        nofObj = {
             "created": (new Date()).getTime(),
             "is_clicked": false,
             "is_read": false,
@@ -411,7 +412,6 @@ function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
         return UserModel.getGcmIdsForUserIds([toUserId])
     })
         .then(function (gcmIds) {
-
             NF.send(nofObj, constants.notifications.type.push, gcmIds, null)
         })
         .fail(function (err) {
@@ -565,5 +565,5 @@ module.exports = {
     acceptJoinMatchRequest: acceptJoinMatchRequest,
     sendSlackMessage: sendSlackMessage,
     newMatch: newMatch,
-    userAcceptsHostInvite : userAcceptsHostInvite
+    userAcceptsHostInvite: userAcceptsHostInvite
 }

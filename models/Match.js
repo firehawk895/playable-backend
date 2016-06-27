@@ -326,6 +326,39 @@ function removeFromMatch(userId, matchId) {
             if (match.isDiscoverable == false)
                 db.merge("matches", matchId, {isDiscoverable: true})
 
+            //if the last person of that gender is removed, we gotta update the match baby
+            checkGenderStatusOfMatch(matchId, user.gender)
+                .then(function (hasThatGender) {
+                    if (!hasThatGender) {
+                        var genderKey
+                        switch (user.gender) {
+                            case "male":
+                                genderKey = "hasMale"
+                                break
+                            case "female":
+                                genderKey = "hasFemale"
+                                break
+                            default:
+                                genderKey = "hasOther"
+                        }
+
+                        db.newPatchBuilder("matches", matchId)
+                            .merge(genderKey, false)
+                            .apply()
+                            .then(function (result) {
+
+                            })
+                            .fail(function (err) {
+                                console.log("recalculated gender patch failed")
+                                console.log(err)
+                            })
+                    }
+                })
+                .fail(function (err) {
+                    console.log("checkGenderStatusOfMatch failed")
+                    console.log(err)
+                })
+
             return kew.all([
                 ChatModel.removeUsersFromRoom(match.qbId, [results[3].body.qbId]),
                 decrementSlotsFilled(matchId)
@@ -641,6 +674,34 @@ function deleteMatch(matchId) {
     return deleteMatchStatus
 }
 
+/**
+ * checks the match participants if it contains participants
+ * of this gender
+ * @param matchId
+ * @param gender
+ * @returns {!Promise}
+ */
+function checkGenderStatusOfMatch(matchId, gender) {
+    var dbUtils = require('../dbUtils')
+    var status = kew.defer()
+    var theStatus = false
+    getMatchParticipantsPromise(matchId)
+        .then(function (results) {
+            var participants = dbUtils.injectId(results)
+            participants.forEach(function (participant) {
+                if (participant.gender == gender)
+                    theStatus = true
+            })
+            status.resolve(theStatus)
+        })
+        .fail(function (err) {
+            console.log("checkGenderStatusOfMatch failed")
+            console.log(err)
+            status.reject(err)
+        })
+    return status
+}
+
 module.exports = {
     getMatchParticipantsPromise: getMatchParticipantsPromise,
     createSportsQuery: createSportsQuery,
@@ -669,5 +730,6 @@ module.exports = {
     recommendedQuery: recommendedQuery,
     decrementSlotsFilled: decrementSlotsFilled,
     deleteMatch: deleteMatch,
-    matchWithinHourQuery: matchWithinHourQuery
+    matchWithinHourQuery: matchWithinHourQuery,
+    checkGenderStatusOfMatch: checkGenderStatusOfMatch
 }
