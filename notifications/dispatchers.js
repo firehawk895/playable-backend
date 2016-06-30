@@ -301,6 +301,7 @@ function acceptConnectionRequest(accepterId, senderId) {
         })
         .then(function (gcmIds) {
             var nofObj = {
+                "id": accepterId,
                 "created": (new Date()).getTime(),
                 "is_clicked": false,
                 "is_read": false,
@@ -463,7 +464,7 @@ function feedback(username, message) {
         "is_read": false,
         "link": "Feedback Channel",
         "title": "Response for your Feedback",
-        "text": "You got a response from Playable Team : " + message.split(":")[1].trim(),
+        "text": "You received a message from Playable Team : " + message.split(":")[1].trim(),
         "photo": ""
     };
 
