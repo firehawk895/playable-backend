@@ -514,7 +514,7 @@ function feedback(username, message) {
                 var user = result.body.results[0].value;
                 console.log("feedback user")
                 console.log(user)
-                NF.send(nofObj, constants.notifications.type.both, [user.gcmId], [user.id]);
+                NF.send(nofObj, constants.notifications.type.push, [user.gcmId], [user.id]);
             } else {
                 request.post(config.newSlack.feedbackHook, {
                     body: JSON.stringify({text: "User nahi mila bhai, chasma pehen lo"})
