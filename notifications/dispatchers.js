@@ -145,12 +145,14 @@ function newEvent(eventId, eventName) {
     everyoneNotificationDispatcer(0, nofObj, constants.notifications.type.both)
 }
 
-function newMatch(matchId, matchName, hostName, hostNumber, hostUsername, sport, isFacility) {
+function newMatch(matchId, matchName, hostName, hostNumber, hostUsername, sport, isFacility, playing_time) {
     var message
     if (isFacility) {
         message = "*FACILITY MATCH HOSTED* : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport
+            + "at " + customUtils.getFormattedDate(playing_time)
     } else {
-        message = "*vela match hosted* : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport
+        message = "*non facility match hosted* : id: " + matchId + " matchName: " + matchName + " hostName: " + hostName + " hostNumber: " + hostNumber + " hostUsername: " + hostUsername + " sport: " + sport
+            + "at " + customUtils.getFormattedDate(playing_time)
     }
     sendSlackMessage(message)
 }
@@ -402,6 +404,7 @@ function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
     UserModel.getUserPromise(function (result) {
         var theUser = result.body
         nofObj = {
+            "id": matchPayload["id"],
             "created": (new Date()).getTime(),
             "is_clicked": false,
             "is_read": false,
@@ -421,6 +424,7 @@ function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
 }
 
 function userAcceptsHostInvite(matchId, joineeId) {
+    console.log("userAcceptsHostInvite inside")
     var UserModel = require('../models/User');
     var MatchModel = require('../models/Match')
     var promises = [

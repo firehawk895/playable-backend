@@ -219,7 +219,7 @@ function parseJoinMatchRequest(requestObj) {
         console.log("and this user is being joined" + fromUserId)
         MatchModel.joinMatch(matchPayload["id"], fromUserId)
             .then(function (result) {
-                Dispatchers.acceptJoinMatchRequest(fromUserId, toUserId, matchPayload)
+                // Dispatchers.acceptJoinMatchRequest(fromUserId, toUserId, matchPayload)
                 //what to do?
                 console.log("")
             })

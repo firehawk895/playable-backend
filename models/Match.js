@@ -484,7 +484,7 @@ function createMatch(payload, hostData, invitedUserIdList) {
             //    "matchId": payload["id"],
             //    "pathTitle": reqBody.title
             //}
-            dispatchers.newMatch(payload["id"], payload["title"], hostData["name"], hostData["phoneNumber"], hostData["username"], payload["sport"], payload["isFacility"])
+            dispatchers.newMatch(payload["id"], payload["title"], hostData["name"], hostData["phoneNumber"], hostData["username"], payload["sport"], payload["isFacility"], payload["playing_time"])
             return kew.all(promises)
         })
         .then(function (result) {
@@ -551,9 +551,10 @@ function joinMatch(matchId, joineeId) {
                                     ])
                                 })
                                 .then(function (result) {
+                                    console.log("time to fire userAcceptsHostInvite : ")
                                     incrementFilledSlots(matchDetails.slots, matchDetails.slots_filled)
-                                    joinStatus.resolve()
                                     dispatchers.userAcceptsHostInvite(matchId, joineeId)
+                                    joinStatus.resolve()
                                 })
                                 .fail(function (err) {
                                     joinStatus.reject(err)
