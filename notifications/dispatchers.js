@@ -424,6 +424,12 @@ function acceptJoinMatchRequest(fromUserId, toUserId, matchPayload) {
 }
 
 function userAcceptsHostInvite(matchId, joineeId) {
+    /**
+     * super cool shitty hack
+     * fire notifications to both joinee and host.
+     * jiska screen open hai, usko notificatin nahi mileyga
+     * (logic resides in android)
+     */
     console.log("userAcceptsHostInvite inside")
     var UserModel = require('../models/User');
     var MatchModel = require('../models/Match')
@@ -440,12 +446,39 @@ function userAcceptsHostInvite(matchId, joineeId) {
             theMatch = results[1].body
 
             nofObj = {
+                "id" : matchId,
                 "created": (new Date()).getTime(),
                 "is_clicked": false,
                 "is_read": false,
                 "link": constants.notifications.links.matchId,
                 "title": "Your invite was accepted!",
                 "text": theUser.name + " has accepted your invite and successfully joined your match of "
+                + theMatch.sport + " titled " + theMatch.title,
+                "photo": ""
+            };
+            return UserModel.getGcmIdsForUserIds([theMatch.host.id])
+        })
+        .then(function (gcmIds) {
+            NF.send(nofObj, constants.notifications.type.both, gcmIds, [theMatch.host.id])
+        })
+        .fail(function (err) {
+            console.log("Error dispatching userAcceptsHostInvite")
+            console.log(err)
+        })
+
+    kew.all(promises)
+        .then(function (results) {
+            theUser = results[0].body
+            theMatch = results[1].body
+
+            nofObj = {
+                "id" : matchId,
+                "created": (new Date()).getTime(),
+                "is_clicked": false,
+                "is_read": false,
+                "link": constants.notifications.links.matchId,
+                "title": "Your host has accepted your request!",
+                "text": "The host " + theMatch["host"]["name"] + " has accepted you into the match of "
                 + theMatch.sport + " titled " + theMatch.title,
                 "photo": ""
             };
