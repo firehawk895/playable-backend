@@ -462,7 +462,7 @@ function userAcceptsHostInvite(matchId, joineeId) {
             NF.send(nofObj, constants.notifications.type.both, gcmIds, [theMatch.host.id])
         })
         .fail(function (err) {
-            console.log("Error dispatching userAcceptsHostInvite")
+            console.log("Error dispatching userAcceptsHostInvite - host.id")
             console.log(err)
         })
 
@@ -482,13 +482,13 @@ function userAcceptsHostInvite(matchId, joineeId) {
                 + theMatch.sport + " titled " + theMatch.title,
                 "photo": ""
             };
-            return UserModel.getGcmIdsForUserIds([theMatch.host.id])
+            return UserModel.getGcmIdsForUserIds([joineeId])
         })
         .then(function (gcmIds) {
-            NF.send(nofObj, constants.notifications.type.both, gcmIds, [theMatch.host.id])
+            NF.send(nofObj, constants.notifications.type.both, gcmIds, [joineeId])
         })
         .fail(function (err) {
-            console.log("Error dispatching userAcceptsHostInvite")
+            console.log("Error dispatching userAcceptsHostInvite - joineeId")
             console.log(err)
         })
 }
