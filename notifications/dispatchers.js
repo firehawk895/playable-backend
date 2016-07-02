@@ -439,6 +439,10 @@ function userAcceptsHostInvite(matchId, joineeId) {
     ]
     var theUser
     var theMatch
+
+    var theUser2
+    var theMatch2
+    
     var nofObj
     kew.all(promises)
         .then(function (results) {
@@ -451,7 +455,7 @@ function userAcceptsHostInvite(matchId, joineeId) {
                 "is_clicked": false,
                 "is_read": false,
                 "link": constants.notifications.links.matchId,
-                "title": "Your invite was accepted!",
+                "title": "Invitation accepted!",
                 "text": theUser.name + " has accepted your invite and successfully joined your match of "
                 + theMatch.sport + " titled " + theMatch.title,
                 "photo": ""
@@ -468,8 +472,8 @@ function userAcceptsHostInvite(matchId, joineeId) {
 
     kew.all(promises)
         .then(function (results) {
-            theUser = results[0].body
-            theMatch = results[1].body
+            theUser2 = results[0].body
+            theMatch2 = results[1].body
 
             nofObj = {
                 "id" : matchId,
@@ -477,9 +481,9 @@ function userAcceptsHostInvite(matchId, joineeId) {
                 "is_clicked": false,
                 "is_read": false,
                 "link": constants.notifications.links.matchId,
-                "title": "Your host has accepted your request!",
-                "text": "The host " + theMatch["host"]["name"] + " has accepted you into the match of "
-                + theMatch.sport + " titled " + theMatch.title,
+                "title": "Match request accepted!",
+                "text": "The host " + theMatch2["host"]["name"] + " has accepted you into the match of "
+                + theMatch2.sport + " titled " + theMatch2.title,
                 "photo": ""
             };
             return UserModel.getGcmIdsForUserIds([joineeId])
