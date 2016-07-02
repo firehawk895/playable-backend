@@ -197,7 +197,7 @@ function joinedEvent(eventId, eventName, userId, google_form) {
         .then(function (result) {
             var theUser = result.body
             console.log(theUser)
-            sendSlackMessage("Bakra has joined event - " + eventName + " , bakraName: " + theUser.name + " bakraNumber: " + theUser.phoneNumber + " bakraUsername: " + theUser.username)
+            sendSlackMessage("user has joined event - " + eventName + " , userName: " + theUser.name + " userNumber: " + theUser.phoneNumber + " userUsername: " + theUser.username)
             return customUtils.sendSms(message, theUser.phoneNumber)
         })
         .then(function (result) {

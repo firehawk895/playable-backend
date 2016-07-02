@@ -69,7 +69,7 @@ function joinEvent(userId, eventId) {
                     dbUtils.createGraphRelationPromise('users', userId, 'events', eventId, constants.graphRelations.users.playsMatches)
                 ])
             } else {
-                return joinedEventStatus.reject(new Error("You are already part of this event. Roll back any payments if made."))
+                return joinedEventStatus.reject(new Error("You are already part of this event. In case of any issues drop in a message from feedback chat"))
             }
         })
         .then(function (result) {
