@@ -306,7 +306,7 @@ router.get('/', [passport.authenticate('bearer', {session: false}), function (re
 
         if (req.query.skill_level_min && req.query.skill_level_max) {
             console.log("we have a skill level filter")
-            queries.push(MatchModel.createSkillRatingQuery(req.query.skill_level_min, req.query.skill_level_max))
+            queries.push(MatchModel.createSkillRatingQuery(req.query.skill_range_min, req.query.skill_range_max))
         }
     }
 

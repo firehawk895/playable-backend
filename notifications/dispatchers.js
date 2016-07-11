@@ -352,7 +352,7 @@ function acceptMatchRequest(user1id, user2id, matchPayload) {
             };
             console.log("dispatching : ")
             console.log(nofObj)
-            NF.send(nofObj, constants.notifications.type.push, [user1.gcmId], null);
+            NF.send(nofObj, constants.notifications.type.push, [user2.gcmId], null);
         })
 
     // kew.all([
@@ -456,7 +456,7 @@ function userAcceptsHostInvite(matchId, joineeId) {
                 "is_read": false,
                 "link": constants.notifications.links.matchId,
                 "title": "Invitation accepted!",
-                "text": theUser.name + " has accepted your invite and successfully joined your match of "
+                "text": theUser.name + " has accepted your invitation and successfully joined your match of "
                 + theMatch.sport + " titled " + theMatch.title,
                 "photo": ""
             };
@@ -469,32 +469,32 @@ function userAcceptsHostInvite(matchId, joineeId) {
             console.log("Error dispatching userAcceptsHostInvite - host.id")
             console.log(err)
         })
-
-    kew.all(promises)
-        .then(function (results) {
-            theUser2 = results[0].body
-            theMatch2 = results[1].body
-
-            nofObj = {
-                "id" : matchId,
-                "created": (new Date()).getTime(),
-                "is_clicked": false,
-                "is_read": false,
-                "link": constants.notifications.links.matchId,
-                "title": "Match request accepted!",
-                "text": "The host " + theMatch2["host"]["name"] + " has accepted you into the match of "
-                + theMatch2.sport + " titled " + theMatch2.title,
-                "photo": ""
-            };
-            return UserModel.getGcmIdsForUserIds([joineeId])
-        })
-        .then(function (gcmIds) {
-            NF.send(nofObj, constants.notifications.type.both, gcmIds, [joineeId])
-        })
-        .fail(function (err) {
-            console.log("Error dispatching userAcceptsHostInvite - joineeId")
-            console.log(err)
-        })
+    //
+    // kew.all(promises)
+    //     .then(function (results) {
+    //         theUser2 = results[0].body
+    //         theMatch2 = results[1].body
+    //
+    //         nofObj = {
+    //             "id" : matchId,
+    //             "created": (new Date()).getTime(),
+    //             "is_clicked": false,
+    //             "is_read": false,
+    //             "link": constants.notifications.links.matchId,
+    //             "title": "Match request accepted!",
+    //             "text": "The host " + theMatch2["host"]["name"] + " has accepted you into the match of "
+    //             + theMatch2.sport + " titled " + theMatch2.title,
+    //             "photo": ""
+    //         };
+    //         return UserModel.getGcmIdsForUserIds([joineeId])
+    //     })
+    //     .then(function (gcmIds) {
+    //         NF.send(nofObj, constants.notifications.type.both, gcmIds, [joineeId])
+    //     })
+    //     .fail(function (err) {
+    //         console.log("Error dispatching userAcceptsHostInvite - joineeId")
+    //         console.log(err)
+    //     })
 }
 
 function feedback(username, message) {
@@ -503,7 +503,7 @@ function feedback(username, message) {
         "id": (new Date()).getTime(),
         "is_clicked": false,
         "is_read": false,
-        "link": "Feedback Channel",
+        "link": "feedback",
         "title": "Response for your Feedback",
         "text": "You received a message from Playable Team : " + message.split(":")[1].trim(),
         "photo": ""
