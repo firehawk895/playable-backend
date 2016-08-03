@@ -309,7 +309,7 @@ function acceptConnectionRequest(accepterId, senderId) {
                 "is_read": false,
                 "link": constants.notifications.links.userId,
                 "title": "Request Accepted",
-                "text": theUser.name + " has accepted your request to connect. Chat and play with him now!",
+                "text": theUser.name + " has accepted your request to connect. Chat and play now!",
                 "photo": ""
             };
             NF.send(nofObj, constants.notifications.type.push, gcmIds, null);

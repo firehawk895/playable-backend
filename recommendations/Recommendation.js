@@ -62,19 +62,20 @@ function createRecommendationCron(matchId) {
                     createRateTeamReco(participant.id, matchId, match.title)
                 })
             }
-            if (match.isFacility) {
-                MatchModel.getFacilityOfMatchPromise(matchId)
-                    .then(function (result) {
-                        var results = dbUtils.injectId(result)
-                        var facility = results[0]
-                        console.log("the facility is")
-                        console.log(facility)
-
-                        participants.forEach(function (participant) {
-                            createRateFacilityReco(participant.id, facility.id, facility.name)
-                        })
-                    })
-            }
+            //uncomment if you want facility recommendation
+            // if (match.isFacility) {
+            //     MatchModel.getFacilityOfMatchPromise(matchId)
+            //         .then(function (result) {
+            //             var results = dbUtils.injectId(result)
+            //             var facility = results[0]
+            //             console.log("the facility is")
+            //             console.log(facility)
+            //
+            //             participants.forEach(function (participant) {
+            //                 createRateFacilityReco(participant.id, facility.id, facility.name)
+            //             })
+            //         })
+            // }
         })
         .fail(function (err) {
             console.log("err")

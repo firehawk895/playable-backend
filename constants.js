@@ -170,35 +170,35 @@ module.exports = {
     sportsCoverPics: {
         pool: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/pool_004f12.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-pool_004f12.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/pool_004f12.jpg'
         },
         snooker: {
-            url: 'https://s3.amazonaws.com/pyoopil-prod-server/snooker_12_49080e.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-snooker_12_49080e.png'
+            url: 'https://s3.amazonaws.com/pyoopil-prod-server/snooker_d1883d.jpg',
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/snooker_d1883d.jpg'
         },
         ultimatefrisbee: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/ultimate_12_1d3713.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-ultimate_12_1d3713.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/ultimate_12_1d3713.jpg'
         },
         tabletennis: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/table_tennis_64b262.jpeg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-table_tennis_64b262.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/table_tennis_64b262.jpeg'
         },
         badminton: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/badminton_16d145.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-badminton_16d145.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/badminton_16d145.jpg'
         },
         squash: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/squash_add7e3.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-squash_add7e3.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/squash_add7e3.jpg'
         },
         tennis: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/tennis_12_f38820.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-tennis_12_f38820.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/tennis_12_f38820.jpg'
         },
         cycling: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/cycling_782eb2.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-cycling_782eb2.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/cycling_782eb2.jpg'
         },
         swimming: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/swimming_12_cda533.jpg',
@@ -206,11 +206,11 @@ module.exports = {
         },
         cricket: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/cricket_12_ff52ef.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-cricket_12_ff52ef.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/cricket_12_ff52ef.jpg'
         },
         bowling: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/bowling_68f975.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-bowling_68f975.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/bowling_68f975.jpg'
         },
         hockey: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/hockey_12_f05c29.jpg',
@@ -218,7 +218,7 @@ module.exports = {
         },
         running: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/running_12_c43383.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-running_12_c43383.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/running_12_c43383.jpg'
         },
         golf: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/golf_12_2c68d1.jpg',
@@ -226,12 +226,12 @@ module.exports = {
         },
         football: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/football_763658.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-football_763658.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/football_763658.jpg'
         }
         ,
         basketball: {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/basketball_399b89.jpg',
-            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-serverresized/resized-basketball_399b89.png'
+            urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/basketball_399b89.jpg'
         }
     }
 }
