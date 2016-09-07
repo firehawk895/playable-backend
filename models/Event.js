@@ -63,14 +63,14 @@ function joinEvent(userId, eventId) {
         .then(function (results) {
             console.log("just checked event participation")
             var count = results.body.count
-            if (count == 0) {
+            // if (count == 0) {
                 return kew.all([
                     dbUtils.createGraphRelationPromise('events', eventId, 'users', userId, constants.graphRelations.events.participants),
                     dbUtils.createGraphRelationPromise('users', userId, 'events', eventId, constants.graphRelations.users.playsMatches)
                 ])
-            } else {
-                return joinedEventStatus.reject(new Error("You are already part of this event. In case of any issues drop in a message from feedback chat"))
-            }
+            // } else {
+            //     return joinedEventStatus.reject(new Error("You are already part of this event. In case of any issues drop in a message from feedback chat"))
+            // }
         })
         .then(function (result) {
             joinedEventStatus.resolve()
