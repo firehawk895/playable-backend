@@ -233,7 +233,7 @@ validatePostEvent = function (req) {
         errors.push(constants.validations.event.time_in_future)
 
     if (validator.isTimeInFuture(reqBody.lastRegDate))
-        reqBody.playing_time = parseInt(reqBody.lastRegDate)
+        reqBody.lastRegDate = parseInt(reqBody.lastRegDate)
     else
         errors.push(constants.validations.event.reg_time_in_future)
 
