@@ -191,7 +191,7 @@ function joinedEvent(eventId, eventName, userId, google_form) {
 
     message = "You have been registered for the event - " + eventName + "."
     if (google_form)
-        message = message + " Please fill out this google form so we can serve you better - " + google_form
+        message = message + " Please click the following link for more information - " + google_form
 
     UserModel.getUserPromise(userId)
         .then(function (result) {
