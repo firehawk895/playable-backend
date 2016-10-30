@@ -286,6 +286,9 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
 
             console.log("sanitizedPayload : ")
             console.log(sanitizedPayload)
+            
+            console.log("about to call db.merge : ")
+            console.log("eventId" + eventId)
 
             db.merge('events', eventId, sanitizedPayload)
                 .then(function (result) {
