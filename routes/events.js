@@ -232,7 +232,7 @@ router.post('/join', [passport.authenticate('bearer', {session: false}), functio
 router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), function (req, res) {
     var responseObj = {}
     var user = req.user.results[0].value
-    var eventId = req.query.id
+    var eventId = req.query.eventId
     var invitedUsersIds = req.body.invitedUserIds
 
     console.log("req.body before validation:")
