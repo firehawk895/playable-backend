@@ -254,6 +254,9 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
         res.json(responseObj);
     } else {
         customUtils.upload(req.files.image, function (coverPhotoInfo) {
+            console.log("customUtils.upload just done: ")
+            console.log("coverPhotoInfo: ")
+            console.log(coverPhotoInfo)
             var sanitizedPayload = {
                 title: req.body.title,
                 sub_title: req.body.sub_title,
