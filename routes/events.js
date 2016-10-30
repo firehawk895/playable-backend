@@ -281,6 +281,7 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
                 sanitizedPayload.coverPhotoThumb = coverPhotoInfo.urlThumb
             }
 
+            console.log("sanitizedPayload : ")
             console.log(sanitizedPayload)
 
             db.merge('events', eventId, sanitizedPayload)
