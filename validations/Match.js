@@ -365,7 +365,7 @@ validatePatchEvent = function (req) {
         }
     }
 
-    if(!validator.isNull(reqBody.isPaid) || reqBody.isPaid!= "undefined") {
+    if(!validator.isNull(reqBody.isPaid) && !validator.isUndefined(reqBody.isPaid) && reqBody != "undefined") {
         if (validator.isBoolean(reqBody.isPaid)) {
             reqBody.isPaid = customUtils.stringToBoolean(reqBody.isPaid)
             if (reqBody.isPaid && !validator.isInt(reqBody.price, {min: 1})) {
