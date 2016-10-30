@@ -235,10 +235,18 @@ router.patch('/', [passport.authenticate('bearer', {session: false}), multer(), 
     var eventId = req.query.id
     var invitedUsersIds = req.body.invitedUserIds
 
+    console.log("req.body before validation:")
+    console.log(req.body)
+    
+
     var validationResponse = matchValidation.validatePatchEvent(req);
     req.body = validationResponse.reqBody
     req.files = validationResponse.reqFiles
     var errors = validationResponse.errors
+
+    console.log("req.body after validation:")
+    console.log(req.body)
+    
 
     if (errors.length > 0) {
         responseObj["errors"] = errors;
