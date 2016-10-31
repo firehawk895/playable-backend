@@ -317,6 +317,19 @@ router.get('/csv', function (req, res) {
         })
 })
 
+router.get('/csv/participants', function (req, res) {
+    var eventId = req.query.id
+    dbUtils.generateCsvForGraphRelationsFile("events", eventId, constants.graphRelations.matches.participants)
+        .then(function (result) {
+            var filename = "events-" + eventId + ".csv"
+            res.status(200)
+            res.sendFile(filename, {root: path.join(__dirname, '../csv')});
+        })
+        .fail(function (err) {
+            customUtils.sendErrors(err, res)
+        })
+})
+
 router.delete('/', [passport.authenticate('bearer', {session: false}), function (req, res) {
     console.log("delete event")
     var id = req.query.id

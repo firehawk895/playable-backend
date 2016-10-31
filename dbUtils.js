@@ -343,6 +343,80 @@ function getAllItems(collection, query) {
     return allItems
 }
 
+function getAllGraphItems(collection, id, relation) {
+    var allGraphItemsPromise = kew.defer()
+    var graphItems = []
+    getGraphItems(collection, id, relation, 0)
+
+    function getGraphItems(collection, id, relation, offset) {
+        console.log("offset value -- " + offset)
+        db.newGraphReader()
+            .get()
+            .limit(constants.pagination.limit)
+            .offset(offset)
+            .from(collection, id)
+            .related(relation)
+            .then(function (result) {
+                Array.prototype.push.apply(graphItems,injectId(result))
+                if (result.body.next != undefined) {
+                    getGraphItems(collection, id, relation, offset + constants.pagination.limit);
+                } else {
+                    graphItemsDone()
+                }
+            })
+            .fail(function (err) {
+                allGraphItemsPromise.reject(err)
+                console.log(err)
+            })
+    }
+
+    function graphItemsDone() {
+        allGraphItemsPromise.resolve(graphItems)
+    }
+    
+    return allGraphItemsPromise
+}
+
+function generateCsvForGraphRelationsFile(collection, id, relation) {
+    var fs = require('fs')
+    var fileStatus = kew.defer()
+    generateCsvForGraphRelations(collection, id, relation)
+        .then(function (csvDump) {
+            var filename = collection + "-" + id + ".csv"
+            var filepath = __dirname + "/csv/" + filename
+            fs.writeFile(filepath, csvDump, function (err) {
+                if (err) {
+                    console.log(err);
+                    fileStatus.reject(err)
+                } else {
+                    fileStatus.resolve()
+                    console.log("The file was saved!");
+                }
+            });
+        })
+    return fileStatus
+}
+
+function generateCsvForGraphRelations(collection, id, relation) {
+    var generatedCsvStatus = kew.defer()
+    getAllGraphItems(collection, id, relation)
+        .then(function (results) {
+            json2csv({data: results}, function (err, csv) {
+                if (err) {
+                    console.log(err);
+                    generatedCsvStatus.reject(err)
+                } else {
+                    // console.log(csv);
+                    generatedCsvStatus.resolve(csv)
+                }
+            });
+        })
+        .fail(function (err) {
+            generatedCsvStatus.reject(err)
+        })
+    return generatedCsvStatus
+}
+
 function generateCsv(collection, query) {
     var generatedCsvStatus = kew.defer()
     getAllItems(collection, query)
@@ -411,7 +485,8 @@ module.exports = {
     createFieldQuery:createFieldQuery,
     getAllItemsWithFields : getAllItemsWithFields,
     getIdAfterPost : getIdAfterPost,
-    generateCsvFile : generateCsvFile
+    generateCsvFile : generateCsvFile,
+    generateCsvForGraphRelationsFile : generateCsvForGraphRelationsFile
 }
 
 

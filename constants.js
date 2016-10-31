@@ -233,5 +233,8 @@ module.exports = {
             url: 'https://s3.amazonaws.com/pyoopil-prod-server/basketball_399b89.jpg',
             urlThumb: 'https://s3.amazonaws.com/pyoopil-prod-server/basketball_399b89.jpg'
         }
+    },
+    'pagination': {
+        'limit': 100
     }
 }
